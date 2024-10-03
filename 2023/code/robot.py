@@ -16,8 +16,8 @@ class MyRobot(wpilib.TimedRobot):
     """
 
     def robotInit(self):
-        self.gyro = wpilib.ADIS16470_IMU()
-        wpilib.CameraServer.launch()
+        # self.gyro = wpilib.ADIS16470_IMU()
+        # wpilib.CameraServer.launch()
         
         self.ARM_EXTEND = 72
         self.ARM_HOME =0
@@ -37,7 +37,7 @@ class MyRobot(wpilib.TimedRobot):
 
         self.LeftFrontMotor = ctre.WPI_TalonSRX(1)
         self.LeftRearMotor = ctre.WPI_TalonSRX(2)
-
+        
         self.RightFrontMotor = ctre.WPI_TalonSRX(3)
         self.RightRearMotor = ctre.WPI_TalonSRX(4)
 
@@ -59,9 +59,9 @@ class MyRobot(wpilib.TimedRobot):
         self.ArmState="unknown"
         self.WantedArmPosition = self.ARM_RETRACT
         self.ArmRunningToPosition = False
-        self.MaxArmSpeed=1.0
-        self.IntakeSpeed=-0.6
-        self.ReleaseSpeed=0.6
+        self.MaxArmSpeed=0.5
+        self.IntakePickupSpeed=0.5
+        self.ReleaseSpeed=-0.8
 
         self.AutoTimer = wpilib.Timer()
         self.AutoDirection=""
@@ -80,12 +80,12 @@ class MyRobot(wpilib.TimedRobot):
 
         
 
-        if self.gyro.isConnected():
-            print("start calibration")
-            self.gyro.calibrate()
+        # if self.gyro.isConnected():
+        #     print("start calibration")
+        #     self.gyro.calibrate()
             
-            print("calibrated")
-            SmartDashboard.putData("Gyro", self.gyro);
+        #     print("calibrated")
+        #     SmartDashboard.putData("Gyro", self.gyro);
     
 
 
@@ -111,13 +111,57 @@ class MyRobot(wpilib.TimedRobot):
         self.AutoTimer.start()
 
     def autonomousPeriodic(self):
+
+        # this goes backwards to knock the piece in
         if(self.AutoTimer.get() < 0.5):
             self.setDrives(0.5, 0.5)
-        elif(self.AutoTimer.get() < 5):
-            self.setDrives(-0.4, -0.4)
+
+
+
+        #CHANGE THIS BACK TO 4 FOR THE MIDDLE LANE
+
+
+
+        # this goes forward to cross into the field
+        elif(self.AutoTimer.get() < 3):
+            self.setDrives(-0.5, -0.5)
+
+        # this pauses to let tht ramp stop shaking
+        elif(self.AutoTimer.get() < 6.6):
+            self.LeftFrontMotor.setNeutralMode(ctre.NeutralMode.Brake)
+            self.LeftRearMotor.setNeutralMode(ctre.NeutralMode.Brake)
+            self.RightFrontMotor.setNeutralMode(ctre.NeutralMode.Brake)
+            self.RightRearMotor.setNeutralMode(ctre.NeutralMode.Brake)
+            self.setDrives(0, 0)
+
+        
+
+
+
+        # UNCOMMENT THIS FOR THE RAMP
+
+        # this goes backwards to balance the bot
+        # 8.5 ON THE PRACTICE FIELD WAS TOO MUCH
+        # I AM 
+        # elif(self.AutoTimer.get() < 8.3):
+        #     self.LeftFrontMotor.setNeutralMode(ctre.NeutralMode.Coast)
+        #     self.LeftRearMotor.setNeutralMode(ctre.NeutralMode.Coast)
+        #     self.RightFrontMotor.setNeutralMode(ctre.NeutralMode.Coast)
+        #     self.RightRearMotor.setNeutralMode(ctre.NeutralMode.Coast)
+        #     self.setDrives(0.6, 0.6)
+        
+        
+
+
+        # this stops the drive
         else:
             self.setDrives(0, 0)
 
+            self.LeftFrontMotor.setNeutralMode(ctre.NeutralMode.Brake)
+            self.LeftRearMotor.setNeutralMode(ctre.NeutralMode.Brake)
+            self.RightFrontMotor.setNeutralMode(ctre.NeutralMode.Brake)
+            self.RightRearMotor.setNeutralMode(ctre.NeutralMode.Brake)
+            
     
     def teleopPeriodic(self):
 
@@ -132,7 +176,7 @@ class MyRobot(wpilib.TimedRobot):
         # if data is not None:
         #     print("Received data:", data)
 
-        self.tiltPeriodic()
+        # self.tiltPeriodic()
         self.JoystickPeriodic()
         self.DrivePeriodic()
         self.ArmPeriodic()
@@ -226,7 +270,8 @@ class MyRobot(wpilib.TimedRobot):
         # Set the motor's output to half power.
         # This takes a number from -1 (100% speed in reverse) to +1 (100%
         # speed going forward)
-        self.DriveSpeed=0.75
+        self.DriveSpeed=1.0
+
 
         # High Speed
         # Set the motor's output to FULL power.
@@ -242,6 +287,19 @@ class MyRobot(wpilib.TimedRobot):
         # Set the motor's output to ZERO power.
         if self.DRIVE_LB_Button:
             self.DriveSpeed=0
+            self.LeftFrontMotor.setNeutralMode(ctre.NeutralMode.Brake)
+            self.LeftRearMotor.setNeutralMode(ctre.NeutralMode.Brake)
+            self.RightFrontMotor.setNeutralMode(ctre.NeutralMode.Brake)
+            self.RightRearMotor.setNeutralMode(ctre.NeutralMode.Brake)
+        else:
+            
+            self.LeftFrontMotor.setNeutralMode(ctre.NeutralMode.Coast)
+            self.LeftRearMotor.setNeutralMode(ctre.NeutralMode.Coast)
+            self.RightFrontMotor.setNeutralMode(ctre.NeutralMode.Coast)
+            self.RightRearMotor.setNeutralMode(ctre.NeutralMode.Coast)
+        
+        
+        
         # self.LeftFrontMotor.set(-1*self.DriveSpeed*self.DRIVE_LEFT_THUMB_UPDOWN)
         # self.LeftRearMotor.set(-1*self.DriveSpeed*self.DRIVE_LEFT_THUMB_UPDOWN)
         # self.RightFrontMotor.set(self.DriveSpeed*self.DRIVE_RIGHT_THUMB_UPDOWN)
@@ -280,9 +338,12 @@ class MyRobot(wpilib.TimedRobot):
         elif self.ArmState == "Upper Position":
             print("Upper Position")
         else:
-            if self.ARM_RIGHT_TRIGGER > 0.05:
+            if self.ARM_RIGHT_TRIGGER > 0.05 and self.CurrentPosition <= 160:
                 self.JackShaftMotor.set(self.MaxArmSpeed*self.ARM_RIGHT_TRIGGER)
             elif self.ARM_LEFT_TRIGGER > 0.05:
+
+# Make it stop at 160 on the encoder
+
                 self.JackShaftMotor.set(-1*self.MaxArmSpeed*self.ARM_LEFT_TRIGGER)
             else:
                 self.JackShaftMotor.set(0)
@@ -300,7 +361,7 @@ class MyRobot(wpilib.TimedRobot):
         else:
             self.ArmState="unknown"
 
-        self.SMARTArmRotation = SmartDashboard.putString("Arm State", ArmState)
+        self.SMARTArmRotation = SmartDashboard.putString("Arm State", self.ArmState)
         self.SMARTArmRotation = SmartDashboard.putNumber("Wanted Position", WantedPosition)
         
         if(self.CurrentPosition > WantedPosition + offset):
@@ -335,16 +396,23 @@ class MyRobot(wpilib.TimedRobot):
             
         # # if Intake_Current > 5:
         # #     self.IntakeMotor.set(0)
+        
         # # el
         
-        
-        if self.INTAKE_STATE=="Intake":
-            self.IntakeMotor.set(self.IntakeSpeed)
-        elif self.INTAKE_STATE=="Release":
+        # if self.INTAKE_STATE=="Intake":
+        #     self.IntakeMotor.set(self.IntakeSpeed)
+        # elif self.INTAKE_STATE=="Release":
+        #     self.IntakeMotor.set(self.ReleaseSpeed)
+        # else:
+        #     self.IntakeMotor.set(0)
+
+        if self.ARM_RB_Button:
+            self.IntakeMotor.set(self.IntakePickupSpeed)
+        elif self.ARM_LB_Button:
             self.IntakeMotor.set(self.ReleaseSpeed)
         else:
             self.IntakeMotor.set(0)
-       
+    
 
     def setDrives(self, LeftSpeed: float, RightSpeed: float):
         
