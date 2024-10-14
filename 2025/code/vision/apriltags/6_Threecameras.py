@@ -76,7 +76,7 @@ def detect_and_estimate_position(frame, camera_matrix, dist_coeffs, rotation_mat
 
 def main():
 	# Initialize video capture for three cameras
-	caps = [cv2.VideoCapture(i) for i in range(3)]  # Cameras 0, 1, and 2
+	caps = [cv2.VideoCapture(i, cv2.CAP_DSHOW) for i in range(3)]  # Cameras 0, 1, and 2
 
 	# Calculate the transformation matrices for each camera's rotation
 	rotation_matrices = [calculate_transformation_matrix(angle) for angle in camera_offset_angles]
