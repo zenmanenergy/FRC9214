@@ -5,7 +5,7 @@ import json
 
 # Define the field areas and initialize the coordinates dictionary
 areas = ["red charging station", "red loading zone", "red community",
-         "blue charging station", "blue loading zone", "blue community"]
+		 "blue charging station", "blue loading zone", "blue community"]
 coordinates = {area: [] for area in areas}
 current_area = 0
 
