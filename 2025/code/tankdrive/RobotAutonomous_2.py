@@ -20,13 +20,19 @@ class MyRobot(wpilib.TimedRobot):
 		# Call the drive function based on the current drive step
 		if self.driveStep == 0:
 			# First drive forward for 0.5 seconds at 50% speed
-			if self.drive_forward_for_time(0.5, 0.5):
+			if self.drive_forward_for_time(-0.4, .75):
 				self.driveStep += 1  # Move to the next step
 
 		elif self.driveStep == 1:
 			# Second drive forward for 1 second at 75% speed
-			if self.drive_forward_for_time(0.75, 1.0):
+			if self.drive_forward_for_time(0.4, 0.75):
 				self.driveStep += 1  # Move to the next step
+
+		elif self.driveStep == 2:
+			# Second drive forward for 1 second at 75% speed
+			if self.drive_forward_for_time(-0.05, 0.75):
+				self.driveStep += 1  # Move to the next step
+
 
 	def teleopInit(self):
 		pass
@@ -46,7 +52,7 @@ class MyRobot(wpilib.TimedRobot):
 			self.RightRearMotor.set(speed)
 
 		# Check if the duration has passed
-		if self.timer.hasPeriodPassed(duration):
+		if self.timer.get() >=duration:
 			# Stop the motors
 			self.LeftFrontMotor.set(0)
 			self.LeftRearMotor.set(0)

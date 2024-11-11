@@ -8,45 +8,48 @@ class MyRobot(wpilib.TimedRobot):
 		self.RightFrontMotor = ctre.WPI_TalonSRX(3)
 		self.RightRearMotor = ctre.WPI_TalonSRX(4)
 		
-		# Initialize a timer and a completion flag
+		# Initialize a timer and a step counter
 		self.timer = wpilib.Timer()
-		self.driveCompleted = False
-
+		
+		
 	def autonomousInit(self):
-		# Reset the drive completion flag at the start of autonomous
-		self.driveCompleted = False
+		# Reset the step counter at the start of autonomous
+		self.timer.reset()
 
 	def autonomousPeriodic(self):
-		# Call the drive function only if drive is not completed
-		if not self.driveCompleted:
-			self.drive_forward_for_time(0.5, 0.5)
-
+		# Call the drive function based on the current drive step
+		self.drive_for_time(0.4, .75)
+		
 	def teleopInit(self):
 		pass
 	
 	def teleopPeriodic(self):
 		pass
 
-	def drive_forward_for_time(self, speed, duration):
-		"""Drives forward at the given speed for the specified duration in seconds."""
-		# Start driving if not already driving
-		if not self.timer.hasPeriodPassed(duration):
-			# Start the timer and set motor speeds the first time
-			if self.timer.get() == 0:
-				self.timer.start()
-				self.LeftFrontMotor.set(-speed)
-				self.LeftRearMotor.set(-speed)
-				self.RightFrontMotor.set(speed)
-				self.RightRearMotor.set(speed)
-		else:
-			# Stop the motors and mark drive as completed
+	def drive_for_time(self, speed, duration):
+		"""Drives forward at the given speed for the specified duration in seconds.
+		Returns True once the duration has passed, otherwise False."""
+		# Start driving if the timer hasn't started yet
+		if self.timer.get() == 0:
+			self.timer.start()
+			self.LeftFrontMotor.set(speed)
+			self.LeftRearMotor.set(speed)
+			self.RightFrontMotor.set(-speed)
+			self.RightRearMotor.set(-speed)
+
+		# Check if the duration has passed
+		if self.timer.get() >=duration:
+			# Stop the motors
 			self.LeftFrontMotor.set(0)
 			self.LeftRearMotor.set(0)
 			self.RightFrontMotor.set(0)
 			self.RightRearMotor.set(0)
 			
-			# Mark the drive as completed to prevent it from running again
-			self.driveCompleted = True
+			# Reset the timer for the next call
+			self.timer.stop()
+			return True  # Signal that the drive action is complete
+
+		return False  # Drive action is still in progress
 
 if __name__ == "__main__":
 	wpilib.run(MyRobot)
