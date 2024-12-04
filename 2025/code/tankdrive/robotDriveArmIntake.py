@@ -19,8 +19,9 @@ class MyRobot(wpilib.TimedRobot):
 		self.IntakeMotor.setSmartCurrentLimit(19) # set the maximum current limit to 20A
 		self.IntakeMotor.setSecondaryCurrentLimit(25) # set the maximum current limit during current limit duration to 25A
         
-		self.ArmSpeed=0.5
-		self.IntakeSpeed=0.6
+		self.MaxDriveSpeed=0.5
+		self.MaxArmSpeed=0.5
+		self.MaxIntakeSpeed=0.6
 
 	def autonomousInit(self):
 		return False
@@ -46,20 +47,20 @@ class MyRobot(wpilib.TimedRobot):
 	
 	
 	def DrivePeriodic(self):
-		self.LeftFrontMotor.set(-self.DRIVE_LEFT_THUMB_UPDOWN)
-		self.LeftRearMotor.set(-self.DRIVE_LEFT_THUMB_UPDOWN)
-		self.RightFrontMotor.set(self.DRIVE_RIGHT_THUMB_UPDOWN)
-		self.RightRearMotor.set(self.DRIVE_RIGHT_THUMB_UPDOWN)
+		self.LeftFrontMotor.set(-self.DRIVE_LEFT_THUMB_UPDOWN*self.MaxDriveSpeed)
+		self.LeftRearMotor.set(-self.DRIVE_LEFT_THUMB_UPDOWN*self.MaxDriveSpeed)
+		self.RightFrontMotor.set(self.DRIVE_RIGHT_THUMB_UPDOWN*self.MaxDriveSpeed)
+		self.RightRearMotor.set(self.DRIVE_RIGHT_THUMB_UPDOWN*self.MaxDriveSpeed)
 
 	def ArmPeriodic(self):
 		if self.ARM_LEFT_THUMB_UPDOWN > 0.05 or self.ARM_LEFT_THUMB_UPDOWN < -0.05:
-			self.JackShaftMotor.set(-1*self.ArmSpeed*self.ARM_LEFT_THUMB_UPDOWN)
+			self.JackShaftMotor.set(-1*self.MaxArmSpeed*self.ARM_LEFT_THUMB_UPDOWN)
 		else:
 			self.JackShaftMotor.set(0)
 
 	def IntakePeriodic(self):
 		if self.ARM_RIGHT_THUMB_UPDOWN>0.05 or self.ARM_RIGHT_THUMB_UPDOWN<-0.05:
-			self.IntakeMotor.set(-1*self.IntakeSpeed*self.ARM_RIGHT_THUMB_UPDOWN)
+			self.IntakeMotor.set(-1*self.MaxIntakeSpeed*self.ARM_RIGHT_THUMB_UPDOWN)
 		else:
 			self.IntakeMotor.set(0)
 
