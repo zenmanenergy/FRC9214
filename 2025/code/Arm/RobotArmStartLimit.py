@@ -15,6 +15,7 @@ class MyRobot(wpilib.TimedRobot):
 		# State variables
 		self.retracting = False
 
+
 	def autonomousInit(self):
 		return False
 	
