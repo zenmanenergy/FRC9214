@@ -27,6 +27,12 @@ class MyRobot(wpilib.TimedRobot):
 		self.left_encoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / self.ENCODER_CPR)
 		self.right_encoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / self.ENCODER_CPR)
 
+		# Rotation parameters
+		self.max_speed = 0.5  # Maximum motor speed
+		self.min_speed = 0.2  # Minimum motor speed for smooth startup/stop
+		self.accel_distance = 50  # Distance (mm) over which to accelerate/decelerate
+
+
 	def autonomousInit(self):
 		return False
 	
@@ -53,25 +59,55 @@ class MyRobot(wpilib.TimedRobot):
 
 	def rotateRobot(self, degrees):
 		"""
-		Rotates the robot in place by the specified number of degrees using both encoders.
+		Rotates the robot in place by the specified number of degrees using both encoders,
+		with acceleration and deceleration.
 		"""
 		print(f"Rotating to: {degrees:.2f} degrees")
 
 		# Calculate the distance each wheel must travel to achieve the desired rotation
 		rotation_distance_mm = (degrees / 360.0) * self.ROBOT_CIRCUMFERENCE_MM
 
-		# Rotate the robot: left wheels backward, right wheels forward
-		while abs(self.left_encoder.getDistance()) < rotation_distance_mm and abs(self.right_encoder.getDistance()) < rotation_distance_mm:
-			self.LeftFrontMotor.set(-0.5)  # Adjust speed as necessary
-			self.LeftRearMotor.set(-0.5)
-			self.RightFrontMotor.set(0.5)
-			self.RightRearMotor.set(0.5)
 
-		# Stop the motors
+		
+		while True:
+			# Get the distances traveled by each encoder
+			left_distance = abs(self.left_encoder.getDistance())
+			right_distance = abs(self.right_encoder.getDistance())
+
+			# Calculate the average distance traveled
+			average_distance = (left_distance + right_distance) / 2
+
+			# Break the loop if the target rotation distance is reached
+			if average_distance >= rotation_distance_mm:
+				break
+
+			# Calculate the remaining distance
+			remaining_distance = rotation_distance_mm - average_distance
+
+			# Adjust speed based on remaining distance (deceleration)
+			if remaining_distance < self.accel_distance:
+				speed = max(self.min_speed, self.max_speed * (remaining_distance / self.accel_distance))
+			# Accelerate at the start
+			elif average_distance < self.accel_distance:
+				speed = max(self.min_speed, self.max_speed * (average_distance / self.accel_distance))
+			# Maintain maximum speed in the middle
+			else:
+				speed = self.max_speed
+
+			# Apply speed to the motors for rotation
+			self.LeftFrontMotor.set(-speed)  # Left wheels backward
+			self.LeftRearMotor.set(-speed)
+			self.RightFrontMotor.set(speed)  # Right wheels forward
+			self.RightRearMotor.set(speed)
+
+		# Stop the motors after the rotation
 		self.LeftFrontMotor.set(0)
 		self.LeftRearMotor.set(0)
 		self.RightFrontMotor.set(0)
 		self.RightRearMotor.set(0)
+
+		print("Rotation complete.")
+
 
 	def checkForRotation(self):
 		"""
