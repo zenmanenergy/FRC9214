@@ -21,6 +21,11 @@ class MyRobot(wpilib.TimedRobot):
 		self.left_encoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / self.ENCODER_CPR)
 		self.right_encoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / self.ENCODER_CPR)
 
+		# Travel parameters
+		self.max_speed = 0.5  # Maximum motor speed
+		self.min_speed = 0.2  # Minimum motor speed for smooth startup/stop
+		self.accel_distance = 100  # Distance (mm) over which to accelerate/decelerate
+
 
 	def autonomousInit(self):
 		# Reset the encoder at the start of autonomous
@@ -42,29 +47,43 @@ class MyRobot(wpilib.TimedRobot):
 
 	def travelDistance(self, distance_mm):
 		"""
-		Makes the robot travel a specified distance in millimeters at a constant speed.
-		Uses two encoders for more accurate distance tracking.
+		Makes the robot travel a specified distance in millimeters at a controlled speed.
+		Uses two encoders for accurate distance tracking and applies acceleration/deceleration.
 		Returns True if the robot is still moving, False if it has reached the target distance.
 		"""
 		# Determine the direction of travel
 		direction = 1 if distance_mm > 0 else -1
 		target_distance = abs(distance_mm)
 
-		# Travel speed
-		speed = 0.5  # Adjust this speed as necessary
-
+		
 		# Calculate the average distance traveled by both encoders
 		left_distance = abs(self.left_encoder.getDistance())
 		right_distance = abs(self.right_encoder.getDistance())
 		average_distance = (left_distance + right_distance) / 2
 
+		# Print encoder values for debugging
+		print(f"Left Distance: {left_distance:.2f} mm, Right Distance: {right_distance:.2f} mm, Average: {average_distance:.2f} mm")
+
 		# Check if the target distance is reached
 		if average_distance < target_distance:
-			# Apply constant speed to the motors
+			# Calculate the remaining distance
+			remaining_distance = target_distance - average_distance
+
+			# Adjust speed based on remaining distance (deceleration)
+			if remaining_distance < self.accel_distance:
+				speed = max(self.min_speed, self.max_speed * (remaining_distance / self.accel_distance))
+			# Accelerate at the start
+			elif average_distance < self.accel_distance:
+				speed = max(self.min_speed, self.max_speed * (average_distance / self.accel_distance))
+			# Maintain maximum speed in the middle
+			else:
+				speed = self.max_speed
+
+			# Apply speed to the motors
 			self.LeftFrontMotor.set(direction * speed)
 			self.LeftRearMotor.set(direction * speed)
-			self.RightFrontMotor.set(direction * speed)
-			self.RightRearMotor.set(direction * speed)
+			self.RightFrontMotor.set(-1 * direction * speed)
+			self.RightRearMotor.set(-1 * direction * speed)
 			return True
 		else:
 			# Stop the motors
