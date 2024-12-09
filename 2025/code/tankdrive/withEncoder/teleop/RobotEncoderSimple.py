@@ -17,9 +17,10 @@ class MyRobot(wpilib.TimedRobot):
 		self.ENCODER_CPR = 2048  # Counts per revolution for the encoder
 
 		# Initialize encoder: Blue (Signal B) in DIO 1, Yellow (Signal A) in DIO 2
-		self.encoder = wpilib.Encoder(1, 2)
-		self.encoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / self.ENCODER_CPR)
-
+		self.LeftEncoder = wpilib.Encoder(1, 2)
+		self.LeftEncoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / self.ENCODER_CPR)
+		self.RightEncoder = wpilib.Encoder(3, 4)
+		self.RightEncoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / self.ENCODER_CPR)
 	def autonomousInit(self):
 		return False
 	
@@ -28,8 +29,8 @@ class MyRobot(wpilib.TimedRobot):
 	
 	def teleopInit(self):
 		# Reset encoder distance at the start of teleop
-		self.encoder.reset()
-
+		self.LeftEncoder.reset()
+		self.RightEncoder.reset()
 	def teleopPeriodic(self):
 		# Periodic joystick and driving updates
 		self.JoystickPeriodic()
@@ -50,8 +51,9 @@ class MyRobot(wpilib.TimedRobot):
 
 	def logEncoderDistance(self):
 		# Retrieve and print the distance traveled
-		distance_traveled_mm = self.encoder.getDistance()
-		print(f"Distance traveled: {distance_traveled_mm:.2f} mm")
+		LeftDistance_traveled_mm = -1*self.LeftEncoder.getDistance()
+		RightDistance_traveled_mm = 1*self.RightEncoder.getDistance()
+		print(f"Distance traveled: {LeftDistance_traveled_mm:.2f} mm {RightDistance_traveled_mm:.2f} mm")
 
 
 if __name__ == "__main__":
