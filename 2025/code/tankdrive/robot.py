@@ -38,9 +38,10 @@ class MyRobot(wpilib.TimedRobot):
 
 		# Travel parameters
 		self.max_speed = 0.3  # Maximum motor speed
-		self.min_speed = 0.2  # Minimum motor speed for smooth startup/stop
-		self.accel_distance = 300  # Distance (mm) over which to accelerate/decelerate
-
+		self.start_speed = 0.2
+		speed = 0  # Minimum motor speed for smooth startup/stop
+		self.accel_distance = 3000 *self.max_speed+100  # Distance (mm) over which to accelerate/decelerate
+		
 		self.brake_speed=-0.2
 		self.brake_duration=0.3
 
@@ -59,6 +60,36 @@ class MyRobot(wpilib.TimedRobot):
 	def JoystickPeriodic(self):
 		self.DRIVE_BUTTON_A = self.DriveJoystick.getRawButton(1)  # A button
 		self.DRIVE_BUTTON_Y = self.DriveJoystick.getRawButton(4)  # Y button
+
+		# Get current button states
+		current_x_button_state = self.DriveJoystick.getRawButton(3)  # X button
+		current_b_button_state = self.DriveJoystick.getRawButton(2)  # B button
+		current_lb_button_state = self.DriveJoystick.getRawButton(5)  # B button
+		current_rb_button_state = self.DriveJoystick.getRawButton(6)  # B button
+
+		# Check for a new press (button transitioned from not pressed to pressed)
+		if current_x_button_state and not self.last_x_button_state:
+			self.max_speed = max(0.1, self.max_speed - 0.1)  # Prevent negative speeds
+			self.accel_distance = 3000 *self.max_speed+100
+			print(f"Decreased max speed: {self.max_speed:.2f}")
+			print(f"accel_distance: {self.accel_distance:.2f}")
+		if current_b_button_state and not self.last_b_button_state:
+			self.max_speed = min(1.0, self.max_speed + 0.1)  # Cap at 1.0
+			self.accel_distance = 3000 *self.max_speed+100
+			print(f"Increased max speed: {self.max_speed:.2f}")
+			print(f"accel_distance: {self.accel_distance:.2f}")
+		if current_lb_button_state and not self.last_lb_button_state:
+			self.accel_distance = self.accel_distance - 100  # Cap at 1.0
+			print(f"accel_distance: {self.accel_distance:.2f}")
+		if current_rb_button_state and not self.last_rb_button_state:
+			self.accel_distance = self.accel_distance +100  # Cap at 1.0
+			print(f"accel_distance: {self.accel_distance:.2f}")
+
+		# Update last button states
+		self.last_x_button_state = current_x_button_state
+		self.last_b_button_state = current_b_button_state
+		self.last_lb_button_state = current_lb_button_state
+		self.last_rb_button_state = current_rb_button_state
 
 	def checkForTravel(self):
 		"""
@@ -94,8 +125,8 @@ class MyRobot(wpilib.TimedRobot):
 		direction = 1 if distance_mm > 0 else -1
 		target_distance = abs(distance_mm)
 
-		# Travel speed
-		speed = 0.4  # Adjust this speed as necessary
+	
+		# self.accel_distance=self.self.accel_distance
 
 		# Calculate the average distance traveled by both encoders
 		left_distance = abs(self.left_encoder.getDistance())
@@ -103,23 +134,24 @@ class MyRobot(wpilib.TimedRobot):
 		average_distance = (left_distance + right_distance) / 2
 
 		# Print encoder values for debugging
-		print(f"Left Distance: {left_distance:.2f} mm, Right Distance: {right_distance:.2f} mm, Average: {average_distance:.2f} mm")
-
+		# print(f"Left Distance: {left_distance:.2f} mm, Right Distance: {right_distance:.2f} mm, Average: {average_distance:.2f} mm")
 		# Check if the target distance is reached
 		if average_distance < target_distance:
 			# Calculate the remaining distance
 			remaining_distance = target_distance - average_distance
 
-			# Adjust speed based on remaining distance (deceleration)
-			if remaining_distance < self.accel_distance:
-				speed = max(self.min_speed, self.max_speed * (remaining_distance / self.accel_distance))
 			# Accelerate at the start
-			elif average_distance < self.accel_distance:
-				speed = max(self.min_speed, self.max_speed * (average_distance / self.accel_distance))
+			if average_distance < self.accel_distance:
+				speed = max(self.start_speed,self.max_speed * (average_distance / self.accel_distance))
+			# Adjust speed based on remaining distance (deceleration)
+			elif remaining_distance < self.accel_distance:
+				speed = self.max_speed * (remaining_distance / self.accel_distance)
 			# Maintain maximum speed in the middle
 			else:
 				speed = self.max_speed
 
+			print(f"avg dist: {average_distance:.2f} mm, speed {speed:.2f}, %: {(remaining_distance / self.accel_distance):.2f}")
+		
 			# Apply speed to the motors
 			self.LeftFrontMotor.set(direction * speed)
 			self.LeftRearMotor.set(direction * speed)
