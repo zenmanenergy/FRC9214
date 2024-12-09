@@ -46,6 +46,9 @@ class MyRobot(wpilib.TimedRobot):
 		self.step_in_progress = False
 
 	def autonomousPeriodic(self):
+		# Continuously update the robot's position
+		self.movement.updatePosition()
+
 		# Execute the rectangle sequence
 		if self.current_step < len(self.rectangle_steps):
 			step_type, value = self.rectangle_steps[self.current_step]
@@ -68,6 +71,9 @@ class MyRobot(wpilib.TimedRobot):
 			print("Rectangle path complete!")
 
 	def teleopPeriodic(self):
+		# Continuously update the robot's position during teleop
+		self.movement.updatePosition()
+
 		# Example manual control or testing
 		pass
 
