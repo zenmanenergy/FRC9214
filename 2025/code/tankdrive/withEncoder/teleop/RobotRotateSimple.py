@@ -64,7 +64,7 @@ class MyRobot(wpilib.TimedRobot):
 
 	def handleRotation(self):
 		"""
-		Handles ongoing rotation logic with refined control for precise stopping.
+		Handles ongoing rotation logic to minimize overshooting and ensure precise stopping.
 		"""
 		if not self.rotation_in_progress:
 			return
@@ -83,32 +83,27 @@ class MyRobot(wpilib.TimedRobot):
 
 		# Stop if both distances are within the margin
 		if remaining_left <= deadband and remaining_right <= deadband:
-			# Apply a short brake
-			self.LeftFrontMotor.set(-0.2)  # Brief braking force
-			self.LeftRearMotor.set(-0.2)
-			self.RightFrontMotor.set(-0.2)
-			self.RightRearMotor.set(-0.2)
-
-			wpilib.Timer.delay(0.1)  # Short brake period
+			# Stop the motors
 			self.LeftFrontMotor.set(0.0)
 			self.LeftRearMotor.set(0.0)
 			self.RightFrontMotor.set(0.0)
 			self.RightRearMotor.set(0.0)
+
+			# Mark rotation as complete
 			self.rotation_in_progress = False
 			print("Rotation complete")
 			return
 
 		# Dynamic speed adjustment based on remaining distance
 		if remaining_left < 100 or remaining_right < 100:  # Very close to the target
-			speed = 0.3  # Minimum functional speed
-		elif remaining_left < 300 or remaining_right < 300:  # Approaching target
-			speed = 0.4
+			speed = 0.3  # Minimum reliable speed
 		else:
 			speed = 0.5  # Regular speed
 
 		# Rotate the robot
 		self.LeftFrontMotor.set(-speed)  # Left motors backward
 		self.LeftRearMotor.set(-speed)
-		self.RightFrontMotor.set(speed)  # Right motors forward
-		self.RightRearMotor.set(speed)
+		self.RightFrontMotor.set(-speed)  # Right motors backward
+		self.RightRearMotor.set(-speed)
+
 
