@@ -17,91 +17,79 @@ class MyRobot(wpilib.TimedRobot):
 		self.RightRearMotor.setNeutralMode(NeutralMode.Brake)
 
 		# Encoder setup
-		self.ROBOT_WIDTH_MM = 508  # Adjust based on your robot's wheelbase width
-		self.WHEEL_DIAMETER_MM = 152.4  # mm
-		self.WHEEL_CIRCUMFERENCE_MM = self.WHEEL_DIAMETER_MM * 3.141592653589793
+		self.ROBOT_WIDTH_MM = 508  # Distance between wheels in mm
 		self.ROBOT_CIRCUMFERENCE_MM = self.ROBOT_WIDTH_MM * 3.141592653589793
 
 		self.left_encoder = wpilib.Encoder(1, 2)
 		self.right_encoder = wpilib.Encoder(3, 4)
-		self.left_encoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / 2048)
-		self.right_encoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / 2048)
+		self.left_encoder.setDistancePerPulse(self.ROBOT_CIRCUMFERENCE_MM / 2048)
+		self.right_encoder.setDistancePerPulse(self.ROBOT_CIRCUMFERENCE_MM / 2048)
 
 		# Rotation state
-		self.target_rotation_distance = None
-		self.current_heading = 0  # Track the robot's current heading
 		self.rotating = False
+		self.target_distance = 0
 
 	def teleopInit(self):
-		# Reset encoders and heading at the start of teleop
+		# Reset encoders
 		self.left_encoder.reset()
 		self.right_encoder.reset()
-		self.current_heading = 0
 
 	def teleopPeriodic(self):
-		# Handle button presses
-		self.handleJoystick()
-
-		# Continue rotation if in progress
-		if self.rotating:
-			self.rotating = self.rotate()
-
-	def handleJoystick(self):
-		"""
-		Checks joystick button presses and sets the target rotation.
-		"""
-		if not self.rotating:  # Only accept new commands if not currently rotating
+		# Button handling
+		if not self.rotating:
 			if self.DriveJoystick.getRawButton(3):  # X button
-				self.setTargetRotation(90)
+				self.startRotation(90)
 			elif self.DriveJoystick.getRawButton(1):  # A button
-				self.setTargetRotation(180)
+				self.startRotation(180)
 			elif self.DriveJoystick.getRawButton(2):  # B button
-				self.setTargetRotation(270)
+				self.startRotation(270)
 			elif self.DriveJoystick.getRawButton(4):  # Y button
-				self.setTargetRotation(360)
+				self.startRotation(360)
 
-	def setTargetRotation(self, target_heading):
-		"""
-		Sets the target heading for the robot and initializes rotation.
-		"""
-		# Calculate the rotation distance needed to rotate to the target heading
-		rotation_angle = (target_heading - self.current_heading) % 360
-		self.target_rotation_distance = (rotation_angle / 360) * self.ROBOT_CIRCUMFERENCE_MM
+		# Continue rotation if started
+		if self.rotating:
+			self.rotating = self.performRotation()
 
-		# Reset encoders and start rotating
+	def startRotation(self, angle):
+		"""
+		Sets up the robot to rotate to the left by the specified angle in degrees.
+		"""
+		self.target_distance = (angle / 360) * self.ROBOT_CIRCUMFERENCE_MM
 		self.left_encoder.reset()
 		self.right_encoder.reset()
 		self.rotating = True
-		self.current_heading = target_heading
+		print(f"Starting rotation for {angle}°.")
 
-	def rotate(self):
+	def performRotation(self):
 		"""
-		Rotates the robot by driving all motors in the same direction.
-		Returns True if still rotating, False if the target rotation is complete.
+		Rotates the robot left until the target distance is reached.
 		"""
-		# Calculate the average rotation distance
+		# Get encoder distances
 		left_distance = abs(self.left_encoder.getDistance())
 		right_distance = abs(self.right_encoder.getDistance())
 		average_distance = (left_distance + right_distance) / 2
 
-		# Print encoder debug info
-		print(f"Current Heading: {self.current_heading}°, Left: {left_distance:.2f} mm, Right: {right_distance:.2f} mm, Average: {average_distance:.2f} mm")
+		print(f"{left_distance} {right_distance}")
 
-		# Check if rotation is complete
-		if average_distance < self.target_rotation_distance:
-			# Rotate the robot (all motors in the same direction for left rotation)
-			speed = 0.3  # Adjust speed as needed
+		# Print debug info
+		print(f"Target: {self.target_distance:.2f} mm, Current: {average_distance:.2f} mm")
+
+		# Check if the robot has rotated enough
+		if average_distance < self.target_distance:
+			# Rotate the robot
+			speed = 0.3
 			self.LeftFrontMotor.set(-speed)
 			self.LeftRearMotor.set(-speed)
 			self.RightFrontMotor.set(-speed)
 			self.RightRearMotor.set(-speed)
 			return True
 		else:
-			# Stop the motors
+			# Stop the robot
 			self.LeftFrontMotor.set(0)
 			self.LeftRearMotor.set(0)
 			self.RightFrontMotor.set(0)
 			self.RightRearMotor.set(0)
+			print("Rotation complete.")
 			return False
 
 if __name__ == "__main__":
