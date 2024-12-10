@@ -46,17 +46,19 @@ class MyRobot(wpilib.TimedRobot):
 		self.brake_speed=-0.2
 		self.brake_duration=0.3
 
+		
+
+	def teleopInit(self):
+		# Reset encoder distance at the start of teleop
+		self.left_encoder.reset()
+		self.right_encoder.reset()
+
 		# Existing initialization code
 		self.robot_position = {'x': 0.0, 'y': 0.0}  # Robot's position in mm
 		self.robot_heading = 0.0  # Heading in radians (0 = facing positive x-axis)
 		self.last_left_distance = 0.0  # Track last left encoder distance
 		self.last_right_distance = 0.0  # Track last right encoder distance
 
-
-	def teleopInit(self):
-		# Reset encoder distance at the start of teleop
-		self.left_encoder.reset()
-		self.right_encoder.reset()
 
 	def teleopPeriodic(self):
 		# Periodic joystick and driving updates
@@ -177,48 +179,50 @@ class MyRobot(wpilib.TimedRobot):
 			# self.applyBreak(direction)
 			return False
 
+	
 	def updatePosition(self):
-		"""
-		Updates the robot's position and heading using encoder values.
-		Performs dead reckoning to estimate the robot's location on the field.
-		"""
 		# Get current encoder distances
-		left_distance = self.left_encoder.getDistance()
+		left_distance = -self.left_encoder.getDistance()
 		right_distance = self.right_encoder.getDistance()
 
-		# Calculate distance traveled by each wheel since the last update
+		# Calculate distances since last update
 		delta_left = left_distance - self.last_left_distance
 		delta_right = right_distance - self.last_right_distance
-
-		# Update the last distances
+		
+		# Update last distances
 		self.last_left_distance = left_distance
 		self.last_right_distance = right_distance
 
-		# Calculate the change in heading (Δθ) in radians
+		# Calculate change in heading (Δθ)
 		delta_theta = (delta_right - delta_left) / self.ROBOT_WIDTH_MM
 
-		# Calculate the average distance traveled (Δs)
+		# Average distance traveled (Δs)
 		delta_s = (delta_right + delta_left) / 2
 
-		# Update the robot's heading
-		self.robot_heading += delta_theta
-		self.robot_heading %= 2 * math.pi  # Keep heading within [0, 2π]
-
-		# Calculate the change in position
-		if delta_theta == 0:  # Moving straight
+		# Debugging all key values
+		
+		# Calculate position change
+		if abs(delta_theta) < 1e-6:  # Handle straight-line motion
 			delta_x = delta_s * math.cos(self.robot_heading)
 			delta_y = delta_s * math.sin(self.robot_heading)
-		else:  # Rotating and translating
+		else:  # Handle arc motion
 			r = delta_s / delta_theta  # Radius of curvature
-			delta_x = r * (math.sin(self.robot_heading) - math.sin(self.robot_heading - delta_theta))
-			delta_y = r * (math.cos(self.robot_heading - delta_theta) - math.cos(self.robot_heading))
+			delta_x = r * (math.sin(self.robot_heading + delta_theta) - math.sin(self.robot_heading))
+			delta_y = -r * (math.cos(self.robot_heading + delta_theta) - math.cos(self.robot_heading))
 
-		# Update the robot's position
+		# Debugging position deltas
+		
+		# Update robot heading
+		self.robot_heading += delta_theta
+		self.robot_heading %= 2 * math.pi  # Normalize to [0, 2π]
+
+		# Update robot position
 		self.robot_position['x'] += delta_x
 		self.robot_position['y'] += delta_y
 
-		# Debugging output
-		print(f"Position: x={self.robot_position['x']:.2f} mm, y={self.robot_position['y']:.2f} mm, heading={math.degrees(self.robot_heading):.2f}°")
+		# Debugging final position and heading
+		print(f"Updated Position - X: {self.robot_position['x']:.2f} mm, Y: {self.robot_position['y']:.2f} mm")
+		print(f"Updated Heading: {math.degrees(self.robot_heading):.2f}°")
 
 
 if __name__ == "__main__":

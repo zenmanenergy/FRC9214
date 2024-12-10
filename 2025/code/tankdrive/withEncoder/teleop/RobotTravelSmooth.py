@@ -164,28 +164,9 @@ class MyRobot(wpilib.TimedRobot):
 			self.LeftRearMotor.set(0)
 			self.RightFrontMotor.set(0)
 			self.RightRearMotor.set(0)
-			# self.applyBreak(direction)
 			return False
 
-	def applyBreak(self, direction):
-
-		brake_speed=self.brake_speed * direction
-
-		self.LeftFrontMotor.set(brake_speed)
-		self.LeftRearMotor.set(brake_speed)
-		self.RightFrontMotor.set(-brake_speed)
-		self.RightFrontMotor.set(-brake_speed)
-
-		timer = wpilib.Timer()
-		timer.start()
-		while timer.get() < self.brake_duration:
-			pass
-		timer.stop()
-
-		self.LeftFrontMotor.set(0)
-		self.LeftRearMotor.set(0)
-		self.RightFrontMotor.set(0)
-		self.RightRearMotor.set(0)
+	
 
 if __name__ == "__main__":
 	wpilib.run(MyRobot)
