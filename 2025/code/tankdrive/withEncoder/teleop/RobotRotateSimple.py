@@ -100,8 +100,8 @@ class MyRobot(wpilib.TimedRobot):
 			speed = 0.4 if error > 0 else -0.4
 			self.LeftFrontMotor.set(-speed)
 			self.LeftRearMotor.set(-speed)
-			self.RightFrontMotor.set(speed)
-			self.RightRearMotor.set(speed)
+			self.RightFrontMotor.set(-speed)
+			self.RightRearMotor.set(-speed)
 			return True
 		else:
 			# Stop the motors
@@ -121,4 +121,5 @@ class MyRobot(wpilib.TimedRobot):
 			angle += 360
 		return angle
 
-if __name__ == "__
+if __name__ == "__main__":
+	wpilib.run(MyRobot)
