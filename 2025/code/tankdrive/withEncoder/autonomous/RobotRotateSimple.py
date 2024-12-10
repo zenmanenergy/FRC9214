@@ -21,20 +21,26 @@ class MyRobot(wpilib.TimedRobot):
 		self.ROBOT_CIRCUMFERENCE_MM = self.ROBOT_WIDTH_MM * 3.141592653589793
 
 		# Initialize encoder: Blue (Signal B) in DIO 1, Yellow (Signal A) in DIO 2
-		self.left_encoder = wpilib.Encoder(0, 1)  # Left encoder on DIO 0, 1
-		self.right_encoder = wpilib.Encoder(2, 3)  # Right encoder on DIO 2, 3
+		self.left_encoder = wpilib.Encoder(1, 2)  # Left encoder on DIO 0, 1
+		self.right_encoder = wpilib.Encoder(3, 4)  # Right encoder on DIO 2, 3
+
+		# Invert the left encoder values to match motor configuration
+		self.left_encoder.setReverseDirection(True)
+
+		# Set distance per pulse
 		self.left_encoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / self.ENCODER_CPR)
 		self.right_encoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / self.ENCODER_CPR)
 
 	def autonomousInit(self):
 		return False
-	
+
 	def autonomousPeriodic(self):
 		return False
-	
+
 	def teleopInit(self):
-		# Reset encoder distance at the start of teleop
-		self.encoder.reset()
+		# Reset encoder distances at the start of teleop
+		self.left_encoder.reset()
+		self.right_encoder.reset()
 
 	def teleopPeriodic(self):
 		# Periodic joystick and driving updates
@@ -53,7 +59,6 @@ class MyRobot(wpilib.TimedRobot):
 		self.LeftRearMotor.set(-self.DRIVE_LEFT_THUMB_UPDOWN)
 		self.RightFrontMotor.set(self.DRIVE_RIGHT_THUMB_UPDOWN)
 		self.RightRearMotor.set(self.DRIVE_RIGHT_THUMB_UPDOWN)
-
 
 	def rotateRobot(self, degrees):
 		"""
