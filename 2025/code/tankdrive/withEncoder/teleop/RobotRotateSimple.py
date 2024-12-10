@@ -1,104 +1,90 @@
-import math
-import wpilib  # FIRST Robotics library
-import ctre  # Zippy wheel motor controller library
-import rev  # Zippy arm motor controller library
-
 class MyRobot(wpilib.TimedRobot):
-	def robotInit(self):  # Initializes joystick, motors, and encoders
-		# Joystick and motor setup
+	def robotInit(self):
+		# Initialization code (same as before)
 		self.DriveJoystick = wpilib.Joystick(0)  # Joystick port 0
 		self.LeftFrontMotor = ctre.WPI_TalonSRX(1)
 		self.LeftRearMotor = ctre.WPI_TalonSRX(2)
 		self.RightFrontMotor = ctre.WPI_TalonSRX(3)
 		self.RightRearMotor = ctre.WPI_TalonSRX(4)
 
-		# Encoder setup
 		self.WHEEL_DIAMETER_MM = 152.4  # mm
 		self.WHEEL_CIRCUMFERENCE_MM = self.WHEEL_DIAMETER_MM * math.pi
-		self.ENCODER_CPR = 2048  # Counts per revolution for the encoder
+		self.ENCODER_CPR = 2048
 
-		# Robot dimensions (wheelbase diameter for rotation calculation)
-		self.ROBOT_WIDTH_MM = 508  # Distance between wheels, adjust as needed
+		self.ROBOT_WIDTH_MM = 508
 		self.ROBOT_CIRCUMFERENCE_MM = self.ROBOT_WIDTH_MM * math.pi
 
-		# Initialize left and right encoders
-		self.left_encoder = wpilib.Encoder(1, 2)  # Left encoder on DIO 0, 1
-		self.right_encoder = wpilib.Encoder(3, 4)  # Right encoder on DIO 2, 3
-
-		# Invert the left encoder values to match motor configuration
+		self.left_encoder = wpilib.Encoder(1, 2)
+		self.right_encoder = wpilib.Encoder(3, 4)
 		self.left_encoder.setReverseDirection(True)
 
-		# Set distance per pulse
 		self.left_encoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / self.ENCODER_CPR)
 		self.right_encoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / self.ENCODER_CPR)
 
-	def autonomousInit(self):
-		pass  # Placeholder for autonomous initialization
-
-	def autonomousPeriodic(self):
-		pass  # Placeholder for autonomous periodic actions
+		# State variables for rotation
+		self.rotation_in_progress = False
+		self.rotation_target_distance = 0.0
 
 	def teleopInit(self):
-		# Reset encoder distances at the start of teleop
 		self.left_encoder.reset()
 		self.right_encoder.reset()
+		self.rotation_in_progress = False
 
 	def teleopPeriodic(self):
-		# Periodic joystick and driving updates
 		self.JoystickPeriodic()
 
-		# Call rotation functions based on button presses
-		self.checkForRotation()
+		# Handle rotation
+		self.handleRotation()
 
 	def JoystickPeriodic(self):
-		# Read button states from the joystick
-		self.DRIVE_BUTTON_A = self.DriveJoystick.getRawButton(1)  # A button
-		self.DRIVE_BUTTON_B = self.DriveJoystick.getRawButton(2)  # B button
-		self.DRIVE_BUTTON_X = self.DriveJoystick.getRawButton(3)  # X button
-		self.DRIVE_BUTTON_Y = self.DriveJoystick.getRawButton(4)  # Y button
+		self.DRIVE_BUTTON_A = self.DriveJoystick.getRawButton(1)
+		self.DRIVE_BUTTON_B = self.DriveJoystick.getRawButton(2)
+		self.DRIVE_BUTTON_X = self.DriveJoystick.getRawButton(3)
+		self.DRIVE_BUTTON_Y = self.DriveJoystick.getRawButton(4)
 
-	def rotateRobot(self, degrees):
+		# Trigger rotation
+		if self.DRIVE_BUTTON_Y:
+			self.startRotation(0)
+		elif self.DRIVE_BUTTON_X:
+			self.startRotation(90)
+		elif self.DRIVE_BUTTON_A:
+			self.startRotation(180)
+		elif self.DRIVE_BUTTON_B:
+			self.startRotation(270)
+
+	def startRotation(self, degrees):
 		"""
-		Rotates the robot in place by the specified number of degrees using both encoders.
+		Starts a rotation by setting target distances and enabling the state.
 		"""
-		print(f"Rotating to: {degrees:.2f} degrees")
-
-		# Calculate the distance each wheel must travel to achieve the desired rotation
-		rotation_distance_mm = (degrees / 360.0) * self.ROBOT_CIRCUMFERENCE_MM
-
-		# Reset both encoders
+		print(f"Starting rotation: {degrees} degrees")
+		self.rotation_target_distance = (degrees / 360.0) * self.ROBOT_CIRCUMFERENCE_MM
 		self.left_encoder.reset()
 		self.right_encoder.reset()
+		self.rotation_in_progress = True
 
-		# Rotate the robot: left wheels backward, right wheels forward
-		while (
-			abs(self.left_encoder.getDistance()) < rotation_distance_mm
-			and abs(self.right_encoder.getDistance()) < rotation_distance_mm
-		):
+	def handleRotation(self):
+		"""
+		Handles ongoing rotation logic, making it non-blocking.
+		"""
+		if not self.rotation_in_progress:
+			return
+
+		# Check distances
+		left_distance = abs(self.left_encoder.getDistance())
+		right_distance = abs(self.right_encoder.getDistance())
+		print(f"Left: {left_distance:.2f} mm, Right: {right_distance:.2f} mm")
+
+		if left_distance < self.rotation_target_distance or right_distance < self.rotation_target_distance:
+			# Continue rotating
 			self.LeftFrontMotor.set(-0.5)  # Left motors backward
 			self.LeftRearMotor.set(-0.5)
 			self.RightFrontMotor.set(-0.5)  # Right motors forward
 			self.RightRearMotor.set(-0.5)
-
-		# Stop the motors
-		self.LeftFrontMotor.set(0)
-		self.LeftRearMotor.set(0)
-		self.RightFrontMotor.set(0)
-		self.RightRearMotor.set(0)
-
-	def checkForRotation(self):
-		"""
-		Checks for button presses and calls rotateRobot() with the corresponding angle.
-		"""
-		if self.DRIVE_BUTTON_Y:
-			self.rotateRobot(0)  # Y button = 0 degrees
-		elif self.DRIVE_BUTTON_X:
-			self.rotateRobot(90)  # X button = 90 degrees
-		elif self.DRIVE_BUTTON_A:
-			self.rotateRobot(180)  # A button = 180 degrees
-		elif self.DRIVE_BUTTON_B:
-			self.rotateRobot(270)  # B button = 270 degrees
-
-
-if __name__ == "__main__":
-	wpilib.run(MyRobot)
+		else:
+			# Stop rotation
+			self.LeftFrontMotor.set(0)
+			self.LeftRearMotor.set(0)
+			self.RightFrontMotor.set(0)
+			self.RightRearMotor.set(0)
+			self.rotation_in_progress = False
+			print("Rotation complete")
