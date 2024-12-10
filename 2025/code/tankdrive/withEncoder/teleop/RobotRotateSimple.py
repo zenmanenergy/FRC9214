@@ -29,34 +29,54 @@ class MyRobot(wpilib.TimedRobot):
 
 		# Rotation state
 		self.target_rotation_distance = None
+		self.current_heading = 0  # Track the robot's current heading
 		self.rotating = False
 
 	def teleopInit(self):
-		# Reset encoders at the start of teleop
+		# Reset encoders and heading at the start of teleop
 		self.left_encoder.reset()
 		self.right_encoder.reset()
+		self.current_heading = 0
 
 	def teleopPeriodic(self):
-		# Handle rotation when the X button is pressed
-		if self.DriveJoystick.getRawButton(3) and not self.rotating:  # X button
-			self.target_rotation_distance = self.ROBOT_CIRCUMFERENCE_MM / 4  # 90 degrees
-			self.startRotation()
+		# Handle button presses
+		self.handleJoystick()
 
 		# Continue rotation if in progress
 		if self.rotating:
 			self.rotating = self.rotate()
 
-	def startRotation(self):
+	def handleJoystick(self):
 		"""
-		Initializes the rotation by resetting encoders.
+		Checks joystick button presses and sets the target rotation.
 		"""
+		if not self.rotating:  # Only accept new commands if not currently rotating
+			if self.DriveJoystick.getRawButton(3):  # X button
+				self.setTargetRotation(90)
+			elif self.DriveJoystick.getRawButton(1):  # A button
+				self.setTargetRotation(180)
+			elif self.DriveJoystick.getRawButton(2):  # B button
+				self.setTargetRotation(270)
+			elif self.DriveJoystick.getRawButton(4):  # Y button
+				self.setTargetRotation(360)
+
+	def setTargetRotation(self, target_heading):
+		"""
+		Sets the target heading for the robot and initializes rotation.
+		"""
+		# Calculate the rotation distance needed to rotate to the target heading
+		rotation_angle = (target_heading - self.current_heading) % 360
+		self.target_rotation_distance = (rotation_angle / 360) * self.ROBOT_CIRCUMFERENCE_MM
+
+		# Reset encoders and start rotating
 		self.left_encoder.reset()
 		self.right_encoder.reset()
 		self.rotating = True
+		self.current_heading = target_heading
 
 	def rotate(self):
 		"""
-		Rotates the robot by driving the left and right motors in opposite directions.
+		Rotates the robot by driving all motors in the same direction.
 		Returns True if still rotating, False if the target rotation is complete.
 		"""
 		# Calculate the average rotation distance
@@ -65,16 +85,16 @@ class MyRobot(wpilib.TimedRobot):
 		average_distance = (left_distance + right_distance) / 2
 
 		# Print encoder debug info
-		print(f"Left: {left_distance:.2f} mm, Right: {right_distance:.2f} mm, Average: {average_distance:.2f} mm")
+		print(f"Current Heading: {self.current_heading}°, Left: {left_distance:.2f} mm, Right: {right_distance:.2f} mm, Average: {average_distance:.2f} mm")
 
 		# Check if rotation is complete
 		if average_distance < self.target_rotation_distance:
-			# Rotate the robot (motors in opposite directions)
+			# Rotate the robot (all motors in the same direction for left rotation)
 			speed = 0.3  # Adjust speed as needed
 			self.LeftFrontMotor.set(-speed)
 			self.LeftRearMotor.set(-speed)
-			self.RightFrontMotor.set(speed)
-			self.RightRearMotor.set(speed)
+			self.RightFrontMotor.set(-speed)
+			self.RightRearMotor.set(-speed)
 			return True
 		else:
 			# Stop the motors
