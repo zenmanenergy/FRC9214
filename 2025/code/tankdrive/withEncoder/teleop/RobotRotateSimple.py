@@ -22,17 +22,22 @@ class MyRobot(wpilib.TimedRobot):
 		self.ROBOT_CIRCUMFERENCE_MM = self.ROBOT_WIDTH_MM * math.pi
 
 		# Initialize left and right encoders
-		self.left_encoder = wpilib.Encoder(0, 1)  # Left encoder on DIO 0, 1
-		self.right_encoder = wpilib.Encoder(2, 3)  # Right encoder on DIO 2, 3
+		self.left_encoder = wpilib.Encoder(1, 2)  # Left encoder on DIO 0, 1
+		self.right_encoder = wpilib.Encoder(3, 4)  # Right encoder on DIO 2, 3
+
+		# Invert the left encoder values to match motor configuration
+		self.left_encoder.setReverseDirection(True)
+
+		# Set distance per pulse
 		self.left_encoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / self.ENCODER_CPR)
 		self.right_encoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / self.ENCODER_CPR)
 
 	def autonomousInit(self):
-		return False
-	
+		pass  # Placeholder for autonomous initialization
+
 	def autonomousPeriodic(self):
-		return False
-	
+		pass  # Placeholder for autonomous periodic actions
+
 	def teleopInit(self):
 		# Reset encoder distances at the start of teleop
 		self.left_encoder.reset()
@@ -46,6 +51,7 @@ class MyRobot(wpilib.TimedRobot):
 		self.checkForRotation()
 
 	def JoystickPeriodic(self):
+		# Read button states from the joystick
 		self.DRIVE_BUTTON_A = self.DriveJoystick.getRawButton(1)  # A button
 		self.DRIVE_BUTTON_B = self.DriveJoystick.getRawButton(2)  # B button
 		self.DRIVE_BUTTON_X = self.DriveJoystick.getRawButton(3)  # X button
@@ -60,12 +66,19 @@ class MyRobot(wpilib.TimedRobot):
 		# Calculate the distance each wheel must travel to achieve the desired rotation
 		rotation_distance_mm = (degrees / 360.0) * self.ROBOT_CIRCUMFERENCE_MM
 
+		# Reset both encoders
+		self.left_encoder.reset()
+		self.right_encoder.reset()
+
 		# Rotate the robot: left wheels backward, right wheels forward
-		while abs(self.left_encoder.getDistance()) < rotation_distance_mm and abs(self.right_encoder.getDistance()) < rotation_distance_mm:
-			self.LeftFrontMotor.set(-0.5)  # Adjust speed as necessary
+		while (
+			abs(self.left_encoder.getDistance()) < rotation_distance_mm
+			and abs(self.right_encoder.getDistance()) < rotation_distance_mm
+		):
+			self.LeftFrontMotor.set(-0.5)  # Left motors backward
 			self.LeftRearMotor.set(-0.5)
-			self.RightFrontMotor.set(0.5)
-			self.RightRearMotor.set(0.5)
+			self.RightFrontMotor.set(-0.5)  # Right motors forward
+			self.RightRearMotor.set(-0.5)
 
 		# Stop the motors
 		self.LeftFrontMotor.set(0)
