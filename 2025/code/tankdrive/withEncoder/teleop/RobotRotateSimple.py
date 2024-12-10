@@ -1,12 +1,13 @@
-import wpilib  # FIRST Robotics library
-import ctre  # Zippy wheel motor controller library
-import rev  # Zippy arm motor controller library
+import wpilib
+import ctre
+import rev
 from ctre import NeutralMode
+from math import atan2, degrees, pi
 
 class MyRobot(wpilib.TimedRobot):
-	def robotInit(self):  # Initializes joystick, motors, and encoder
+	def robotInit(self):
 		# Joystick and motor setup
-		self.DriveJoystick = wpilib.Joystick(0)  # Joystick port 0
+		self.DriveJoystick = wpilib.Joystick(0)
 		self.LeftFrontMotor = ctre.WPI_TalonSRX(1)
 		self.LeftRearMotor = ctre.WPI_TalonSRX(2)
 		self.RightFrontMotor = ctre.WPI_TalonSRX(3)
@@ -17,93 +18,68 @@ class MyRobot(wpilib.TimedRobot):
 		self.RightFrontMotor.setNeutralMode(NeutralMode.Brake)
 		self.RightRearMotor.setNeutralMode(NeutralMode.Brake)
 
-		# Encoder setup
-		self.WHEEL_DIAMETER_MM = 152.4  # mm
-		self.WHEEL_CIRCUMFERENCE_MM = self.WHEEL_DIAMETER_MM * 3.141592653589793
-		self.ENCODER_CPR = 2048  # Counts per revolution for the encoder
-
-		# Robot dimensions (wheelbase diameter for rotation calculation)
-		self.ROBOT_WIDTH_MM = 508  # Distance between wheels, adjust as needed
-		self.ROBOT_CIRCUMFERENCE_MM = self.ROBOT_WIDTH_MM * 3.141592653589793
-
-		# Initialize encoder: Blue (Signal B) in DIO 1, Yellow (Signal A) in DIO 2
-		self.left_encoder = wpilib.Encoder(1, 2)  # Left encoder on DIO 1, 2
-		self.right_encoder = wpilib.Encoder(3, 4)  # Right encoder on DIO 3, 4
-		self.left_encoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / self.ENCODER_CPR)
-		self.right_encoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / self.ENCODER_CPR)
+		# IMU initialization
+		self.gyro = wpilib.ADXRS450_Gyro()
+		self.gyro.reset()
 
 		# Travel state
-		self.target_distance = None
-		self.travel_in_progress = False
+		self.target_heading = None
+		self.rotating = False
 
 	def teleopInit(self):
-		# Reset encoder distance at the start of teleop
-		self.left_encoder.reset()
-		self.right_encoder.reset()
+		# Reset gyro heading at the start of teleop
+		self.gyro.reset()
 
 	def teleopPeriodic(self):
-		# Periodic joystick and driving updates
-		self.JoystickPeriodic()
-
-		# Call travel function based on state
-		self.checkForTravel()
-
-	def JoystickPeriodic(self):
+		# Read joystick buttons
+		self.DRIVE_BUTTON_X = self.DriveJoystick.getRawButton(3)  # X button
 		self.DRIVE_BUTTON_A = self.DriveJoystick.getRawButton(1)  # A button
+		self.DRIVE_BUTTON_B = self.DriveJoystick.getRawButton(2)  # B button
 		self.DRIVE_BUTTON_Y = self.DriveJoystick.getRawButton(4)  # Y button
 
-	def checkForTravel(self):
+		# Handle rotation to absolute headings
+		if self.DRIVE_BUTTON_X:
+			self.target_heading = 270  # Face left
+			self.startRotation()
+		elif self.DRIVE_BUTTON_A:
+			self.target_heading = 180  # Face backward
+			self.startRotation()
+		elif self.DRIVE_BUTTON_B:
+			self.target_heading = 90  # Face right
+			self.startRotation()
+		elif self.DRIVE_BUTTON_Y:
+			self.target_heading = 0  # Face forward
+			self.startRotation()
+
+		# Continue rotation if in progress
+		if self.rotating:
+			self.rotating = self.rotateToHeading()
+
+	def startRotation(self):
 		"""
-		Checks for button presses and initiates travel operations.
+		Initializes rotation by setting the rotating flag.
 		"""
-		# Start travel if not already in progress
-		if self.DRIVE_BUTTON_Y and not self.travel_in_progress:
-			self.target_distance = 1000  # Travel 10 mm forward
-			self.startTravel()
-		elif self.DRIVE_BUTTON_A and not self.travel_in_progress:
-			self.target_distance = -1000  # Travel 10 mm backward
-			self.startTravel()
+		self.rotating = True
 
-		# Continue travel if in progress
-		if self.travel_in_progress:
-			self.travel_in_progress = self.travelDistance(self.target_distance)
-
-	def startTravel(self):
+	def rotateToHeading(self):
 		"""
-		Initializes travel operation by resetting encoders.
+		Rotates the robot to the target heading.
+		Returns True if still rotating, False if the target heading is reached.
 		"""
-		self.left_encoder.reset()
-		self.right_encoder.reset()
-		self.travel_in_progress = True
+		current_heading = self.normalizeAngle(self.gyro.getAngle())
+		target_heading = self.target_heading
+		error = self.normalizeAngle(target_heading - current_heading)
 
-	def travelDistance(self, distance_mm):
-		"""
-		Makes the robot travel a specified distance in millimeters at a constant speed.
-		Uses two encoders for more accurate distance tracking.
-		Returns True if the robot is still moving, False if it has reached the target distance.
-		"""
-		# Determine the direction of travel
-		direction = 1 if distance_mm > 0 else -1
-		target_distance = abs(distance_mm)
+		# Print debug info
+		print(f"Current: {current_heading:.2f}°, Target: {target_heading:.2f}°, Error: {error:.2f}°")
 
-		# Travel speed
-		speed = 0.4  # Adjust this speed as necessary
-
-		# Calculate the average distance traveled by both encoders
-		left_distance = abs(self.left_encoder.getDistance())
-		right_distance = abs(self.right_encoder.getDistance())
-		average_distance = (left_distance + right_distance) / 2
-
-		# Print encoder values for debugging
-		print(f"Left Distance: {left_distance:.2f} mm, Right Distance: {right_distance:.2f} mm, Average: {average_distance:.2f} mm")
-
-		# Check if the target distance is reached
-		if average_distance < target_distance:
-			# Apply constant speed to the motors
-			self.LeftFrontMotor.set(direction * speed)
-			self.LeftRearMotor.set(direction * speed)
-			self.RightFrontMotor.set(-1 * direction * speed)
-			self.RightRearMotor.set(-1 * direction * speed)
+		# Rotation speed based on error
+		if abs(error) > 2:  # Threshold to stop rotation
+			speed = 0.4 if error > 0 else -0.4
+			self.LeftFrontMotor.set(-speed)
+			self.LeftRearMotor.set(-speed)
+			self.RightFrontMotor.set(speed)
+			self.RightRearMotor.set(speed)
 			return True
 		else:
 			# Stop the motors
@@ -111,29 +87,13 @@ class MyRobot(wpilib.TimedRobot):
 			self.LeftRearMotor.set(0)
 			self.RightFrontMotor.set(0)
 			self.RightRearMotor.set(0)
-			self.applyBreak(direction)
 			return False
 
-	def applyBreak(self, direction):
-
-		brake_speed=-0.4 * direction
-		brake_duration=0.3
-
-		self.LeftFrontMotor.set(brake_speed)
-		self.LeftRearMotor.set(brake_speed)
-		self.RightFrontMotor.set(-brake_speed)
-		self.RightFrontMotor.set(-brake_speed)
-
-		timer = wpilib.Timer()
-		timer.start()
-		while timer.get() < brake_duration:
-			pass
-		timer.stop()
-
-		self.LeftFrontMotor.set(0)
-		self.LeftRearMotor.set(0)
-		self.RightFrontMotor.set(0)
-		self.RightRearMotor.set(0)
+	def normalizeAngle(self, angle):
+		"""
+		Normalizes an angle to the range [0, 360).
+		"""
+		return angle % 360
 
 if __name__ == "__main__":
 	wpilib.run(MyRobot)
