@@ -64,7 +64,7 @@ class MyRobot(wpilib.TimedRobot):
 
 	def handleRotation(self):
 		"""
-		Handles ongoing rotation logic, making it non-blocking.
+		Handles ongoing rotation logic with refined control for precise stopping.
 		"""
 		if not self.rotation_in_progress:
 			return
@@ -74,17 +74,41 @@ class MyRobot(wpilib.TimedRobot):
 		right_distance = abs(self.right_encoder.getDistance())
 		print(f"Left: {left_distance:.2f} mm, Right: {right_distance:.2f} mm")
 
-		if left_distance < self.rotation_target_distance or right_distance < self.rotation_target_distance:
-			# Continue rotating
-			self.LeftFrontMotor.set(-0.5)  # Left motors backward
-			self.LeftRearMotor.set(-0.5)
-			self.RightFrontMotor.set(-0.5)  # Right motors forward
-			self.RightRearMotor.set(-0.5)
-		else:
-			# Stop rotation
-			self.LeftFrontMotor.set(0)
-			self.LeftRearMotor.set(0)
-			self.RightFrontMotor.set(0)
-			self.RightRearMotor.set(0)
+		# Calculate remaining distance to target
+		remaining_left = self.rotation_target_distance - left_distance
+		remaining_right = self.rotation_target_distance - right_distance
+
+		# Define a deadband margin to stop early
+		deadband = 20  # mm
+
+		# Stop if both distances are within the margin
+		if remaining_left <= deadband and remaining_right <= deadband:
+			# Apply a short brake
+			self.LeftFrontMotor.set(-0.2)  # Brief braking force
+			self.LeftRearMotor.set(-0.2)
+			self.RightFrontMotor.set(-0.2)
+			self.RightRearMotor.set(-0.2)
+
+			wpilib.Timer.delay(0.1)  # Short brake period
+			self.LeftFrontMotor.set(0.0)
+			self.LeftRearMotor.set(0.0)
+			self.RightFrontMotor.set(0.0)
+			self.RightRearMotor.set(0.0)
 			self.rotation_in_progress = False
 			print("Rotation complete")
+			return
+
+		# Dynamic speed adjustment based on remaining distance
+		if remaining_left < 100 or remaining_right < 100:  # Very close to the target
+			speed = 0.3  # Minimum functional speed
+		elif remaining_left < 300 or remaining_right < 300:  # Approaching target
+			speed = 0.4
+		else:
+			speed = 0.5  # Regular speed
+
+		# Rotate the robot
+		self.LeftFrontMotor.set(-speed)  # Left motors backward
+		self.LeftRearMotor.set(-speed)
+		self.RightFrontMotor.set(speed)  # Right motors forward
+		self.RightRearMotor.set(speed)
+
