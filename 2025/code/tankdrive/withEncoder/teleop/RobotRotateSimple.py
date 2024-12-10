@@ -1,3 +1,9 @@
+import wpilib  # FIRST Robotics library
+import ctre  # Zippy wheel motor controller library
+import rev  # Zippy arm motor controller library
+from ctre import NeutralMode
+import math
+
 class MyRobot(wpilib.TimedRobot):
 	def robotInit(self):
 		# Initialization code (same as before)
@@ -6,6 +12,12 @@ class MyRobot(wpilib.TimedRobot):
 		self.LeftRearMotor = ctre.WPI_TalonSRX(2)
 		self.RightFrontMotor = ctre.WPI_TalonSRX(3)
 		self.RightRearMotor = ctre.WPI_TalonSRX(4)
+		
+		self.LeftFrontMotor.setNeutralMode(NeutralMode.Brake)
+		self.LeftRearMotor.setNeutralMode(NeutralMode.Brake)
+		self.RightFrontMotor.setNeutralMode(NeutralMode.Brake)
+		self.RightRearMotor.setNeutralMode(NeutralMode.Brake)
+
 
 		self.WHEEL_DIAMETER_MM = 152.4  # mm
 		self.WHEEL_CIRCUMFERENCE_MM = self.WHEEL_DIAMETER_MM * math.pi
