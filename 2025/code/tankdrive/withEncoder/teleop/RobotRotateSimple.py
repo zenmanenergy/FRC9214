@@ -1,8 +1,7 @@
 import wpilib
 import ctre
-import rev
 from ctre import NeutralMode
-from math import atan2, degrees, pi
+from math import degrees, pi
 
 class MyRobot(wpilib.TimedRobot):
 	def robotInit(self):
@@ -18,17 +17,27 @@ class MyRobot(wpilib.TimedRobot):
 		self.RightFrontMotor.setNeutralMode(NeutralMode.Brake)
 		self.RightRearMotor.setNeutralMode(NeutralMode.Brake)
 
-		# IMU initialization
-		self.gyro = wpilib.ADXRS450_Gyro()
-		self.gyro.reset()
+		# Encoder setup
+		self.WHEEL_DIAMETER_MM = 152.4  # mm
+		self.WHEEL_CIRCUMFERENCE_MM = self.WHEEL_DIAMETER_MM * pi
+		self.ROBOT_WIDTH_MM = 508  # Distance between wheels, adjust as needed
+		self.ROBOT_CIRCUMFERENCE_MM = self.ROBOT_WIDTH_MM * pi
 
-		# Travel state
+		self.left_encoder = wpilib.Encoder(1, 2)
+		self.right_encoder = wpilib.Encoder(3, 4)
+		self.left_encoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / 2048)
+		self.right_encoder.setDistancePerPulse(self.WHEEL_CIRCUMFERENCE_MM / 2048)
+
+		# Heading tracking
+		self.current_heading = 0  # Start at 0 degrees
 		self.target_heading = None
 		self.rotating = False
 
 	def teleopInit(self):
-		# Reset gyro heading at the start of teleop
-		self.gyro.reset()
+		# Reset encoders and heading at the start of teleop
+		self.left_encoder.reset()
+		self.right_encoder.reset()
+		self.current_heading = 0
 
 	def teleopPeriodic(self):
 		# Read joystick buttons
@@ -36,6 +45,9 @@ class MyRobot(wpilib.TimedRobot):
 		self.DRIVE_BUTTON_A = self.DriveJoystick.getRawButton(1)  # A button
 		self.DRIVE_BUTTON_B = self.DriveJoystick.getRawButton(2)  # B button
 		self.DRIVE_BUTTON_Y = self.DriveJoystick.getRawButton(4)  # Y button
+
+		# Update current heading
+		self.updateHeading()
 
 		# Handle rotation to absolute headings
 		if self.DRIVE_BUTTON_X:
@@ -55,10 +67,22 @@ class MyRobot(wpilib.TimedRobot):
 		if self.rotating:
 			self.rotating = self.rotateToHeading()
 
+	def updateHeading(self):
+		"""
+		Updates the current heading based on encoder distances.
+		"""
+		left_distance = self.left_encoder.getDistance()
+		right_distance = self.right_encoder.getDistance()
+		rotation_distance = right_distance - left_distance
+		self.current_heading += (rotation_distance / self.ROBOT_CIRCUMFERENCE_MM) * 360
+		self.current_heading %= 360  # Keep within 0-360 degrees
+
 	def startRotation(self):
 		"""
-		Initializes rotation by setting the rotating flag.
+		Initializes rotation by resetting encoders.
 		"""
+		self.left_encoder.reset()
+		self.right_encoder.reset()
 		self.rotating = True
 
 	def rotateToHeading(self):
@@ -66,12 +90,10 @@ class MyRobot(wpilib.TimedRobot):
 		Rotates the robot to the target heading.
 		Returns True if still rotating, False if the target heading is reached.
 		"""
-		current_heading = self.normalizeAngle(self.gyro.getAngle())
-		target_heading = self.target_heading
-		error = self.normalizeAngle(target_heading - current_heading)
+		error = self.normalizeAngle(self.target_heading - self.current_heading)
 
 		# Print debug info
-		print(f"Current: {current_heading:.2f}°, Target: {target_heading:.2f}°, Error: {error:.2f}°")
+		print(f"Current: {self.current_heading:.2f}°, Target: {self.target_heading:.2f}°, Error: {error:.2f}°")
 
 		# Rotation speed based on error
 		if abs(error) > 2:  # Threshold to stop rotation
@@ -91,9 +113,12 @@ class MyRobot(wpilib.TimedRobot):
 
 	def normalizeAngle(self, angle):
 		"""
-		Normalizes an angle to the range [0, 360).
+		Normalizes an angle to the range [-180, 180].
 		"""
-		return angle % 360
+		while angle > 180:
+			angle -= 360
+		while angle < -180:
+			angle += 360
+		return angle
 
-if __name__ == "__main__":
-	wpilib.run(MyRobot)
+if __name__ == "__
