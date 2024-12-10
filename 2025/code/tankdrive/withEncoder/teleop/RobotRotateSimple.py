@@ -25,6 +25,9 @@ class MyRobot(wpilib.TimedRobot):
 		self.left_encoder.setDistancePerPulse(self.ROBOT_CIRCUMFERENCE_MM / 2048)
 		self.right_encoder.setDistancePerPulse(self.ROBOT_CIRCUMFERENCE_MM / 2048)
 
+		# Reverse one encoder to reflect directionality
+		self.left_encoder.setReverseDirection(True)  # Reverse left encoder
+
 		# Rotation state
 		self.rotating = False
 		self.target_distance = 0
@@ -33,6 +36,7 @@ class MyRobot(wpilib.TimedRobot):
 		# Reset encoders
 		self.left_encoder.reset()
 		self.right_encoder.reset()
+		print("Teleop initialized: Encoders reset.")
 
 	def teleopPeriodic(self):
 		# Button handling
@@ -58,7 +62,7 @@ class MyRobot(wpilib.TimedRobot):
 		self.left_encoder.reset()
 		self.right_encoder.reset()
 		self.rotating = True
-		print(f"Starting rotation for {angle}°.")
+		print(f"Starting rotation for {angle}°. Target distance: {self.target_distance:.2f} mm")
 
 	def performRotation(self):
 		"""
@@ -69,15 +73,15 @@ class MyRobot(wpilib.TimedRobot):
 		right_distance = abs(self.right_encoder.getDistance())
 		average_distance = (left_distance + right_distance) / 2
 
-		print(f"{left_distance} {right_distance}")
-
-		# Print debug info
-		print(f"Target: {self.target_distance:.2f} mm, Current: {average_distance:.2f} mm")
+		# Print encoder values and target
+		print(f"Left Distance: {left_distance:.2f} mm, Right Distance: {right_distance:.2f} mm")
+		print(f"Average Distance: {average_distance:.2f} mm, Target Distance: {self.target_distance:.2f} mm")
 
 		# Check if the robot has rotated enough
 		if average_distance < self.target_distance:
 			# Rotate the robot
 			speed = 0.3
+			print("Rotating... Setting motor speeds.")
 			self.LeftFrontMotor.set(-speed)
 			self.LeftRearMotor.set(-speed)
 			self.RightFrontMotor.set(-speed)
@@ -85,11 +89,11 @@ class MyRobot(wpilib.TimedRobot):
 			return True
 		else:
 			# Stop the robot
+			print("Rotation complete. Stopping motors.")
 			self.LeftFrontMotor.set(0)
 			self.LeftRearMotor.set(0)
 			self.RightFrontMotor.set(0)
 			self.RightRearMotor.set(0)
-			print("Rotation complete.")
 			return False
 
 if __name__ == "__main__":
