@@ -35,7 +35,7 @@ class MyRobot(wpilib.TimedRobot):
 		# Travel state
 		self.target_distance = None
 		self.travel_in_progress = False
-
+		self.offset = 600
 	def teleopInit(self):
 		# Reset encoder distance at the start of teleop
 		self.left_encoder.reset()
@@ -58,10 +58,10 @@ class MyRobot(wpilib.TimedRobot):
 		"""
 		# Start travel if not already in progress
 		if self.DRIVE_BUTTON_Y and not self.travel_in_progress:
-			self.target_distance = 1000  # Travel 10 mm forward
+			self.target_distance = 6000  # Travel 3000 mm forward
 			self.startTravel()
 		elif self.DRIVE_BUTTON_A and not self.travel_in_progress:
-			self.target_distance = -1000  # Travel 10 mm backward
+			self.target_distance = -3000  # Travel 3000 mm backward
 			self.startTravel()
 
 		# Continue travel if in progress
@@ -75,7 +75,7 @@ class MyRobot(wpilib.TimedRobot):
 		self.left_encoder.reset()
 		self.right_encoder.reset()
 		self.travel_in_progress = True
-
+		
 	def travelDistance(self, distance_mm):
 		"""
 		Makes the robot travel a specified distance in millimeters at a constant speed.
@@ -84,8 +84,7 @@ class MyRobot(wpilib.TimedRobot):
 		"""
 		# Determine the direction of travel
 		direction = 1 if distance_mm > 0 else -1
-		target_distance = abs(distance_mm)
-
+		target_distance = abs(distance_mm) - self.offset
 		# Travel speed
 		speed = 0.4  # Adjust this speed as necessary
 
@@ -111,7 +110,7 @@ class MyRobot(wpilib.TimedRobot):
 			self.LeftRearMotor.set(0)
 			self.RightFrontMotor.set(0)
 			self.RightRearMotor.set(0)
-			self.applyBreak(direction)
+			# self.applyBreak(direction)
 			return False
 
 	def applyBreak(self, direction):
