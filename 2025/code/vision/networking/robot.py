@@ -1,44 +1,33 @@
 import wpilib
-import asyncio
-import websockets
-from threading import Thread
-
+import socket
 
 class MyRobot(wpilib.TimedRobot):
-
 	def robotInit(self):
-		# Initialize any robot components here
-		wpilib.SmartDashboard.putString("Status", "Robot Initialized")
-
-		# Start the WebSocket server in a separate thread
-		self.websocketThread = Thread(target=self.runWebSocketServer, daemon=True)
-		self.websocketThread.start()
-
-	def runWebSocketServer(self):
-		async def server(websocket, path):
-			try:
-				async for message in websocket:
-					# Log the message to the FRC Driver Station
-					wpilib.DriverStation.reportWarning(f"Received: {message}", False)
-			except Exception as e:
-				wpilib.DriverStation.reportError(f"WebSocket Error: {e}", False)
-
-		# Create the WebSocket server
-		start_server = websockets.serve(server, "0.0.0.0", 5800)
-
-		# Run the WebSocket server
-		asyncio.set_event_loop(asyncio.new_event_loop())
-		asyncio.get_event_loop().run_until_complete(start_server)
-		asyncio.get_event_loop().run_forever()
+		"""Initialization code runs once when the robot powers on."""
+		# Set up a UDP socket to listen for messages on port 5800
+		self.udpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		self.udpSocket.bind(("0.0.0.0", 5800))  # Listen on all interfaces at port 5800
+		self.udpSocket.setblocking(False)
+		print("UDP Server listening on port 5800")
 
 	def teleopPeriodic(self):
-		# Add any periodic teleop code here
-		wpilib.SmartDashboard.putString("Status", "Teleop Running")
+		"""Periodic code that runs during teleoperated control."""
+		try:
+			# Receive data (1024-byte buffer size)
+			data, addr = self.udpSocket.recvfrom(1024)
 
-	def autonomousPeriodic(self):
-		# Add any periodic autonomous code here
-		wpilib.SmartDashboard.putString("Status", "Autonomous Running")
+			# Decode and process the message
+			message = data.decode()
+			# wpilib.DriverStation.reportWarning(f"Received: {message}", False)
+			print(f"Received: {message} from {addr}")
 
+		except BlockingIOError:
+			# No data received, keep looping
+			pass
+		except Exception as e:
+			# Log any errors
+			# wpilib.DriverStation.reportError(f"UDP Error: {e}", False)
+			print("udp error")
 
 if __name__ == "__main__":
 	wpilib.run(MyRobot)
