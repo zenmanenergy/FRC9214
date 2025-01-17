@@ -83,7 +83,7 @@ if image_size is not None:
 	# Check if calibration was successful
 	if ret:
 		# Apply a manual offset to the principal point in the camera matrix
-		manual_x_offset = 150  # Offset in pixels for x-axis
+		manual_x_offset = 0  # Offset in pixels for x-axis
 		manual_y_offset = 0    # Offset in pixels for y-axis (adjust if necessary)
 
 		# Adjust principal point (c_x and c_y) in the camera matrix
