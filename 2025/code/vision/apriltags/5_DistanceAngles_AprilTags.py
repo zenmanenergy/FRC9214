@@ -7,6 +7,9 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 camera_matrix = np.load(os.path.join(current_dir, "calibration", "camera_matrix.npy"))
 dist_coeffs = np.load(os.path.join(current_dir, "calibration", "dist_coeffs.npy"))
 
+
+print(camera_matrix)
+
 # Define the real-world size of the AprilTag (in meters)
 tag_size = 0.164  # Example: 16.4 cm
 
@@ -18,6 +21,10 @@ cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
+<<<<<<< HEAD
+# Correction factor to improve distance measurement accuracy (based on calibration tests)
+adjustment_factor = 1  # Adjusted using actual vs. measured distance
+=======
 # Precompute distortion maps for undistortion
 frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -46,6 +53,7 @@ def calculate_adjustment_factor(raw_distance, radial_distance, max_radius, base_
 	adjusted_distance = raw_distance * adjustment_factor
 	adjustment_factor *= (1 + k_proximity * abs(reference_distance - adjusted_distance))
 	return adjustment_factor
+>>>>>>> dfd2eadb5679d3088169354329f397fb858c85e6
 
 while True:
 	# Capture each frame
@@ -78,8 +86,15 @@ while True:
 				radial_distance_pixels = np.sqrt((tag_center_x - camera_matrix[0, 2])**2 +
 				                                 (tag_center_y - camera_matrix[1, 2])**2)
 
+<<<<<<< HEAD
+			print(tvec)
+
+			# Draw axes on the tag to indicate orientation and position
+			cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvec, tvec, 0.1)
+=======
 				# Retrieve raw Z-distance
 				raw_distance = tvec[2][0]  # Z-distance in meters
+>>>>>>> dfd2eadb5679d3088169354329f397fb858c85e6
 
 				# Calculate dynamic adjustment factor with proximity scaling
 				adjustment_factor = calculate_adjustment_factor(
