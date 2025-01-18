@@ -21,10 +21,6 @@ cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
-<<<<<<< HEAD
-# Correction factor to improve distance measurement accuracy (based on calibration tests)
-adjustment_factor = 1  # Adjusted using actual vs. measured distance
-=======
 # Precompute distortion maps for undistortion
 frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -53,7 +49,6 @@ def calculate_adjustment_factor(raw_distance, radial_distance, max_radius, base_
 	adjusted_distance = raw_distance * adjustment_factor
 	adjustment_factor *= (1 + k_proximity * abs(reference_distance - adjusted_distance))
 	return adjustment_factor
->>>>>>> dfd2eadb5679d3088169354329f397fb858c85e6
 
 while True:
 	# Capture each frame
