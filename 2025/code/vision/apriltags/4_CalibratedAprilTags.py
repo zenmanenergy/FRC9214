@@ -19,11 +19,7 @@ tag_size = 0.165  # Example: 16.5 cm
 dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_APRILTAG_36h11)
 
 # Initialize the camera and set its resolution
-<<<<<<< HEAD
-cap = cv2.VideoCapture(0)
-=======
 cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
->>>>>>> dfd2eadb5679d3088169354329f397fb858c85e6
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
