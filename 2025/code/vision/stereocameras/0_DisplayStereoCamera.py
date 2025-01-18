@@ -3,7 +3,7 @@ import numpy as np
 
 # Open cameras with DirectShow backend
 cap_left = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # Left camera
-cap_right = cv2.VideoCapture(2, cv2.CAP_DSHOW)  # Right camera
+cap_right = cv2.VideoCapture(1, cv2.CAP_DSHOW)  # Right camera
 
 # Set resolution
 width = 1280
