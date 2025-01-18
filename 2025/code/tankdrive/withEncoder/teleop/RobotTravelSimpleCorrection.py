@@ -36,8 +36,8 @@ class MyRobot(wpilib.TimedRobot):
 		self.target_distance = None
 		self.travel_in_progress = False
 		self.offset = 600
-		self.RightMotorSpeedFactor = 1.0 # This is so the robot does not tilt right
-
+		self.RightSpeedFactor = 1
+		
 	def teleopInit(self):
 		# Reset encoder distance at the start of teleop
 		self.left_encoder.reset()
@@ -60,10 +60,10 @@ class MyRobot(wpilib.TimedRobot):
 		"""
 		# Start travel if not already in progress
 		if self.DRIVE_BUTTON_Y and not self.travel_in_progress:
-			self.target_distance = 6000  # Travel 3000 mm forward
+			self.target_distance = 4000  # Travel 3000 mm forward
 			self.startTravel()
 		elif self.DRIVE_BUTTON_A and not self.travel_in_progress:
-			self.target_distance = -6000  # Travel 3000 mm backward
+			self.target_distance = -4000  # Travel 3000 mm backward
 			self.startTravel()
 
 		# Continue travel if in progress
@@ -77,8 +77,7 @@ class MyRobot(wpilib.TimedRobot):
 		self.left_encoder.reset()
 		self.right_encoder.reset()
 		self.travel_in_progress = True
-		self.RightMotorSpeedFactor = 1.0 # This is so the robot does not tilt right
-
+		self.RightSpeedFactor = 1
 		
 	def travelDistance(self, distance_mm):
 		"""
@@ -90,26 +89,27 @@ class MyRobot(wpilib.TimedRobot):
 		direction = 1 if distance_mm > 0 else -1
 		target_distance = abs(distance_mm) - self.offset
 		# Travel speed
-		speed = 0.4  # Adjust this speed as necessary
-
+		LeftSpeed = 0.4  # Adjust this speed as necessary
+		RightSpeed = 0.4
 		# Calculate the average distance traveled by both encoders
 		left_distance = abs(self.left_encoder.getDistance())
 		right_distance = abs(self.right_encoder.getDistance())
 		average_distance = (left_distance + right_distance) / 2
-		if left_distance > right_distance:
-			self.RightMotorSpeedFactor = self.RightMotorSpeedFactor + 0.001
-		else:
-			self.RightMotorSpeedFactor = self.RightMotorSpeedFactor - 0.001
 		# Print encoder values for debugging
-		print(f"Left Distance: {left_distance:.2f} mm, Right Distance: {right_distance:.2f} mm, {self.RightMotorSpeedFactor}")
+		if left_distance<right_distance:
+			self.RightSpeedFactor = self.RightSpeedFactor- (abs(right_distance-left_distance))/10000
+		else:
+			self.RightSpeedFactor = self.RightSpeedFactor+ (abs(right_distance-left_distance))/10000
+		RightSpeed = RightSpeed* self.RightSpeedFactor
+		print(f"Left Distance: {left_distance:.2f} mm, Right Distance: {right_distance:.2f} mm {(right_distance-left_distance)/10000}")
 
 		# Check if the target distance is reached
 		if average_distance < target_distance:
 			# Apply constant speed to the motors
-			self.LeftFrontMotor.set(direction * speed)
-			self.LeftRearMotor.set(direction * speed)
-			self.RightFrontMotor.set(-1 * direction * speed * self.RightMotorSpeedFactor)
-			self.RightRearMotor.set(-1 * direction * speed * self.RightMotorSpeedFactor)
+			self.LeftFrontMotor.set(direction * LeftSpeed)
+			self.LeftRearMotor.set(direction * LeftSpeed)
+			self.RightFrontMotor.set(-1 * direction * RightSpeed)
+			self.RightRearMotor.set(-1 * direction * RightSpeed)
 			return True
 		else:
 			# Stop the motors
