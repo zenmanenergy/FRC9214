@@ -81,15 +81,8 @@ while True:
 				radial_distance_pixels = np.sqrt((tag_center_x - camera_matrix[0, 2])**2 +
 				                                 (tag_center_y - camera_matrix[1, 2])**2)
 
-<<<<<<< HEAD
-			print(tvec)
-
-			# Draw axes on the tag to indicate orientation and position
-			cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvec, tvec, 0.1)
-=======
 				# Retrieve raw Z-distance
 				raw_distance = tvec[2][0]  # Z-distance in meters
->>>>>>> dfd2eadb5679d3088169354329f397fb858c85e6
 
 				# Calculate dynamic adjustment factor with proximity scaling
 				adjustment_factor = calculate_adjustment_factor(
