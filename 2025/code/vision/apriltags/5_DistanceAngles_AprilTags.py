@@ -1,9 +1,3 @@
-# This script detects AprilTags in real-time using a calibrated camera, estimates their pose,
-# and calculates the distance and angles to each detected tag.
-# The calculated distance is adjusted by a correction factor to improve accuracy.
-# The resulting information is displayed on the video feed, showing the tag ID, corrected distance,
-# horizontal angle, and vertical angle for each detected tag.
-
 import cv2
 import numpy as np
 import os
@@ -27,65 +21,105 @@ cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
+<<<<<<< HEAD
 # Correction factor to improve distance measurement accuracy (based on calibration tests)
 adjustment_factor = 1  # Adjusted using actual vs. measured distance
+=======
+# Precompute distortion maps for undistortion
+frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+map1, map2 = cv2.initUndistortRectifyMap(camera_matrix, dist_coeffs, None, camera_matrix, (frame_width, frame_height), cv2.CV_16SC2)
+
+# Define correction parameters
+base_adjustment_factor = 100 / 124  # Base adjustment factor for center
+k_dynamic = 0.4  # Dynamic adjustment factor based on angle
+k_proximity = -0.35  # Proximity scaling constant
+reference_distance = 1.0  # Reference distance in meters (e.g., 100 cm)
+max_radius = np.sqrt((frame_width / 2)**2 + (frame_height / 2)**2)
+
+# Define 3D world coordinates for the tag corners
+half_size = tag_size / 2
+tag_corners_3d = np.array([
+	[-half_size, -half_size, 0],
+	[ half_size, -half_size, 0],
+	[ half_size,  half_size, 0],
+	[-half_size,  half_size, 0]
+], dtype=np.float32)
+
+# Function to calculate dynamic adjustment factor based on radial distance
+def calculate_adjustment_factor(raw_distance, radial_distance, max_radius, base_factor, reference_distance, k_proximity):
+	# Quadratic proximity scaling applied to the adjustment factor
+	adjustment_factor = base_factor + k_dynamic * (radial_distance / max_radius)
+	adjusted_distance = raw_distance * adjustment_factor
+	adjustment_factor *= (1 + k_proximity * abs(reference_distance - adjusted_distance))
+	return adjustment_factor
+>>>>>>> dfd2eadb5679d3088169354329f397fb858c85e6
 
 while True:
-	# Capture each frame from the camera
+	# Capture each frame
 	ret, frame = cap.read()
 	if not ret:
 		print("Failed to grab frame")
 		break
 
-	# Convert to grayscale (required for AprilTag detection)
-	gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+	# Undistort the frame
+	undistorted = cv2.remap(frame, map1, map2, cv2.INTER_LINEAR)
 
-	# Detect AprilTags in the frame
+	# Convert to grayscale for detection
+	gray = cv2.cvtColor(undistorted, cv2.COLOR_BGR2GRAY)
+
+	# Detect AprilTags
 	corners, ids, rejected = cv2.aruco.detectMarkers(gray, dictionary)
 
 	if ids is not None:
-		# Estimate the pose (position and orientation) of each detected AprilTag
-		rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(corners, tag_size, camera_matrix, dist_coeffs)
+		for i, corner in enumerate(corners):
+			# Solve pose
+			success, rvec, tvec = cv2.solvePnP(tag_corners_3d, corner[0], camera_matrix, dist_coeffs)
+			if success:
+				# Draw markers and axes
+				cv2.aruco.drawDetectedMarkers(undistorted, corners, ids)
+				cv2.drawFrameAxes(undistorted, camera_matrix, dist_coeffs, rvec, tvec, 0.1)
 
-		for i, (rvec, tvec) in enumerate(zip(rvecs, tvecs)):
-			# Draw the detected markers on the frame
-			cv2.aruco.drawDetectedMarkers(frame, corners, ids)
+				# Calculate radial distance
+				tag_center_x = np.mean(corner[0][:, 0])
+				tag_center_y = np.mean(corner[0][:, 1])
+				radial_distance_pixels = np.sqrt((tag_center_x - camera_matrix[0, 2])**2 +
+				                                 (tag_center_y - camera_matrix[1, 2])**2)
 
+<<<<<<< HEAD
 			print(tvec)
 
 			# Draw axes on the tag to indicate orientation and position
 			cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvec, tvec, 0.1)
+=======
+				# Retrieve raw Z-distance
+				raw_distance = tvec[2][0]  # Z-distance in meters
+>>>>>>> dfd2eadb5679d3088169354329f397fb858c85e6
 
-			# Calculate the center of the tag (average of the four corners)
-			tag_center_x = np.mean(corners[i][0][:, 0])
-			tag_center_y = np.mean(corners[i][0][:, 1])
+				# Calculate dynamic adjustment factor with proximity scaling
+				adjustment_factor = calculate_adjustment_factor(
+					raw_distance, radial_distance_pixels, max_radius, base_adjustment_factor, reference_distance, k_proximity
+				)
 
-			# Calculate horizontal and vertical angles using the principal point in the camera matrix
-			angle_x = np.arctan((tag_center_x - camera_matrix[0, 2]) / camera_matrix[0, 0])
-			angle_y = np.arctan((tag_center_y - camera_matrix[1, 2]) / camera_matrix[1, 1])
+				# Apply corrections
+				final_corrected_distance = raw_distance * adjustment_factor
 
-			# Convert angles from radians to degrees for easier interpretation
-			angle_x_deg = np.degrees(angle_x)
-			angle_y_deg = np.degrees(angle_y)
+				# Debugging output
+				print(f"Raw: {raw_distance:.2f}m, Adjustment Factor: {adjustment_factor:.3f}, "
+				      f"Corrected: {final_corrected_distance:.2f}m")
 
-			# Retrieve the Z translation value as the distance in meters
-			distance = tvec[0][2]
+				# Display tag information
+				text = (f"ID: {ids[i][0]}, Raw Z: {raw_distance:.2f}m, "
+				        f"Corrected: {final_corrected_distance:.2f}m")
+				cv2.putText(undistorted, text, (10, 50 + 30 * i), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
-			# Apply the adjustment factor to improve accuracy of the distance measurement
-			corrected_distance = distance * adjustment_factor
+	# Display the frame
+	cv2.imshow('AprilTag Detection with Adjustment Factor Scaling', undistorted)
 
-			# Display the tag information (ID, corrected distance, angles) on the frame
-			text = (f"ID: {ids[i][0]}, Distance: {corrected_distance:.2f}m, "
-					f"Horizontal Angle: {angle_x_deg:.2f}°, Vertical Angle: {angle_y_deg:.2f}°")
-			cv2.putText(frame, text, (10, 50 + 30 * i), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
-
-	# Display the frame with overlaid information
-	cv2.imshow('AprilTag Detection', frame)
-
-	# Exit the loop when 'q' is pressed
+	# Exit on 'q' key
 	if cv2.waitKey(1) & 0xFF == ord('q'):
 		break
 
-# Release the camera and close any OpenCV windows
+# Release resources
 cap.release()
 cv2.destroyAllWindows()

@@ -7,21 +7,32 @@
 
 import cv2
 
-cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
+cap0 = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+cap2 = cv2.VideoCapture(1, cv2.CAP_DSHOW)
 
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+cap0.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+cap0.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+
+cap2.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+cap2.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
 while True:
-	ret, frame = cap.read()
-	if not ret:
-		print("Failed to grab frame")
+	ret2, frame2 = cap2.read()
+	if not ret2:
+		print("Failed to grab frame 2")
 		break
 
-	cv2.imshow('Verify camera', frame)
+	ret0, frame0 = cap0.read()
+	if not ret0:
+		print("Failed to grab frame 0")
+		break
+
+	cv2.imshow('Camera 0', frame0)
+	cv2.imshow('Camera 2', frame2)
 
 	if cv2.waitKey(1) & 0xFF == ord('q'):
 		break
 
-cap.release()
+cap0.release()
+cap2.release()
 cv2.destroyAllWindows()

@@ -59,19 +59,7 @@ if image_size is not None:
 	ret, camera_matrix, dist_coeffs, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, image_size, None, None)
 
 	if ret:
-<<<<<<< HEAD
-		# Apply a manual offset to the principal point in the camera matrix
-		manual_x_offset = 0  # Offset in pixels for x-axis
-		manual_y_offset = 0    # Offset in pixels for y-axis (adjust if necessary)
-
-		# Adjust principal point (c_x and c_y) in the camera matrix
-		camera_matrix[0, 2] += manual_x_offset  # Adjust c_x
-		camera_matrix[1, 2] += manual_y_offset  # Adjust c_y if needed
-
-		# Save camera matrix and distortion coefficients to the calibration directory
-=======
 		# Save calibration results
->>>>>>> dfd2eadb5679d3088169354329f397fb858c85e6
 		calibration_dir = os.path.join(current_dir, 'calibration')
 		os.makedirs(calibration_dir, exist_ok=True)
 
