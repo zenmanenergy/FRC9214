@@ -15,7 +15,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 images_dir = os.path.join(current_dir, 'calibration', 'images')
 os.makedirs(images_dir, exist_ok=True)
 
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
 
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
