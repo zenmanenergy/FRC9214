@@ -17,7 +17,7 @@ tag_size = 0.164  # Example: 16.4 cm
 dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_APRILTAG_36h11)
 
 # Initialize the camera and set resolution
-cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
+cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
@@ -27,9 +27,9 @@ frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 map1, map2 = cv2.initUndistortRectifyMap(camera_matrix, dist_coeffs, None, camera_matrix, (frame_width, frame_height), cv2.CV_16SC2)
 
 # Define correction parameters
-base_adjustment_factor = 100 / 124  # Base adjustment factor for center
-k_dynamic = 0.4  # Dynamic adjustment factor based on angle
-k_proximity = -0.35  # Proximity scaling constant
+base_adjustment_factor = 1000 / 455  # Base adjustment factor for center
+k_dynamic = 0.9  # Dynamic adjustment factor based on angle
+k_proximity = 0.3  # Proximity scaling constant
 reference_distance = 1.0  # Reference distance in meters (e.g., 100 cm)
 max_radius = np.sqrt((frame_width / 2)**2 + (frame_height / 2)**2)
 
