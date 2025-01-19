@@ -9,8 +9,8 @@ import os
 
 # Load camera calibration parameters (replace with your actual calibrated values)
 current_dir = os.path.dirname(os.path.abspath(__file__))
-camera_matrix = np.load(os.path.join(current_dir, "calibration", "camera_matrix.npy"))
-dist_coeffs = np.load(os.path.join(current_dir, "calibration", "dist_coeffs.npy"))
+camera_matrix = np.load(os.path.join(current_dir, "calibration", "cameraMatrix.npy"))
+dist_coeffs = np.load(os.path.join(current_dir, "calibration", "dist.npy"))
 
 # Define the real-world size of the AprilTag (in meters)
 tag_size = 0.165  # Example: 16.5 cm
@@ -19,11 +19,7 @@ tag_size = 0.165  # Example: 16.5 cm
 dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_APRILTAG_36h11)
 
 # Initialize the camera and set its resolution
-<<<<<<< HEAD
-cap = cv2.VideoCapture(0)
-=======
-cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
->>>>>>> dfd2eadb5679d3088169354329f397fb858c85e6
+cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
