@@ -1,16 +1,17 @@
 import wpilib  # FIRST Robotics library
-import ctre  # Zippy wheel motor controller library
 import rev  # Zippy arm motor controller library
-from ctre import NeutralMode
+from phoenix5 import WPI_TalonSRX, NeutralMode
 
 class MyRobot(wpilib.TimedRobot):
 	def robotInit(self):  # Initializes joystick, motors, and encoder
 		# Joystick and motor setup
 		self.DriveJoystick = wpilib.Joystick(0)  # Joystick port 0
-		self.LeftFrontMotor = ctre.WPI_TalonSRX(1)
-		self.LeftRearMotor = ctre.WPI_TalonSRX(2)
-		self.RightFrontMotor = ctre.WPI_TalonSRX(3)
-		self.RightRearMotor = ctre.WPI_TalonSRX(4)
+		
+		self.LeftFrontMotor = WPI_TalonSRX(1)
+		self.LeftRearMotor = WPI_TalonSRX (4)
+
+		self.RightFrontMotor = WPI_TalonSRX(3)
+		self.RightRearMotor = WPI_TalonSRX(2)
 
 		self.LeftFrontMotor.setNeutralMode(NeutralMode.Brake)
 		self.LeftRearMotor.setNeutralMode(NeutralMode.Brake)

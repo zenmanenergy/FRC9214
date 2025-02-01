@@ -29,8 +29,11 @@ class MyRobot(wpilib.TimedRobot):
 		self.LeftRearMotor.setInverted(True)
 
 		# NavX Sensor
-		self.navx = AHRS(AHRS.NavXComType.kMXP_SPI, AHRS.NavXUpdateRate.k100Hz)  # Replace with your connection type if different
-
+		self.navx = AHRS(AHRS.NavXComType.kMXP_SPI, AHRS.NavXUpdateRate.k200Hz)  # Replace with your connection type if different
+		# self.navx = AHRS.create_spi()
+		
+		
+		# print(self.navx.getActualUpdateRate())
 
 	def autonomousInit(self):
 		self.startingCompass = self.navx.getCompassHeading()
@@ -42,9 +45,22 @@ class MyRobot(wpilib.TimedRobot):
 		# self.drive_forward_for_time(1, 1)
 
 	def autonomousPeriodic(self):
-		compass_heading = self.navx.getCompassHeading() - self.startingCompass
-		print(f"Compass Heading: {compass_heading} degrees")
+		
+		if self.driveStep == 0:
+			if self.turn(0.1, 124):
+				self.driveStep += 1
 
+		if self.driveStep == 1:
+			if self.drive_forward_for_time(0.1, 1):
+				self.driveStep += 1
+		
+
+		if self.driveStep == 2:
+			if self.turn(0.1, 10):
+				self.driveStep += 1
+		# compass_heading = self.navx.getYaw()
+		# print(f"Compass Heading: {compass_heading} degrees")
+		# print(self.navx.isCalibrating())
 
 		# if self.driveStep == 0:
 		# 	if self.drive_forward_for_time(0.4, 2.4):
@@ -116,24 +132,26 @@ class MyRobot(wpilib.TimedRobot):
 
 	def turn(self, speed, degree):
 
-		current_heading = self.navx.getCompassHeading()
+		current_heading = self.navx.getYaw()
 
 		error = degree - current_heading
 
+		print(error)
 		if error > 180:
 			error -=360
 		elif error < -180:
 			error +=360
 
-		turn_output = 0.02 * error * speed
+		turn_output = 0.1 * error * speed
 
-		self.LeftFrontMotor.set(turn_output)
-		self.RightFrontMotor.set(-turn_output)
-		self.LeftRearMotor.set(turn_output)
-		self.RightRearMotor.set(-turn_output)
+		self.LeftFrontMotor.set(-turn_output)
+		self.RightFrontMotor.set(turn_output)
+		self.LeftRearMotor.set(-turn_output)
+		self.RightRearMotor.set(turn_output)
 
-		if abs(error) < 2:
-			self.allMotorsStraight(0)
+		if abs(error) < 1:
+			self.allMotorsStraight(0.01)
+			print("oh yeah!!!")
 			return True
 
 		
