@@ -21,7 +21,8 @@ class Drive:
 		self.right_rear.setNeutralMode(NeutralMode.Brake)
 
 		# Encoder configuration
-		self.WHEEL_DIAMETER_MM = 152.4
+		self.WHEEL_DIAMETER_MM = 167
+		# 152.4
 		self.WHEEL_CIRCUMFERENCE_MM = self.WHEEL_DIAMETER_MM * 3.14159
 		self.ENCODER_CPR = 2048
 
@@ -33,15 +34,19 @@ class Drive:
 
 		# Create the NavX sensor
 		self.navx = AHRS(AHRS.NavXComType.kMXP_SPI, AHRS.NavXUpdateRate.k200Hz)
+		
+		
+		# print("AAAAAAAAA" + str(self.navx.getBoardYawAxis().board_axis.value))
 
 		# Travel state
-		self.overshoot_distance = 300  # Additional travel distance in mm
+		self.overshoot_distance = 0  # Additional travel distance in mm
 		
+		self.reset()
 		
 
-		
 
 	def reset(self):
+		print("Reset")
 		self.traveling = False
 		self.turning = False
 		self.navigating = False
@@ -62,6 +67,15 @@ class Drive:
 		self.navigation_distance = 0
 		self.navigation_started_travel = False
 		self.set_motors(0,0)
+		self.navx.zeroYaw()
+
+		
+		self.turning = False
+		self.turn_target = 0
+		self.turn_base_speed = 0
+		self.prev_turn_error = 0
+		self.turn_error_offset = 0  # Stores cumulative error correction
+		self.turn_end_time = None  # Timer for non-blocking wait
 
 	# --- New Coordinate Methods ---
 	def setCoordinates(self, x, y):
@@ -73,11 +87,25 @@ class Drive:
 		"""Returns the robot's current coordinates as a tuple (x, y) in mm."""
 		return (self.current_x, self.current_y)
 
+	def printHeading(self):
+		yaw=self.getHeading()
+		# print([self.navx.getFusedHeading(),self.navx.getCompassHeading(), self.navx.getYaw(),yaw, self.navx.isMagneticDisturbance(),self.navx.isMagnetometerCalibrated()])
+		print("yaw:",yaw)
+		yaw_axis_info = self.navx.getBoardYawAxis()
+		# print("Board yaw axis:", yaw_axis_info.board_axis)  # e.g. BoardAxis.kBoardAxisZ
+		# print("Is axis up?", yaw_axis_info.up)
+
+		# # Option B: Print the enum name and its underlying integer value
+		# print("Board yaw axis name:", yaw_axis_info.board_axis.name)   # e.g. 'kBoardAxisZ'
+		# print("Board yaw axis value:", yaw_axis_info.board_axis.value)
 	def getHeading(self):
 		"""Returns the robot's current coordinates as a tuple (x, y) in mm."""
-		return self.navx.getFusedHeading() 
-	# [self.navx.getFusedHeading(),self.navx.getCompassHeading(), self.navx.getYaw(),self.navx.isMagneticDisturbance(),self.navx.isMagnetometerCalibrated()]
-
+		yaw = self.navx.getYaw()
+		yaw = (yaw + 360) % 360
+		# print([self.navx.getFusedHeading(),self.navx.getCompassHeading(), self.navx.getYaw(),yaw, self.navx.isMagneticDisturbance(),self.navx.isMagnetometerCalibrated()])
+		
+		return yaw
+		
 	def reset_encoders(self):
 		"""Resets encoder values."""
 		self.left_encoder.reset()
@@ -108,7 +136,7 @@ class Drive:
 		self.traveling = True
 
 	def update_travel(self, base_speed=0.4):
-		print('update_travel')
+		# print('update_travel')
 
 		if not self.traveling:
 			return False
@@ -144,6 +172,14 @@ class Drive:
 		else:
 			compass_correction = 0
 
+
+
+
+		# FORCING COMPASS OVERRIDE BECAUSE THE COMPASS IS NOT WORKING:
+		compass_correction = 0
+
+
+
 		# Compute motor speeds with corrections
 		left_speed = base_speed - encoder_correction + compass_correction
 		right_speed = base_speed + encoder_correction - compass_correction
@@ -167,124 +203,86 @@ class Drive:
 
 
 
-
 	def start_turn(self, degrees, base_speed=0.4):
-		print('start_turn')
-		"""Initiates a turn by setting a target heading."""
-		self.turning = True
-		self.turn_target = self.getHeading() + degrees
-		while self.turn_target > 360:
-			self.turn_target -= 360
-		while self.turn_target < 0:
-			self.turn_target += 360
+		"""Initiates a turn, applying correction from previous errors."""
+		# Apply the stored offset correction
+		adjusted_degrees = degrees - self.turn_error_offset  
+
+		# Set target heading
+		self.turn_target = (self.getHeading() + adjusted_degrees) % 360
 		self.turn_base_speed = base_speed if degrees > 0 else -base_speed
+		self.turning = True
+		self.turn_start_time = wpilib.Timer.getFPGATimestamp()  # Start timeout timer
+
+		print(f"Starting turn: {degrees}° (Adjusted to {adjusted_degrees}° due to past errors)")
+
 
 	def update_turn(self):
-		if not self.turning:
-			return False
-
 		current_heading = self.getHeading()
-		# Compute error as (target - current_heading)
+
+		# Compute turn error
 		error = (self.turn_target - current_heading + 180) % 360 - 180
-		# Normalize error to the range [-180, 180]
-		while error > 180:
-			error -= 360
-		while error < -180:
-			error += 360
 
-		# If within tolerance, finish turning.
-		if abs(error) < 2:
+		# Stop if error is small enough (±3° tolerance)
+		if abs(error) < 3:
 			self.set_motors(0, 0)
-			self.turning = False
-			return False
 
-		# Compute the derivative term.
-		# We'll store the previous error in self.prev_turn_error.
-		if not hasattr(self, 'prev_turn_error'):
-			self.prev_turn_error = error
-		derivative = error - self.prev_turn_error
+			# If turn_end_time isn't set, initialize it **once**
+			if self.turn_end_time is None:
+				self.turn_end_time = wpilib.Timer.getFPGATimestamp()
+				return True  # Keep running for stabilization delay
+
+			# Wait 0.15s before applying offset
+			if wpilib.Timer.getFPGATimestamp() - self.turn_end_time > 0.15:
+				final_error = self.turn_target - self.getHeading()
+				self.turn_error_offset += final_error  # 🔥 Properly adjust offset
+				print(f"Turn finalized. True Final Heading: {current_heading:.2f}°, Error Offset Updated: {self.turn_error_offset:.2f}°")
+				self.turning = False  # Exit turn mode
+				self.turn_end_time = None  # Reset for next turn
+				return False
+
+			return True  # Keep waiting for stabilization
+
+		# Reset turn_end_time when still turning
+		self.turn_end_time = None  
+
+		# PD controller for turning
+		kp_turn = 0.015  
+		kd_turn = 0.005  
+		turn_speed = kp_turn * error + kd_turn * (error - getattr(self, 'prev_turn_error', 0))
+
+		# Ensure turn speed is above deadband
+		deadband = 0.2  
+		if abs(turn_speed) < deadband:
+			turn_speed = deadband if turn_speed > 0 else -deadband
+
+		# Clamp turn speed
+		max_speed = abs(self.turn_base_speed)
+		turn_speed = max(min(turn_speed, max_speed), -max_speed)
+
+		# Apply motor power
+		self.set_motors(-turn_speed, turn_speed)
+
+		# Save previous error for derivative calculation
 		self.prev_turn_error = error
 
-		# PD controller gains. Tune these experimentally.
-		kp_turn = 0.015  # Proportional gain
-		kd_turn = 0.005  # Derivative gain
-
-		# Calculate the turn speed command.
-		turn_speed = kp_turn * error + kd_turn * derivative
-
-		deadband=0.08
-		if abs(turn_speed) < deadband:
-			turn_speed=deadband if turn_speed >0 else -deadband
-
-		# Clamp the command to the maximum speed allowed.
-		max_speed = abs(self.turn_base_speed)
-		if turn_speed > max_speed:
-			turn_speed = max_speed
-		elif turn_speed < -max_speed:
-			turn_speed = -max_speed
-
-		# Send commands to the motors. The signs here assume that a positive
-		# turn_speed should turn the robot in the correct direction.
-		print(turn_speed, error, self.turn_target, current_heading)
-		self.set_motors(-turn_speed, turn_speed)
-		return True
+		print(f"Turning: Heading {current_heading:.2f}°, Error {error:.2f}°, Speed {turn_speed:.2f}")
+		return True  # Keep turning
 
 
-	def update_navigated_travel(self, base_speed=0.4):
-		print('update_navigated_travel')
 
-		if not self.navigating:
-			return False
 
-		# Compute vector toward the target
-		dx = self.navigation_target_x - self.current_x
-		dy = self.navigation_target_y - self.current_y
-		target_distance = math.sqrt(dx**2 + dy**2)
 
-		# 🚀 **Fix: Stop when close enough**
-		target_tolerance = 50  # Stop within 50mm of the target
-		if target_distance < target_tolerance:
-			self.set_motors(0, 0)
-			self.navigating = False
-			return False
 
-		# Compute desired heading
-		desired_heading = math.degrees(math.atan2(dy, dx))
-		if desired_heading < 0:
-			desired_heading += 360  # Normalize
 
-		# Get current heading and compute heading error
-		current_heading = self.getHeading()
-		heading_error = (desired_heading - current_heading + 180) % 360 - 180  # Normalize
 
-		# Use small turn corrections while driving
-		kp_turn = 0.01  # Adjust for smooth turning
-		turn_correction = kp_turn * heading_error
 
-		# 🚀 **Fix: Correct encoder distance calculation**
-		left_distance = self.left_encoder.getDistance()
-		right_distance = self.right_encoder.getDistance()
-		avg_distance = (left_distance + right_distance) / 2.0  # Average of both encoders
 
-		# Compute motor speeds (encoder straight + heading correction)
-		left_speed = base_speed - turn_correction
-		right_speed = base_speed + turn_correction
 
-		# 🚀 Fix motor deadband (minimum speed)
-		deadband = 0.2
-		if abs(left_speed) < deadband:
-			left_speed = deadband if left_speed > 0 else -deadband
-		if abs(right_speed) < deadband:
-			right_speed = deadband if right_speed > 0 else -deadband
 
-		# **🚀 Fix: Update estimated position using encoders**
-		heading_rad = math.radians(current_heading)
-		self.current_x += avg_distance * math.cos(heading_rad)
-		self.current_y += avg_distance * math.sin(heading_rad)
 
-		# Move toward target
-		self.set_motors(left_speed, right_speed)
-		return True
+
+		
 
 
 
@@ -316,13 +314,65 @@ class Drive:
 		self.navigating = True
 
 
-	def update_navigation(self):
+	def update_navigation(self, base_speed=0.4):
+
 
 		if not self.navigating:
 			return False
 
+		# Compute vector toward the target
+		dx = self.navigation_target_x - self.current_x
+		dy = self.navigation_target_y - self.current_y
+		target_distance = math.sqrt(dx**2 + dy**2)
+		# print(target_distance)
+
+		# 🚀 **Fix: Stop when close enough**
+		target_tolerance = 50  # Stop within 50mm of the target
+		if target_distance < target_tolerance:
+			self.set_motors(0, 0)
+			self.navigating = False
+			return False
+
+		# Compute desired heading
+		desired_heading = math.degrees(math.atan2(dy, dx))
+		if desired_heading < 0:
+			desired_heading += 360  # Normalize
+
+		# Get current heading and compute heading error
+		current_heading = self.getHeading()
+		heading_error = (desired_heading - current_heading + 180) % 360 - 180  # Normalize
+
+		# Use small turn corrections while driving
+		kp_turn = 0.015  # Adjust for smooth turning
+		turn_correction = kp_turn * heading_error
+
+		# 🚀 **Fix: Correct encoder distance calculation**
+		left_distance = self.left_encoder.getDistance()
+		right_distance = self.right_encoder.getDistance()
+		avg_distance = (left_distance + right_distance) / 2.0  # Average of both encoders
+
+		# Compute motor speeds (encoder straight + heading correction)
+		left_speed = base_speed - turn_correction
+		right_speed = base_speed + turn_correction
+
+		# 🚀 Fix motor deadband (minimum speed)
+		deadband = 0.2
+		if abs(left_speed) < deadband:
+			left_speed = deadband if left_speed > 0 else -deadband
+		if abs(right_speed) < deadband:
+			right_speed = deadband if right_speed > 0 else -deadband
+
+		# **🚀 Fix: Update estimated position using encoders**
+		heading_rad = math.radians(current_heading)
+		self.current_x += avg_distance * math.cos(heading_rad)
+		self.current_y += avg_distance * math.sin(heading_rad)
+
+		# Move toward target
+		self.set_motors(left_speed, right_speed)
+		
+	
 		# Update travel while dynamically adjusting heading when needed
-		self.navigating = self.update_navigated_travel()
+		self.navigating = self.update_navigation()
 		return self.navigating
 
 
