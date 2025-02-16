@@ -1,6 +1,7 @@
 import wpilib
 from phoenix5 import WPI_TalonSRX, NeutralMode
 from navx import AHRS
+from networktables import NetworkTables
 
 class Drive:
 	def __init__(self):

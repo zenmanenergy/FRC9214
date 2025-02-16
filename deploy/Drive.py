@@ -2,9 +2,16 @@ import math
 import wpilib
 from phoenix5 import WPI_TalonSRX, NeutralMode
 from navx import AHRS
+from networktables import NetworkTables
+
 
 class Drive:
 	def __init__(self):
+
+
+		NetworkTables.initialize(server="10.92.14.2")
+		self.table = NetworkTables.getTable("vision")
+
 		# Motor setup
 		self.left_front = WPI_TalonSRX(1)
 		self.left_rear = WPI_TalonSRX(4)
@@ -98,9 +105,20 @@ class Drive:
 		# # Option B: Print the enum name and its underlying integer value
 		# print("Board yaw axis name:", yaw_axis_info.board_axis.name)   # e.g. 'kBoardAxisZ'
 		# print("Board yaw axis value:", yaw_axis_info.board_axis.value)
+	def getHeadingFromCameras(self):
+		fromCameraYaw = self.table.getNumber("heading", 1000)
+
+
+		if self.fromCameraYaw != 1000:
+			print("zeroing yaw")
+			self.navx.zeroYaw()
+			self.table.putNumber("heading", 1000)
+			self.cameraYaw = fromCameraYaw
+
+	
 	def getHeading(self):
 		"""Returns the robot's current coordinates as a tuple (x, y) in mm."""
-		yaw = self.navx.getYaw()
+		yaw = self.navx.getYaw() + self.cameraYaw
 		yaw = (yaw + 360) % 360
 		# print([self.navx.getFusedHeading(),self.navx.getCompassHeading(), self.navx.getYaw(),yaw, self.navx.isMagneticDisturbance(),self.navx.isMagnetometerCalibrated()])
 		
