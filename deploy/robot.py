@@ -7,14 +7,16 @@ class MyRobot(wpilib.TimedRobot):
 		NetworkTables.initialize(server="roborio-9214-frc.local")
 		table = NetworkTables.getTable("vision")
 
-		table.putNumber("target_x", 10)
-
 		print(table.getNumber("target_x", 0))
 
 	def teleopPeriodic(self):
 		"""Periodic code that runs during teleoperated control."""
 		pass
-	 
+	
+	def periodic(self):
+		print("hello")
+		print("there")
+
 
 if __name__ == "__main__":
 	pass
