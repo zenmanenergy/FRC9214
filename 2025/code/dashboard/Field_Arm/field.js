@@ -2,7 +2,6 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 let fieldImage = new Image();
-let selectedTeam = "blue"; // Default to Blue team
 
 // Load the field image
 fieldImage.src = "REEFSCAPE2025.png";
@@ -28,12 +27,6 @@ function drawField() {
 }
 
 
-
-// Event listener for team selection dropdown
-document.getElementById("teamSelect").addEventListener("change", (event) => {
-	selectedTeam = event.target.value; // Update team selection
-	drawField(); // Redraw the field with the correct clipping
-});
 
 // Export function for use in other files
 window.drawField = drawField;

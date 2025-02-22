@@ -1,0 +1,36 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>FRC Dashboard</title>
+	<script src="/static/js/socket.io.js"></script>
+</head>
+<body>
+	<h1>FRC Live Data</h1>
+	<h2>Elevator Position: <span id="elevator_value">Loading...</span></h2>
+
+	<button onclick="sendCommand('raise')">Raise Elevator</button>
+	<button onclick="sendCommand('lower')">Lower Elevator</button>
+
+	<script>
+		const socket = io.connect("http://" + location.hostname + ":5805", {transports: ['websocket']});
+	
+		socket.on("connect", function() {
+			console.log("✅ WebSocket Connected!");
+		});
+	
+		socket.on("update_data", function(data) {
+			console.log("📡 Received data:", data);
+			document.getElementById("elevator_value").innerText = data.elevator ?? "N/A";
+		});
+	
+		setInterval(() => {
+			socket.emit("get_data");
+		}, 100); // Request updates every 100ms (10x per second)
+	</script>
+</body>
+</html>
