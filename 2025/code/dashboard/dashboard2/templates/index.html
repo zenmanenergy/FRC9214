@@ -4,7 +4,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Robot Arm & Pathfinding</title>
-	<link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 	<label for="teamSelect">Select Team:</label>
@@ -23,14 +23,11 @@
 		<button id="grabberUnload">Unload</button>
 		<button id="grabberStop">Stop</button>
 	</div>
-	<h1>FRC Dashboard</h1>
-
-	<h2>Robot Position: (<span id="x_position">0</span>, <span id="y_position">0</span>)</h2>
-	<h2>Elevator Position: <span id="elevator_value">0</span></h2>
-	<h2>Arm Angle: <span id="arm_angle">0</span>°</h2>
-	<h2>Wrist Angle: <span id="wrist_angle">0</span>°</h2>
-	<h2>Grabber Angle: <span id="grabber_angle">0</span>°</h2>
-
+	Robot Position: (<span id="x_position">0</span>, <span id="y_position">0</span>)
+	Elevator Position: <span id="elevator_value">0</span>
+	Arm Angle: <span id="arm_angle">0</span>°
+	Wrist Angle: <span id="wrist_angle">0</span>°
+	Grabber Angle: <span id="grabber_angle">0</span>°
 	<canvas id="canvas" width="1000" height="500"></canvas>
 
 	<!-- Saved Positions -->
@@ -41,12 +38,14 @@
 		<ul id="savedPositions"></ul>
 	</div>
 
-	<script src="config.js"></script>
-	<script src="storage.js"></script>
-	<script src="field.js"></script>
-	<script src="pathfinding.js"></script>
-	<script src="robot_arm.js"></script>
-	<script src="training.js"></script>
-	<script src="controls.js"></script>
+	<script src="/static/config.js"></script>
+	<script src="/static/socket.io.js"></script>
+	<script src="/static/socket.js"></script>
+	<script src="/static/storage.js"></script>
+	<script src="/static/field.js"></script>
+	<script src="/static/pathfinding.js"></script>
+	<script src="/static/robot_arm.js"></script>
+	<script src="/static/training.js"></script>
+	<script src="/static/controls.js"></script>
 </body>
 </html>
