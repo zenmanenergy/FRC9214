@@ -1,29 +1,39 @@
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
-const teamSelect = document.getElementById("teamSelect");
 
-let image = new Image();
-let team = "blue"; // Default team
+let fieldImage = new Image();
+let selectedTeam = "blue"; // Default to Blue team
 
-function loadImage() {
-	image.src = "REEFSCAPE2025.png";
-	image.onload = () => draw();
-}
-
-teamSelect.addEventListener("change", () => {
-	team = teamSelect.value;
-	draw();
-});
-
-function draw() {
+// Load the field image
+fieldImage.src = "REEFSCAPE2025.png";
+fieldImage.onload = () => {
+	drawField();
+};
+function drawField() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-	// Draw Field Map (Left 500px)
-	let clipX = team === "blue" ? 0 : image.width / 2;
-	ctx.drawImage(image, clipX, 0, image.width / 2, image.height, 0, 0, 500, 500);
+	// Clip to half the image
+	const sourceWidth = fieldImage.width / 2;
+	const sourceHeight = fieldImage.height;
+	const sourceX = selectedTeam === "blue" ? 0 : sourceWidth;
+	const sourceY = 0;
 
-	// Draw Robot Arm (Right 500px)
-	drawRobotArm();
+	// Keep original proportions
+	const destWidth = canvas.width / 2;
+	const destHeight = canvas.height;
+	ctx.drawImage(fieldImage, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, destWidth, destHeight);
+
+	// Draw the robot arm AFTER the field image so it remains visible
+	window.drawRobotArm();
 }
 
-loadImage();
+
+
+// Event listener for team selection dropdown
+document.getElementById("teamSelect").addEventListener("change", (event) => {
+	selectedTeam = event.target.value; // Update team selection
+	drawField(); // Redraw the field with the correct clipping
+});
+
+// Export function for use in other files
+window.drawField = drawField;

@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Robot Arm Simulator</title>
+	<title>Robot Arm & Pathfinding</title>
 	<link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,37 +14,32 @@
 	</select>
 	<button id="modeToggle">Switch to Driving Mode</button>
 
-	<!-- Robot Arm Controls -->
+	<!-- Arm Controls -->
 	<div>
 		<label>Elevator Height: <input type="range" id="elevatorControl" value="50"></label>
 		<label>Arm Angle: <input type="range" id="armControl" value="0"></label>
 		<label>Wrist Angle: <input type="range" id="wristControl" value="0"></label>
-
-		<!-- Grabber Control Buttons -->
-		<div>
-			<button id="grabberLoad">Load (⟲ Counterclockwise)</button>
-			<button id="grabberUnload">Unload (⟳ Clockwise)</button>
-			<button id="grabberStop">Stop</button>
-		</div>
-
-
+		<button id="grabberLoad">Load</button>
+		<button id="grabberUnload">Unload</button>
+		<button id="grabberStop">Stop</button>
 	</div>
 
-	<canvas id="canvas" width="1000" height="500"></canvas> 
+	<canvas id="canvas" width="1000" height="500"></canvas>
 
-	<!-- Training Section -->
+	<!-- Saved Positions -->
 	<div id="trainingSection">
 		<h3>Train Arm Positions</h3>
 		<input type="text" id="positionName" placeholder="Enter position name">
 		<button id="savePosition">Save Position</button>
-
-		<h4>Saved Positions:</h4>
 		<ul id="savedPositions"></ul>
 	</div>
 
+	<script src="config.js"></script>
+	<script src="storage.js"></script>
 	<script src="field.js"></script>
+	<script src="pathfinding.js"></script>
 	<script src="robot_arm.js"></script>
-	<script src="controls.js"></script>
 	<script src="training.js"></script>
+	<script src="controls.js"></script>
 </body>
 </html>

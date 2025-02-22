@@ -4,6 +4,8 @@ let wristAngle = 0;
 let grabberAngle = 0;
 
 function drawRobotArm() {
+	// DO NOT call drawField() here to prevent infinite recursion
+
 	const baseX = 750;
 	const baseY = 400;
 	const elevatorHeightPixels = elevatorHeight * 2;
@@ -65,7 +67,6 @@ function drawRobotArm() {
 	}
 
 	// Draw the Tusk (backwards 7 shape wrapping around 1/4 of grabber)
-	// Draw the Tusk (backwards 7 shape wrapping around 1/4 of grabber)
 	const tuskStartAngle = (-armAngle - wristAngle) * (Math.PI / 180); // Align with wrist rotation
 
 	// Attach the tusk to the **left** side of the grabber at 0 degrees, shifted 5px left
@@ -87,6 +88,7 @@ function drawRobotArm() {
 	ctx.lineTo(tuskEndX, tuskEndY);
 	ctx.lineTo(tuskHookX, tuskHookY);
 	ctx.stroke();
-
-
 }
+
+// Ensure `drawRobotArm()` can be called externally
+window.drawRobotArm = drawRobotArm;
