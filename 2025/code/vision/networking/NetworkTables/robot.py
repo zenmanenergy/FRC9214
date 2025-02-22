@@ -17,4 +17,4 @@ class MyRobot(wpilib.TimedRobot):
 	 
 
 if __name__ == "__main__":
-	pass
+	wpilib.run(MyRobot)
