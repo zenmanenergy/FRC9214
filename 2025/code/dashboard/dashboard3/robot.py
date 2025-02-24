@@ -5,7 +5,6 @@ class MyRobot(wpilib.TimedRobot):
 	def robotInit(self):
 		# Initialize NetworkTables
 		NetworkTables.initialize(server="roborio-9214-frc.local")
-		NetworkTables.initialize(server=192.168.1.125")  # Replace with your RoboRIO IP if needed
 		self.table = NetworkTables.getTable("robot_data")
 
 		# Check if connected to NetworkTables

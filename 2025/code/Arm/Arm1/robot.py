@@ -8,7 +8,7 @@ class MyRobot(wpilib.TimedRobot):
 
 	def teleopPeriodic(self):
 		# Fixed motor speed
-		fixed_speed = 0.25
+		fixed_speed = .5
 
 		# Elevator control (Left stick up/down)
 		elevator_speed = 0

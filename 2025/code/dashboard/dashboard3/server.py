@@ -9,7 +9,7 @@ app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading", logger=False, engineio_logger=False)
 
 # Connect to NetworkTables
-roborio_ip = "192.168.1.125"  # Update with actual RoboRIO IP
+roborio_ip = "roborio-9214-frc.local"  # Update with actual RoboRIO IP
 NetworkTables.initialize(server=roborio_ip)
 table = NetworkTables.getTable("robot_data")
 
