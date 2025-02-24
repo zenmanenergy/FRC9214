@@ -1,10 +1,9 @@
-import rev
+
 import wpilib
 from phoenix5 import WPI_TalonSRX, NeutralMode
 
 class Arm:
 	def __init__(self):
-		# Motor CAN IDs
 		self.LEFT_FRONT_MOTOR_ID = 1
 		self.LEFT_REAR_MOTOR_ID = 2
 		self.RIGHT_FRONT_MOTOR_ID = 3
