@@ -47,6 +47,32 @@ function draw() {
 	saveData();
 }
 
+document.addEventListener("keydown", (event) => {
+	if (event.key === "Delete" || event.key === "Backspace") {
+		if (selectedDot !== null) {
+			deleteDot(selectedDot);
+			selectedDot = null; // Clear selection after deletion
+			draw();
+		}
+	}
+});
+
+function deleteDot(dotIndex) {
+	// Remove the dot from the array
+	dots.splice(dotIndex, 1);
+
+	// Remove all connections that include the deleted dot
+	connections = connections.filter(conn => conn.start !== dotIndex && conn.end !== dotIndex);
+
+	// Adjust connection indices since dots have shifted
+	connections.forEach(conn => {
+		if (conn.start > dotIndex) conn.start--;
+		if (conn.end > dotIndex) conn.end--;
+	});
+
+	// Save updated data
+	saveData();
+}
 
 // Find a dot that was clicked
 function getClickedDot(x, y) {
