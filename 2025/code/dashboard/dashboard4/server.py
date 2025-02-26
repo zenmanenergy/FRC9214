@@ -3,6 +3,10 @@ from flask_socketio import SocketIO
 from networktables import NetworkTables
 import threading
 import time
+from vision import vision_loop  # Import the vision system
+
+vision_thread = threading.Thread(target=vision_loop, daemon=True)
+vision_thread.start()
 
 # Flask Setup
 app = Flask(__name__)
@@ -12,6 +16,7 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading", logge
 roborio_ip = "roborio-9214-frc.local"  # Update with actual RoboRIO IP
 NetworkTables.initialize(server=roborio_ip)
 table = NetworkTables.getTable("robot_data")
+
 
 # Wait for NetworkTables to connect
 time.sleep(1)  # Small delay to allow connection
