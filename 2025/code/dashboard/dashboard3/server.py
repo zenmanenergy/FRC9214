@@ -9,7 +9,7 @@ app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading", logger=False, engineio_logger=False)
 
 # Connect to NetworkTables
-roborio_ip = "roborio-9214-frc.local"  # Update with actual RoboRIO IP
+roborio_ip = "10.92.14.2"  # Update with actual RoboRIO IP
 NetworkTables.initialize(server=roborio_ip)
 table = NetworkTables.getTable("robot_data")
 
@@ -32,7 +32,7 @@ def handle_connect():
 @socketio.on("send_command")
 def receive_command(command):
 	print("Received command from browser:", command)
-	table.putString("dashboard_command", command)
+	table.putNumber(command["table"], command["number"])
 
 # Periodically send NetworkTables updates to browser
 def broadcast_data():

@@ -1,4 +1,4 @@
-import rev
+
 import wpilib
 from phoenix5 import WPI_TalonSRX, NeutralMode
 

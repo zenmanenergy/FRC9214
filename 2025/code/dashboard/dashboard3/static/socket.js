@@ -14,7 +14,7 @@ socket.on("disconnect", function () {
 
 // ✅ Show NetworkTables updates
 socket.on("update_data", function (data) {
-	console.log("📡 Received data:", data);
+	// console.log("📡 Received data:", data);
 	document.getElementById("x_position").innerText = (data.real_x_position ?? 0).toFixed(2);
 	document.getElementById("y_position").innerText = (data.real_y_position ?? 0).toFixed(2);
 	document.getElementById("elevator_value").innerText = (data.real_elevator ?? 0).toFixed(2);
@@ -30,7 +30,7 @@ let realWristAngle = 0;
 let realGrabberAngle = 0;
 
 socket.on("update_data", function(data) {
-	console.log("📡 Received data:", data);
+	// console.log("📡 Received data:", data);
 
 	// Ensure values are not undefined before calling .toFixed()
 	document.getElementById("x_position").innerText = (data.real_x_position ?? 0).toFixed(2);
@@ -58,22 +58,22 @@ function sendCommand(command) {
 
 // Attach commands to sliders
 document.getElementById("elevatorControl").addEventListener("input", (e) => {
-	sendCommand({ cmd_elevator: parseFloat(e.target.value) });
+	sendCommand({ table: "cmd_elevator", number: parseFloat(e.target.value) });
 });
 document.getElementById("armControl").addEventListener("input", (e) => {
-	sendCommand({ cmd_arm_angle: parseFloat(e.target.value) });
+	sendCommand({ table: "cmd_arm_angle", number: parseFloat(e.target.value) });
 });
 document.getElementById("wristControl").addEventListener("input", (e) => {
-	sendCommand({ cmd_wrist_angle: parseFloat(e.target.value) });
+	sendCommand({ table: "cmd_wrist_angle", number: parseFloat(e.target.value) });
 });
 
 // Grabber button controls
 document.getElementById("grabberLoad").addEventListener("click", () => {
-	sendCommand({ cmd_grabber_angle: -30 });
+	sendCommand({ table: "cmd_grabber_angle", number: -30 });
 });
 document.getElementById("grabberUnload").addEventListener("click", () => {
-	sendCommand({ cmd_grabber_angle: 30 });
+	sendCommand({ table: "cmd_grabber_angle", number: 30 });
 });
 document.getElementById("grabberStop").addEventListener("click", () => {
-	sendCommand({ cmd_grabber_angle: 0 });
+	sendCommand({ table: "cmd_grabber_angle", number: 0 });
 });
