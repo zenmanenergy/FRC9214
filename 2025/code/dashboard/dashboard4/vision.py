@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import os
 import math
+import time
 from networktables import NetworkTables
 
 # ✅ AprilTag Map (Field Positions in cm)
@@ -83,7 +84,7 @@ def vision_loop():
 		cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 		cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
-	print("Starting vision processing...")
+	print("Vision processing started...")
 
 	while True:
 		camera_readings = {}
@@ -107,7 +108,7 @@ def vision_loop():
 					# ✅ SolvePnP for Pose Estimation
 					ret, rvec, tvec = cv2.solvePnP(
 						np.array([[-0.082, -0.082, 0], [0.082, -0.082, 0],
-								  [0.082, 0.082, 0], [-0.082, 0.082, 0]], dtype=np.float32),
+								[0.082, 0.082, 0], [-0.082, 0.082, 0]], dtype=np.float32),
 						tag_corners, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
 
 					if ret:
@@ -125,19 +126,19 @@ def vision_loop():
 						if robot_pos:
 							camera_readings[cam_id] = robot_pos
 
-		# ✅ Compute Final Position and Update NetworkTables
+		# ✅ Every 5 seconds, update NetworkTables
+		time.sleep(5)
 		if camera_readings:
 			final_x = sum([p[0] for p in camera_readings.values()]) / len(camera_readings)
 			final_y = sum([p[1] for p in camera_readings.values()]) / len(camera_readings)
 			final_heading = sum([p[2] for p in camera_readings.values()]) / len(camera_readings)
 
-			table.putNumber("real_x_position", final_x)
-			table.putNumber("real_y_position", final_y)
-			table.putNumber("real_heading", final_heading)
+			# ✅ Send the computed position to NetworkTables (RoboRIO will handle broadcasting)
+			table.putNumber("vision_x_position", final_x)
+			table.putNumber("vision_y_position", final_y)
+			table.putNumber("vision_heading", final_heading)
 
-			print(f"Vision Position: X={final_x:.2f} cm, Y={final_y:.2f} cm, Heading={final_heading:.1f}°")
-
-		cv2.waitKey(1)
+			print(f"Updated Vision Position: X={final_x:.2f} cm, Y={final_y:.2f} cm, Heading={final_heading:.1f}°")
 
 	for cap in cameras.values():
 		cap.release()
