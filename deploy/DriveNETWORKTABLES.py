@@ -107,18 +107,23 @@ class Drive:
 		# print("Board yaw axis name:", yaw_axis_info.board_axis.name)   # e.g. 'kBoardAxisZ'
 		# print("Board yaw axis value:", yaw_axis_info.board_axis.value)
 	def getHeadingFromCameras(self):
-		fromCameraYaw = self.table.getNumber("heading", 1000)
+		fromCameraYaw = self.table.getNumber("vision_heading", 1000)
 
 
 		if self.fromCameraYaw != 1000:
 			print("zeroing yaw")
 			self.navx.zeroYaw()
-			self.table.putNumber("heading", 1000)
+			self.table.putNumber("vision_heading", 1000)
 			self.cameraYaw = fromCameraYaw
 
 	
 	def getHeading(self):
 		"""Returns the robot's current coordinates as a tuple (x, y) in mm."""
+
+		if self.table.getNumber("vision_heading") != 1000:
+			self.getHeadingFromCameras()
+
+
 		yaw = self.navx.getYaw() + self.cameraYaw
 		yaw = (yaw + 360) % 360
 		# print([self.navx.getFusedHeading(),self.navx.getCompassHeading(), self.navx.getYaw(),yaw, self.navx.isMagneticDisturbance(),self.navx.isMagnetometerCalibrated()])
