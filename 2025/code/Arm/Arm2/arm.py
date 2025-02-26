@@ -10,28 +10,9 @@ class Arm:
 		self.SHOULDER_MOTOR_ID = 12
 		self.GRABBER_MOTOR_ID = 13
 
-		# Speeds:
-		self.elevatorUpSpeedFactor=0.4
-		self.elevatorDownSpeedFactor=0.4
-		self.elevatorBreakSpeed=0.05
-
-		self.shoulderUpSpeedFactor=0.3
-		self.shoulderDownSpeedFactor=0.05
-		self.shoulderBreakSpeed=0.12
-
-		self.wristUpSpeedFactor=0.2
-		self.wristDownSpeedFactor=0.1
-		self.wristBreakSpeed=0.04
-
-		self.grabberInSpeedFactor=0.5
-		self.grabberOutSpeedFactor=0.5
-		self.grabberBreakSpeed=0.0
-
 		# Max Current Limits (Amps) - Adjust as needed
 		self.MAX_CURRENT = 60
 		  # Immediate shutoff threshold
-
-		
 
 
 		self.table = table
@@ -56,6 +37,7 @@ class Arm:
 		# Reset Encoders to 0 on Startup
 		self.elevator_encoder.setPosition(0)
 		self.shoulder_encoder.setPosition(0)
+
 		self.wrist_encoder.setPosition(0)
 		self.grabber_encoder.setPosition(0)
 
@@ -71,53 +53,6 @@ class Arm:
 		self.table.putNumber("real_grabber_angle",self.real_grabber_angle )
 		if debug:
 			print(f"REAL -> Elevator: {self.real_elevator_position}, Arm: {self.real_arm_angle}, Wrist: {self.real_wrist_angle}, Grabber: {self.real_grabber_angle}")
-
-	def control_motors(self, elevator_speed, shoulder_speed, wrist_speed, grabber_speed):
-		# self.check_current_limits()  # Ensure motors are not overloaded
-
-		# Elevator control (Left stick up/down)
-		if abs(elevator_speed) < 0.01:
-			elevator_speed=self.elevatorBreakSpeed
-		elif elevator_speed > 0:
-			elevator_speed = elevator_speed * self.elevatorUpSpeedFactor
-		elif elevator_speed < 0:
-			elevator_speed = elevator_speed * self.elevatorDownSpeedFactor
-		
-			
-
-
-		if abs(shoulder_speed) < 0.01:
-			shoulder_speed=self.shoulderBreakSpeed
-		elif shoulder_speed > 0:
-			shoulder_speed = shoulder_speed * self.shoulderUpSpeedFactor
-		elif shoulder_speed < 0:
-			shoulder_speed = shoulder_speed * self.shoulderDownSpeedFactor
-
-			
-			
-		if abs(wrist_speed) < 0.01:
-			wrist_speed=self.wristBreakSpeed
-		elif wrist_speed > 0:
-			wrist_speed = wrist_speed * self.wristUpSpeedFactor
-		elif wrist_speed < 0:
-			wrist_speed = wrist_speed * self.wristDownSpeedFactor
-
-		print("wrist_speed",wrist_speed)
-		
-
-		grabber_speed = grabber_speed * self.grabberInSpeedFactor
-		if grabber_speed < 0:
-			grabber_speed = grabber_speed * self.grabberOutSpeedFactor
-		if abs(grabber_speed) < 0.01:
-			grabber_speed=self.grabberBreakSpeed
-
-		
-
-		# Set motor speeds
-		self.elevator_motor.set(elevator_speed)
-		self.shoulder_motor.set(shoulder_speed)
-		self.wrist_motor.set(wrist_speed)
-		self.grabber_motor.set(grabber_speed)
 
 
 
@@ -139,4 +74,19 @@ class Arm:
 			print("Grabber overcurrent detected! Stopping motor.")
 			self.grabber_motor.set(0)
 
-	
+	def control_motors(self, elevator_speed, shoulder_speed, wrist_speed, grabber_speed):
+		"""Control motors while enforcing current limits."""
+		# self.check_current_limits()  # Ensure motors are not overloaded
+
+		# Set motor speeds
+		self.elevator_motor.set(elevator_speed)
+		self.shoulder_motor.set(shoulder_speed)
+		self.wrist_motor.set(wrist_speed)
+		self.grabber_motor.set(grabber_speed)
+
+	def stop_all_motors(self):
+		"""Stop all motors."""
+		self.elevator_motor.set(0)
+		self.shoulder_motor.set(0)
+		self.wrist_motor.set(0)
+		self.grabber_motor.set(0)
