@@ -2,7 +2,7 @@ import wpilib
 from networktables import NetworkTables
 from arm import Arm
 from DriveNETWORKTABLES import Drive
-from arm_calibration import calibrate_encoders
+from arm_calibration import ArmCalibration
 
 class MyRobot(wpilib.TimedRobot):
 	def robotInit(self):
@@ -13,6 +13,7 @@ class MyRobot(wpilib.TimedRobot):
 
 		self.arm = Arm(self.table)
 		self.drive = Drive(self.table)
+		self.calibration = ArmCalibration()
 
 
 		# Check if connected to NetworkTables
@@ -36,7 +37,7 @@ class MyRobot(wpilib.TimedRobot):
 		self.cmd_grabber_angle = 0
 
 
-		self.joystick = wpilib.Joystick(0)  # Using a standard joystick
+		self.ArmJoystick = wpilib.Joystick(0)  # Using a standard joystick
 		self.DriveJoystick = wpilib.Joystick(1)
 		
 		# Joystick:
@@ -50,8 +51,7 @@ class MyRobot(wpilib.TimedRobot):
 
 
 	def DrivePeriodic (self):
-		self.DRIVE_LEFT_THUMB_UPDOWN = self.DriveJoystick.getRawAxis(1)*0.5
-		self.DRIVE_RIGHT_THUMB_UPDOWN = self.DriveJoystick.getRawAxis(5)*0.5
+		
 		self.drive.set_motors(self.DRIVE_LEFT_THUMB_UPDOWN, self.DRIVE_RIGHT_THUMB_UPDOWN)
 
 
@@ -59,19 +59,19 @@ class MyRobot(wpilib.TimedRobot):
 
 
 	def JoyStickPeriodic(self):
-		self.LeftThumbUPDOWN=self.joystick.getRawAxis(1)*-1  #reverse the direction, so up is positive
+		self.LeftThumbUPDOWN=self.ArmJoystick.getRawAxis(1)*-1  #reverse the direction, so up is positive
 		if abs(self.LeftThumbUPDOWN) < 0.05:
 			self.LeftThumbUPDOWN=0
-		self.RightThumbUPDOWN=self.joystick.getRawAxis(5)*-1
+		self.RightThumbUPDOWN=self.ArmJoystick.getRawAxis(5)*-1
 		if abs(self.RightThumbUPDOWN) < 0.05:
 			self.RightThumbUPDOWN=0
-		self.RightThumbLEFTRIGHT=self.joystick.getRawAxis(4)
+		self.RightThumbLEFTRIGHT=self.ArmJoystick.getRawAxis(4)
 		if abs(self.RightThumbLEFTRIGHT) < 0.05:
 			self.RightThumbLEFTRIGHT=0
-		LeftTrigger=self.joystick.getRawAxis(2)*-1
+		LeftTrigger=self.ArmJoystick.getRawAxis(2)*-1
 		if abs(LeftTrigger) < 0.05:
 			LeftTrigger=0
-		RightTrigger=self.joystick.getRawAxis(3)
+		RightTrigger=self.ArmJoystick.getRawAxis(3)
 		if abs(RightTrigger) < 0.05:
 			RightTrigger=0
 		self.LeftORRightTrigger=0
@@ -84,19 +84,26 @@ class MyRobot(wpilib.TimedRobot):
 			self.LeftORRightTrigger=0
 
 		# print(self.LeftThumbUPDOWN,self.RightThumbUPDOWN,self.RightThumbLEFTRIGHT,LeftTrigger,RightTrigger,self.LeftORRightTrigger)
-		self.StartButton = self.joystick.getRawButton(8)  # Start button
-		self.AButton = self.joystick.getRawButton(1)  # A button
-		self.LBButton = self.joystick.getRawButton(5)  # LB button
+		self.StartButton = self.ArmJoystick.getRawButton(8)  # Start button
+		self.AButton = self.ArmJoystick.getRawButton(1)  # A button
+		self.LBButton = self.ArmJoystick.getRawButton(5)  # LB button
 
+		self.DRIVE_LEFT_THUMB_UPDOWN = self.DriveJoystick.getRawAxis(1)*0.5
+		self.DRIVE_RIGHT_THUMB_UPDOWN = self.DriveJoystick.getRawAxis(5)*0.5
+
+		self.DRIVE_A_Button = self.DriveJoystick.getRawButton(1)
 
 	def teleopPeriodic(self):
 		self.JoyStickPeriodic()
 
-
+		self.print_arm_values()
 		# self.DrivePeriodic()
 		
 		# # Control motors
-		# self.arm.control_motors(self.LeftThumbUPDOWN,self.RightThumbUPDOWN,self.RightThumbLEFTRIGHT,self.LeftORRightTrigger)
+		self.arm.control_elevator(self.LeftThumbUPDOWN)
+		self.arm.control_arm(self.RightThumbUPDOWN)
+		self.arm.control_wrist(self.RightThumbLEFTRIGHT)
+		self.arm.control_grabber(self.LeftORRightTrigger)
 
 
 
@@ -114,11 +121,31 @@ class MyRobot(wpilib.TimedRobot):
 		
 
 		# Get real-time data (real state)
-		# self.arm.periodic(True)
+		self.arm.periodic(debug=True)
 
-		if self.StartButton and self.AButton and self.LBButton:
+		if self.StartButton and self.AButton and self.LBButton and self.calibration.state == "idle":
 			print("[CALIBRATION] Triggered!")
-			calibrate_encoders(self.arm)  # Run calibration
+			self.calibration.start_calibration(self.arm)
+
+		# Update calibration process (non-blocking)
+		self.calibration.update(self.ArmJoystick, self.arm)
+
+	def print_arm_values(self):
+		"""Print the real-time values of the elevator, arm, and wrist when A is pressed on DriveJoystick."""
+		if self.DRIVE_A_Button:  # A button on DriveJoystick (Joystick 1)
+			# Ensure values are updated before printing
+			self.arm.periodic(debug=False)  
+
+			# Retrieve values from the arm instance
+			elevator_position = (self.arm.elevator_encoder.getPosition() - self.arm.elevator_zero_offset) * self.arm.elevator_cm_per_tick
+			arm_angle = (self.arm.shoulder_encoder.getPosition() - self.arm.shoulder_zero_offset) * self.arm.shoulder_deg_per_tick
+			wrist_angle = (self.arm.wrist_encoder.getPosition() - self.arm.wrist_zero_offset) * self.arm.wrist_deg_per_tick
+
+			print(f"Elevator: {elevator_position:.2f} cm, "
+				f"Arm: {arm_angle:.2f} degrees, "
+				f"Wrist: {wrist_angle:.2f} degrees")
+
+
 		
 
 if __name__ == "__main__":
