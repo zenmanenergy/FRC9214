@@ -36,6 +36,14 @@ class Drive:
 
 
 
+	def getHeading(self):
+		"""Returns the robot's current coordinates as a tuple (x, y) in mm."""
+		yaw = self.navx.getYaw() + self.cameraYaw
+		yaw = (yaw + 360) % 360
+		# print([self.navx.getFusedHeading(),self.navx.getCompassHeading(), self.navx.getYaw(),yaw, self.navx.isMagneticDisturbance(),self.navx.isMagnetometerCalibrated()])
+		
+		return yaw
+
 	# def control_motors(self, left_speed, right_speed):
 	# 	"""Control motors while enforcing current limits."""
 	

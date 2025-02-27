@@ -1,7 +1,7 @@
 import wpilib
 from networktables import NetworkTables
 from arm import Arm
-from drive import Drive
+from DriveNETWORKTABLES import Drive
 
 class MyRobot(wpilib.TimedRobot):
 	def robotInit(self):
@@ -49,9 +49,13 @@ class MyRobot(wpilib.TimedRobot):
 
 
 	def DrivePeriodic (self):
-		self.DRIVE_LEFT_THUMB_UPDOWN = self.DriveJoystick.getRawAxis(1)*0.3
-		self.DRIVE_RIGHT_THUMB_UPDOWN = self.DriveJoystick.getRawAxis(5)*0.3
-		self.drive.periodic(self.DRIVE_LEFT_THUMB_UPDOWN, self.DRIVE_RIGHT_THUMB_UPDOWN)
+		self.DRIVE_LEFT_THUMB_UPDOWN = self.DriveJoystick.getRawAxis(1)*0.5
+		self.DRIVE_RIGHT_THUMB_UPDOWN = self.DriveJoystick.getRawAxis(5)*0.5
+		self.drive.set_motors(self.DRIVE_LEFT_THUMB_UPDOWN, self.DRIVE_RIGHT_THUMB_UPDOWN)
+
+
+
+
 
 	def JoyStickPeriodic(self):
 		self.LeftThumbUPDOWN=self.joystick.getRawAxis(1)*-1  #reverse the direction, so up is positive

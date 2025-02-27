@@ -6,18 +6,24 @@ from networktables import NetworkTables
 
 
 class Drive:
-	def __init__(self):
+	def __init__(self, table):
 
 
-		NetworkTables.initialize(server="10.92.14.2")
+		# NetworkTables.initialize(server="10.92.14.2")
 		
-		self.table = NetworkTables.getTable("vision")
+		self.table = table
 
 		# Motor setup
-		self.left_front = WPI_TalonSRX(1)
-		self.left_rear = WPI_TalonSRX(4)
-		self.right_front = WPI_TalonSRX(3)
-		self.right_rear = WPI_TalonSRX(2)
+		self.LEFT_FRONT_MOTOR_ID = 4
+		self.LEFT_REAR_MOTOR_ID = 2
+		self.RIGHT_FRONT_MOTOR_ID = 3
+		self.RIGHT_REAR_MOTOR_ID = 1
+
+
+		self.left_front = WPI_TalonSRX(self.LEFT_FRONT_MOTOR_ID)
+		self.left_rear = WPI_TalonSRX(self.LEFT_REAR_MOTOR_ID)
+		self.right_front = WPI_TalonSRX(self.RIGHT_FRONT_MOTOR_ID)
+		self.right_rear = WPI_TalonSRX(self.RIGHT_REAR_MOTOR_ID)
 
 		self.left_front.setInverted(True)
 		self.left_rear.setInverted(True)
@@ -107,18 +113,22 @@ class Drive:
 		# print("Board yaw axis name:", yaw_axis_info.board_axis.name)   # e.g. 'kBoardAxisZ'
 		# print("Board yaw axis value:", yaw_axis_info.board_axis.value)
 	def getHeadingFromCameras(self):
-		fromCameraYaw = self.table.getNumber("heading", 1000)
+		fromCameraYaw = self.table.getNumber("vision_heading", 1000)
 
 
 		if self.fromCameraYaw != 1000:
 			print("zeroing yaw")
 			self.navx.zeroYaw()
-			self.table.putNumber("heading", 1000)
+			self.table.putNumber("vision_heading", 1000)
 			self.cameraYaw = fromCameraYaw
 
 	
 	def getHeading(self):
 		"""Returns the robot's current coordinates as a tuple (x, y) in mm."""
+		if self.table.getNumber("vision_heading") != 1000:
+			self.getHeadingFromCameras()
+
+
 		yaw = self.navx.getYaw() + self.cameraYaw
 		yaw = (yaw + 360) % 360
 		# print([self.navx.getFusedHeading(),self.navx.getCompassHeading(), self.navx.getYaw(),yaw, self.navx.isMagneticDisturbance(),self.navx.isMagnetometerCalibrated()])
