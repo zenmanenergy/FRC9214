@@ -72,6 +72,8 @@ class Arm:
 		if debug:
 			print(f"REAL -> Elevator: {self.real_elevator_position}, Arm: {self.real_arm_angle}, Wrist: {self.real_wrist_angle}, Grabber: {self.real_grabber_angle}")
 
+	
+
 	def control_motors(self, elevator_speed, shoulder_speed, wrist_speed, grabber_speed):
 		# self.check_current_limits()  # Ensure motors are not overloaded
 
