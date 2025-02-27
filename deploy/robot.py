@@ -83,7 +83,9 @@ class MyRobot(wpilib.TimedRobot):
 			self.LeftORRightTrigger=0
 
 		# print(self.LeftThumbUPDOWN,self.RightThumbUPDOWN,self.RightThumbLEFTRIGHT,LeftTrigger,RightTrigger,self.LeftORRightTrigger)
-		
+		self.StartButton = self.joystick.getRawButton(8)  # Start button
+		self.AButton = self.joystick.getRawButton(1)  # A button
+		self.LBButton = self.joystick.getRawButton(5)  # LB button
 
 	def teleopPeriodic(self):
 		self.JoyStickPeriodic()
@@ -106,22 +108,14 @@ class MyRobot(wpilib.TimedRobot):
 		# Print received commands
 		print(f"CMD -> Elevator: {self.cmd_elevator_position}, Arm: {self.cmd_arm_angle}, Wrist: {self.cmd_wrist_angle}, Grabber: {self.cmd_grabber_angle}")
 
-		# Apply commanded values to real robot movement
-		# if abs(self.real_elevator_position - self.cmd_elevator_position) > 0.1:
-		# 	self.real_elevator_position += (self.cmd_elevator_position - self.real_elevator_position) * 0.2
-		# if abs(self.real_arm_angle - self.cmd_arm_angle) > 0.1:
-		# 	self.real_arm_angle += (self.cmd_arm_angle - self.real_arm_angle) * 0.2
-		# if abs(self.real_wrist_angle - self.cmd_wrist_angle) > 0.1:
-		# 	self.real_wrist_angle += (self.cmd_wrist_angle - self.real_wrist_angle) * 0.2
-		# if abs(self.real_grabber_angle - self.cmd_grabber_angle) > 0.1:
-		# 	self.real_grabber_angle += (self.cmd_grabber_angle - self.real_grabber_angle) * 0.2
+		
 
 		# Get real-time data (real state)
 		# self.arm.periodic(True)
 
-
-
-		# Print real positions to confirm updates
+		if self.StartButton and self.AButton and self.LBButton:
+			print("\n[CALIBRATION] Triggered!")
+			calibrate_encoders(self.arm)  # Run calibration
 		
 
 if __name__ == "__main__":
