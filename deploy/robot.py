@@ -92,6 +92,7 @@ class MyRobot(wpilib.TimedRobot):
 	def teleopPeriodic(self):
 		self.JoyStickPeriodic()
 
+
 		# self.DrivePeriodic()
 		
 		# # Control motors

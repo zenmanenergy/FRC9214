@@ -14,4 +14,7 @@ robotpy_extras = ["phoenix5","rev","navx"]
 
 
 # Other pip packages to install
-requires = ["pynetworktables"]
+requires = [
+	"pynetworktables",
+	"robotpy-commands-v2==2025.3.1.1"
+]
