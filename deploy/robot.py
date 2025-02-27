@@ -2,6 +2,7 @@ import wpilib
 from networktables import NetworkTables
 from arm import Arm
 from DriveNETWORKTABLES import Drive
+from arm_calibration import calibrate_encoders
 
 class MyRobot(wpilib.TimedRobot):
 	def robotInit(self):
@@ -87,13 +88,14 @@ class MyRobot(wpilib.TimedRobot):
 		self.AButton = self.joystick.getRawButton(1)  # A button
 		self.LBButton = self.joystick.getRawButton(5)  # LB button
 
+
 	def teleopPeriodic(self):
 		self.JoyStickPeriodic()
 
-		self.DrivePeriodic()
+		# self.DrivePeriodic()
 		
-		# Control motors
-		self.arm.control_motors(self.LeftThumbUPDOWN,self.RightThumbUPDOWN,self.RightThumbLEFTRIGHT,self.LeftORRightTrigger)
+		# # Control motors
+		# self.arm.control_motors(self.LeftThumbUPDOWN,self.RightThumbUPDOWN,self.RightThumbLEFTRIGHT,self.LeftORRightTrigger)
 
 
 
@@ -106,7 +108,7 @@ class MyRobot(wpilib.TimedRobot):
 		self.cmd_grabber_angle = self.table.getNumber("cmd_grabber_angle", self.cmd_grabber_angle)
 
 		# Print received commands
-		print(f"CMD -> Elevator: {self.cmd_elevator_position}, Arm: {self.cmd_arm_angle}, Wrist: {self.cmd_wrist_angle}, Grabber: {self.cmd_grabber_angle}")
+		# print(f"CMD -> Elevator: {self.cmd_elevator_position}, Arm: {self.cmd_arm_angle}, Wrist: {self.cmd_wrist_angle}, Grabber: {self.cmd_grabber_angle}")
 
 		
 
@@ -114,7 +116,7 @@ class MyRobot(wpilib.TimedRobot):
 		# self.arm.periodic(True)
 
 		if self.StartButton and self.AButton and self.LBButton:
-			print("\n[CALIBRATION] Triggered!")
+			print("[CALIBRATION] Triggered!")
 			calibrate_encoders(self.arm)  # Run calibration
 		
 
