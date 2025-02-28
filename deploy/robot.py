@@ -47,13 +47,21 @@ class MyRobot(wpilib.TimedRobot):
 		self.RightThumbUPDOWN=0
 		self.RightThumbLEFTRIGHT=0
 		self.LeftORRightTrigger=0
+
+		self.Zeroed=False
 		
+	def disabledInit(self):
+		self.Zeroed=False
 
+	def autonomousInit(self):
+		if not self.Zeroed:
+			self.arm.resetEncoders()  # Reset encoders once
+			self.Zeroed = True
 
-	def DrivePeriodic (self):
-		
-		self.drive.set_motors(self.DRIVE_LEFT_THUMB_UPDOWN, self.DRIVE_RIGHT_THUMB_UPDOWN)
-
+	def teleopInit(self):
+		if not self.Zeroed:
+			self.arm.resetEncoders()  # Reset encoders once
+			self.Zeroed = True
 
 
 
@@ -96,12 +104,12 @@ class MyRobot(wpilib.TimedRobot):
 	def teleopPeriodic(self):
 		self.JoyStickPeriodic()
 
-		self.print_arm_values()
-		# self.DrivePeriodic()
+		# self.print_arm_values()
+		self.drive.set_motors(self.DRIVE_LEFT_THUMB_UPDOWN, self.DRIVE_RIGHT_THUMB_UPDOWN)
 		
 		# # Control motors
 		self.arm.control_elevator(self.LeftThumbUPDOWN)
-		self.arm.control_arm(self.RightThumbUPDOWN)
+		self.arm.control_shoulder(self.RightThumbUPDOWN)
 		self.arm.control_wrist(self.RightThumbLEFTRIGHT)
 		self.arm.control_grabber(self.LeftORRightTrigger)
 
@@ -123,12 +131,12 @@ class MyRobot(wpilib.TimedRobot):
 		# Get real-time data (real state)
 		self.arm.periodic(debug=True)
 
-		if self.StartButton and self.AButton and self.LBButton and self.calibration.state == "idle":
-			print("[CALIBRATION] Triggered!")
-			self.calibration.start_calibration(self.arm)
+		# if self.StartButton and self.AButton and self.LBButton and self.calibration.state == "idle":
+		# 	print("[CALIBRATION] Triggered!")
+		# 	self.calibration.start_calibration(self.arm)
 
-		# Update calibration process (non-blocking)
-		self.calibration.update(self.ArmJoystick, self.arm)
+		# # Update calibration process (non-blocking)
+		# self.calibration.update(self.ArmJoystick, self.arm)
 
 	def print_arm_values(self):
 		"""Print the real-time values of the elevator, arm, and wrist when A is pressed on DriveJoystick."""
