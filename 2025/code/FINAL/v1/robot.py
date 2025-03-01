@@ -130,7 +130,7 @@ class MyRobot(wpilib.TimedRobot):
 
 		# Get real-time data (real state)
 		self.arm.periodic(debug=True)
-
+		self.arm.update_movement()
 		# if self.StartButton and self.AButton and self.LBButton and self.calibration.state == "idle":
 		# 	print("[CALIBRATION] Triggered!")
 		# 	self.calibration.start_calibration(self.arm)
