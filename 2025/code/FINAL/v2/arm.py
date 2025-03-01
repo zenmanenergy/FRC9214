@@ -100,21 +100,23 @@ class Arm:
 		self.prev_shoulder_position = self.shoulder_encoder.getPosition()
 		self.shoulder_movements = deque(maxlen=5)  # Store last 5 movements to smooth braking
 		self.braking_force = 0.0
-
-		# self.shoulder_pid = PIDController(0.05, 0.0, 0.01)  # Tunable values
-
-		# # Setpoint for PID (target: zero movement)
-		# self.shoulder_pid.setSetpoint(0.0)
-		# self.shoulder_pid.setTolerance(0.001)
-
 		self.prev_wrist_angle = self.wrist_encoder.getPosition()  # Initialize to avoid NoneType error
 
-		# self.wrist_pid = PIDController(0.05, 0.0, 0.01)  # Tunable values
-		# self.wrist_pid.setTolerance(0.5)  # Allow small error without corrections
-		# self.wrist_pid.setIntegratorRange(-0.05, 0.05)  # Prevent windup
 
-		# Last known position to hold when joystick is neutral
-		self.wrist_hold_position = None
+		# Elevator PID Controller
+		self.elevator_pid = PIDController(0.05, 0.0, 0.01)  # Tunable values
+		self.elevator_pid.setTolerance(1)  # Allow small error before stopping
+
+		# Shoulder PID Controller
+		self.shoulder_pid = PIDController(0.05, 0.0, 0.01)  # Tunable values
+		self.shoulder_pid.setTolerance(0.001)  # Small tolerance for precision
+
+		# Wrist PID Controller
+		self.wrist_pid = PIDController(0.05, 0.0, 0.01)  # Tunable values
+		self.wrist_pid.setTolerance(0.5)  # Allow small error before stopping
+		self.wrist_pid.setIntegratorRange(-0.05, 0.05)  # Prevent windup
+
+
 	
 	def resetEncoders(self):
 		"""Resets all encoders to zero."""
@@ -164,26 +166,44 @@ class Arm:
 		
 
 	def update_movement(self):
-		"""Moves the arm toward target positions without blocking."""
+		"""Moves the arm toward target positions smoothly using PID controllers."""
 		if self.target_elevator is None or self.target_shoulder is None or self.target_wrist is None:
 			return  # No active movement target
 
-		# Move elevator if needed
+		# Move elevator using PID
 		if abs(self.real_elevator_position - self.target_elevator) > 1:
-			elevator_speed = (self.target_elevator - self.real_elevator_position) * 0.05
+			pid_output = self.elevator_pid.calculate(self.real_elevator_position, self.target_elevator)
+			elevator_speed = max(min(pid_output, 0.4), -0.4)  # Limit max speed to 0.4
+
+			# Ensure elevator speed obeys movement limits
+			if not self.limit_elevator(elevator_speed):
+				elevator_speed = 0
+
 			self.control_elevator(elevator_speed)
 
-		# Move shoulder if needed
+		# Move shoulder using PID
 		if abs(self.real_arm_angle - self.target_shoulder) > 2:
-			shoulder_speed = (self.target_shoulder - self.real_arm_angle) * 0.05
+			pid_output = self.shoulder_pid.calculate(self.real_arm_angle, self.target_shoulder)
+			shoulder_speed = max(min(pid_output, 0.3), -0.3)  # Limit max speed to 0.3
+
+			# Ensure shoulder speed obeys movement limits
+			if not self.limit_shoulder(shoulder_speed):
+				shoulder_speed = 0
+
 			self.control_shoulder(shoulder_speed)
 
-		# Move wrist if needed
+		# Move wrist using PID
 		if abs(self.real_wrist_angle - self.target_wrist) > 2:
-			wrist_speed = (self.target_wrist - self.real_wrist_angle) * 0.03
+			pid_output = self.wrist_pid.calculate(self.real_wrist_angle, self.target_wrist)
+			wrist_speed = max(min(pid_output, 0.2), -0.2)  # Limit max speed to 0.2
+
+			# Ensure wrist speed obeys movement limits
+			if not self.limit_wrist(wrist_speed):
+				wrist_speed = 0
+
 			self.control_wrist(wrist_speed)
 
-		# Stop movement if all targets are reached
+		# Stop movement once close to target
 		if (
 			abs(self.real_elevator_position - self.target_elevator) <= 1 and
 			abs(self.real_arm_angle - self.target_shoulder) <= 2 and
@@ -193,6 +213,8 @@ class Arm:
 			self.target_elevator = None
 			self.target_shoulder = None
 			self.target_wrist = None
+
+
 
 	def set_target_positions(self, elevator, shoulder, wrist):
 			"""Sets the target positions for movement."""
