@@ -31,6 +31,8 @@ function draw() {
 	dots.forEach((dot, index) => {
 		ctx.beginPath();
 		ctx.arc(dot.x, dot.y, 5, 0, Math.PI * 2);
+		console.log("x: " + (dot.x / 1.475))
+		console.log("y: " + Math.abs(500-dot.y))
 		ctx.fillStyle = index === selectedDot ? "red" : "blue";
 		ctx.fill();
 	});

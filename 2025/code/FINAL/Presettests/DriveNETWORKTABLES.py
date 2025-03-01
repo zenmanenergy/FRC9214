@@ -69,8 +69,7 @@ class Drive:
 		self.turn_target = 0
 
 		# Coordinate state (in mm)
-		self.current_x = 0
-		self.current_y = 0
+		self.setCoordinates(0,0)
 		# These store the starting coordinates for a travel command.
 		self.start_x = 0
 		self.start_y = 0
@@ -152,8 +151,7 @@ class Drive:
 		"""Resets encoders, stores the starting coordinates and heading, and sets the target travel distance."""
 		self.reset_encoders()
 		# Save the coordinate where travel starts.
-		self.start_x = self.current_x
-		self.start_y = self.current_y
+		self.start_x, self.start_y = self.getCoordinates()
 		# Record the heading at the start of travel.
 		self.travel_start_heading = self.getHeading()
 		# Adjust target distance to account for overshoot.
@@ -165,6 +163,7 @@ class Drive:
 		self.traveling = True
 
 	def update_travel(self, base_speed=0.4):
+		# print('update_travel')
 
 		if not self.traveling:
 			return False
@@ -313,7 +312,7 @@ class Drive:
 		
 
 
-
+	# move to x, y position 
 	def start_navigation(self, current_x, current_y, target_x, target_y):
 		print('start_navigation')
 
@@ -403,5 +402,6 @@ class Drive:
 		self.navigating = self.update_navigation()
 		return self.navigating
 
+	
 
 

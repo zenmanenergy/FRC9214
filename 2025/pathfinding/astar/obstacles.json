@@ -178,5 +178,9 @@
     "940,340": "occupied",
     "930,340": "occupied",
     "920,330": "occupied",
-    "910,330": "occupied"
+    "910,330": "occupied",
+    "560,330": "occupied",
+    "240,300": "occupied",
+    "240,310": "occupied",
+    "500,280": "occupied"
 }

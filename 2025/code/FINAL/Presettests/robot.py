@@ -1,9 +1,9 @@
 import wpilib
 from networktables import NetworkTables
 from arm import Arm
-from DriveNETWORKTABLES import Drive
-from arm_calibration import ArmCalibration
-from Arm_Presets import ArmPresets
+# from DriveNETWORKTABLES import Drive
+# from arm_calibration import ArmCalibration
+# from Arm_Presets import ArmPresets
 
 class MyRobot(wpilib.TimedRobot):
 	def robotInit(self):
@@ -13,9 +13,9 @@ class MyRobot(wpilib.TimedRobot):
 		self.table = NetworkTables.getTable("robot_data")
 
 		self.arm = Arm(self.table)
-		self.drive = Drive(self.table)
-		self.calibration = ArmCalibration()
-		self.ap = ArmPresets(self.arm, self.table)
+		# self.drive = Drive(self.table)
+		# self.calibration = ArmCalibration()
+
 
 		# Check if connected to NetworkTables
 		if NetworkTables.isConnected():
@@ -39,7 +39,7 @@ class MyRobot(wpilib.TimedRobot):
 
 
 		self.ArmJoystick = wpilib.Joystick(0)  # Using a standard joystick
-		self.DriveJoystick = wpilib.Joystick(1)
+		# self.DriveJoystick = wpilib.Joystick(1)
 		
 		# Joystick:
 		self.LeftThumbUPDOWN=0
@@ -50,76 +50,31 @@ class MyRobot(wpilib.TimedRobot):
 		self.LeftORRightTrigger=0
 
 		self.Zeroed=False
-
-		self.speed = 1
-		self.timer = wpilib.Timer()
-		self.driveStep = 0
-
 		
 	def disabledInit(self):
 		self.Zeroed=False
-		self.arm.target_elevator = None
-		self.arm.target_wrist = None
-		self.arm.target_shoulder = None
 
-		
+	def autonomousInit(self):
+		if not self.Zeroed:
+			self.arm.resetEncoders()  # Reset encoders once
+			# self.drive.reset()
+			self.Zeroed = True
+
 		
 
 	def teleopInit(self):
 		if not self.Zeroed:
 			self.arm.resetEncoders()  # Reset encoders once
-			self.drive.reset()
+			# self.drive.reset()
 			self.Zeroed = True
-
-	def autonomousInit(self):
-		if not self.Zeroed:
-			self.arm.resetEncoders()  # Reset encoders once
-			self.drive.reset()
-			self.Zeroed = True
-		# self.drive.start_travel(100)
-
-		self.driveStep = 0
-
-
-		self.ap.gotopreset("load")
-
-			
-		
-
 
 	def autonomousPeriodic(self):
-
-		# self.drive.update_travel()
-		if self.driveStep == 0:
-			if self.drive_forward_for_time(-0.4, 2):
-				self.driveStep += 1
-
 		
 
 
-		
 
 		return super().autonomousPeriodic()
 
-
-	def drive_forward_for_time(self, speed, duration):
-		if self.timer.get() == 0:
-			self.timer.start()
-			self.drive.left_front.set(-speed)
-			self.drive.left_rear.set(-speed)
-			self.drive.right_front.set(speed)
-			self.drive.right_rear.set(speed)
-
-		if self.timer.get() >= duration:
-			self.drive.left_front.set(0)
-			self.drive.left_rear.set(0)
-			self.drive.right_front.set(0)
-			self.drive.right_rear.set(0)
-			self.timer.stop()
-			self.timer.reset()
-			return True
-
-		return False
 
 
 
@@ -146,7 +101,19 @@ class MyRobot(wpilib.TimedRobot):
 			self.LeftORRightTrigger=RightTrigger
 			
 
-		self.drive.update_travel()
+		# if self.AButton:
+		# 	ArmPresets.gotopreset("load")
+		# 	print("load")
+		# if self.YButton:
+		# 	ArmPresets.gotopreset("L4")
+		# 	print("L4")
+		# if self.XButton:
+		# 	ArmPresets.gotopreset("L3")
+		# 	print("L3")
+		# if self.BButton:
+		# 	ArmPresets.gotopreset("L2")
+		# 	print("L2")
+
 
 
 		if abs(self.LeftORRightTrigger) < 0.05:
@@ -161,39 +128,25 @@ class MyRobot(wpilib.TimedRobot):
 		self.XButton = self.ArmJoystick.getRawButton(3)
 		self.BButton = self.ArmJoystick.getRawButton(2)
 
-		if self.AButton:
-			# self.ap.gotopreset("load")
-			print("load")
-		# if self.YButton:
-		# 	if self.drive.traveling == False:
-		# 		self.drive.start_travel(100)
-			# self.ap.gotopreset("L4")
-			# print("L4")
-		# if self.XButton:
-		# 	self.ap.gotopreset("L3")
-		# 	print("L3")
-		# if self.BButton:
-		# 	self.ap.gotopreset("L2")
-		# 	print("L2")
+		# if self.AButton:
+		# 	print(Arm.real_elevator_position, Arm.real_arm_angle, Arm.real_wrist_angle)
 
+		# self.DRIVE_LEFT_THUMB_UPDOWN = self.DriveJoystick.getRawAxis(1)*0.5
+		# self.DRIVE_RIGHT_THUMB_UPDOWN = self.DriveJoystick.getRawAxis(5)*0.5
 
-
-		self.DRIVE_LEFT_THUMB_UPDOWN = self.DriveJoystick.getRawAxis(1)*0.5
-		self.DRIVE_RIGHT_THUMB_UPDOWN = self.DriveJoystick.getRawAxis(5)*0.5
-
-		self.DRIVE_A_Button = self.DriveJoystick.getRawButton(1)
+		# self.DRIVE_A_Button = self.DriveJoystick.getRawButton(1)
 
 	def teleopPeriodic(self):
 		self.JoyStickPeriodic()
 
 		# self.print_arm_values()
-		self.drive.set_motors(self.DRIVE_LEFT_THUMB_UPDOWN, self.DRIVE_RIGHT_THUMB_UPDOWN)
+		# self.drive.set_motors(self.DRIVE_LEFT_THUMB_UPDOWN, self.DRIVE_RIGHT_THUMB_UPDOWN)
 		
 		# # Control motors
 		self.arm.control_elevator(self.LeftThumbUPDOWN)
 		self.arm.control_shoulder(self.RightThumbUPDOWN)
 		self.arm.control_wrist(self.RightThumbLEFTRIGHT)
-		self.arm.control_grabber(self.LeftORRightTrigger)
+		self.arm.control_grabber(self.LeftORRightTrigger * .5)
 
 
 

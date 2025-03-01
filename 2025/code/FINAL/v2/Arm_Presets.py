@@ -5,14 +5,15 @@ class ArmPresets:
 
 		# Define preset positions
 		self.presets = {
-			"load": {"elevator": 40, "shoulder": 140, "wrist": 45},
-			"stow": {"elevator": 10, "shoulder": 90, "wrist": 0},
-			"score_high": {"elevator": 80, "shoulder": 160, "wrist": 30},
-			"score_low": {"elevator": 20, "shoulder": 120, "wrist": 10},
-			"pickup": {"elevator": 5, "shoulder": 60, "wrist": -10},
+			"L2": {"elevator": 0, "shoulder": 0, "wrist": 0},
+			"L3": {"elevator": 0, "shoulder": 0, "wrist": 0},
+			"L4": {"elevator": 0, "shoulder": 0, "wrist": 0},
+			"load": {"elevator": 2, "shoulder": 109, "wrist": 30},
 		}
+		
 
 	def gotopreset(self, name):
+		
 		"""Sets the target positions for a preset without blocking."""
 		if name not in self.presets:
 			print(f"Preset '{name}' not found.")

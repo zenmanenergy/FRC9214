@@ -13,15 +13,15 @@ socket.on("disconnect", function () {
 });
 
 // ✅ Show NetworkTables updates
-socket.on("update_data", function (data) {
-	console.log("📡 Received data:", data);
-	document.getElementById("x_position").innerText = (data.real_x_position ?? 0).toFixed(2);
-	document.getElementById("y_position").innerText = (data.real_y_position ?? 0).toFixed(2);
-	document.getElementById("elevator_value").innerText = (data.real_elevator ?? 0).toFixed(2);
-	document.getElementById("arm_angle").innerText = (data.real_arm_angle ?? 0).toFixed(2);
-	document.getElementById("wrist_angle").innerText = (data.real_wrist_angle ?? 0).toFixed(2);
-	document.getElementById("grabber_angle").innerText = (data.real_grabber_angle ?? 0).toFixed(2);
-});
+// socket.on("update_data", function (data) {
+// 	console.log("📡 Received data:", data);
+// 	document.getElementById("x_position").innerText = (data.real_x_position ?? 0).toFixed(2);
+// 	document.getElementById("y_position").innerText = (data.real_y_position ?? 0).toFixed(2);
+// 	document.getElementById("elevator_value").innerText = (data.real_elevator ?? 0).toFixed(2);
+// 	document.getElementById("arm_angle").innerText = (data.real_arm_angle ?? 0).toFixed(2);
+// 	document.getElementById("wrist_angle").innerText = (data.real_wrist_angle ?? 0).toFixed(2);
+// 	document.getElementById("grabber_angle").innerText = (data.real_grabber_angle ?? 0).toFixed(2);
+// });
 
 // Real robot state (from NetworkTables)
 let realElevatorHeight = 50;
@@ -30,7 +30,7 @@ let realWristAngle = 0;
 let realGrabberAngle = 0;
 
 socket.on("update_data", function(data) {
-	console.log("📡 Received data:", data);
+	// console.log("📡 Received data:", data);
 
 	// Ensure values are not undefined before calling .toFixed()
 	document.getElementById("x_position").innerText = (data.real_x_position ?? 0).toFixed(2);

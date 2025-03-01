@@ -13,6 +13,8 @@ class Drive:
 		
 		self.table = table
 
+		self.cameraYaw = 0
+
 		# Motor setup
 		self.LEFT_FRONT_MOTOR_ID = 4
 		self.LEFT_REAR_MOTOR_ID = 2
@@ -40,8 +42,8 @@ class Drive:
 		self.WHEEL_CIRCUMFERENCE_MM = self.WHEEL_DIAMETER_MM * 3.14159
 		self.ENCODER_CPR = 2048
 
-		self.left_encoder = wpilib.Encoder(1, 2)
-		self.right_encoder = wpilib.Encoder(3, 4)
+		self.left_encoder = wpilib.Encoder(0, 1)
+		self.right_encoder = wpilib.Encoder(8, 9)
 		dist_per_pulse = self.WHEEL_CIRCUMFERENCE_MM / self.ENCODER_CPR
 		self.left_encoder.setDistancePerPulse(dist_per_pulse)
 		self.right_encoder.setDistancePerPulse(dist_per_pulse)
@@ -69,8 +71,7 @@ class Drive:
 		self.turn_target = 0
 
 		# Coordinate state (in mm)
-		self.current_x = 0
-		self.current_y = 0
+		self.setCoordinates(0,0)
 		# These store the starting coordinates for a travel command.
 		self.start_x = 0
 		self.start_y = 0
@@ -113,21 +114,21 @@ class Drive:
 		# print("Board yaw axis name:", yaw_axis_info.board_axis.name)   # e.g. 'kBoardAxisZ'
 		# print("Board yaw axis value:", yaw_axis_info.board_axis.value)
 	def getHeadingFromCameras(self):
-		fromCameraYaw = self.table.getNumber("vision_heading", 1000)
+		self.fromCameraYaw = self.table.getNumber("vision_heading", 1000)
 
 
 		if self.fromCameraYaw != 1000:
 			print("zeroing yaw")
 			self.navx.zeroYaw()
 			self.table.putNumber("vision_heading", 1000)
-			self.cameraYaw = fromCameraYaw
+			self.cameraYaw = self.fromCameraYaw
 
 	
 	def getHeading(self):
 		"""Returns the robot's current coordinates as a tuple (x, y) in mm."""
-		if self.table.getNumber("vision_heading") != 1000:
+		if self.table.getNumber("vision_heading", 1000) != 1000:
 			self.getHeadingFromCameras()
-
+		
 
 		yaw = self.navx.getYaw() + self.cameraYaw
 		yaw = (yaw + 360) % 360
@@ -141,6 +142,12 @@ class Drive:
 		self.right_encoder.reset()
 
 	def set_motors(self, left_speed, right_speed):
+		if abs(left_speed) < 0.001:
+			return False
+		if abs(right_speed) < 0.001:
+			return False
+		
+		
 		"""Sets motor speeds."""
 		self.left_front.set(left_speed)
 		self.left_rear.set(left_speed)
@@ -152,8 +159,7 @@ class Drive:
 		"""Resets encoders, stores the starting coordinates and heading, and sets the target travel distance."""
 		self.reset_encoders()
 		# Save the coordinate where travel starts.
-		self.start_x = self.current_x
-		self.start_y = self.current_y
+		self.start_x, self.start_y = self.getCoordinates()
 		# Record the heading at the start of travel.
 		self.travel_start_heading = self.getHeading()
 		# Adjust target distance to account for overshoot.
@@ -219,7 +225,17 @@ class Drive:
 		self.current_x = self.start_x + avg_dist * math.cos(heading_rad) * direction
 		self.current_y = self.start_y + avg_dist * math.sin(heading_rad) * direction
 
+		# print(left_speed, right_speed)
+
 		# Continue moving if the target distance hasn't been reached.
+		
+		# print(avg_dist)
+		# print(self.target_distance)
+		# print("left_dist: " + str(left_dist))
+		
+		# print("right: ", right_dist)
+
+
 		if avg_dist < abs(self.target_distance):
 			self.set_motors(left_speed, right_speed)
 			return True

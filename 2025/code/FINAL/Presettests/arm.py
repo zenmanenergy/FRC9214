@@ -28,7 +28,7 @@ class Arm:
 		self.shoulderUpSpeedFactor = 0.3
 		self.shoulderDownSpeedFactor = 0.05
 		self.shoulderBreakSpeed = 0.12
-		self.minShoulderBreakSpeed = 0.06
+		self.minShoulderBreakSpeed = 0.04
 		self.maxShoulderBreakSpeed = 0.06
 		self.shoulder_min_angle = 10
 		self.shoulder_max_angle = 140
@@ -36,7 +36,7 @@ class Arm:
 		self.wristUpSpeedFactor = 0.2
 		self.wristDownSpeedFactor = 0.25
 		self.wristBreakSpeed = 0.03
-		self.wrist_min_angle = -100
+		self.wrist_min_angle = -50
 		self.wrist_max_angle = 220
 
 		self.grabberInSpeedFactor = 0.5
@@ -165,35 +165,35 @@ class Arm:
 		
 
 	def update_movement(self):
-		"""Moves the arm toward target positions without blocking."""
-		if self.target_elevator is None or self.target_shoulder is None or self.target_wrist is None:
-			return  # No active movement target
+			"""Moves the arm toward target positions without blocking."""
+			if self.target_elevator is None or self.target_shoulder is None or self.target_wrist is None:
+				return  # No active movement target
 
-		# Move elevator if needed
-		if abs(self.real_elevator_position - self.target_elevator) > 1:
-			elevator_speed = (self.target_elevator - self.real_elevator_position) * 0.05
-			self.control_elevator(elevator_speed)
+			# Move elevator if needed
+			if abs(self.real_elevator_position - self.target_elevator) > 1:
+				elevator_speed = (self.target_elevator - self.real_elevator_position) * 0.05
+				self.control_elevator(elevator_speed)
 
-		# Move shoulder if needed
-		if abs(self.real_arm_angle - self.target_shoulder) > 2:
-			shoulder_speed = (self.target_shoulder - self.real_arm_angle) * 0.05
-			self.control_shoulder(shoulder_speed)
+			# Move shoulder if needed
+			if abs(self.real_arm_angle - self.target_shoulder) > 2:
+				shoulder_speed = (self.target_shoulder - self.real_arm_angle) * 0.05
+				self.control_shoulder(shoulder_speed)
 
-		# Move wrist if needed
-		if abs(self.real_wrist_angle - self.target_wrist) > 2:
-			wrist_speed = (self.target_wrist - self.real_wrist_angle) * 0.03
-			self.control_wrist(wrist_speed)
+			# Move wrist if needed
+			if abs(self.real_wrist_angle - self.target_wrist) > 2:
+				wrist_speed = (self.target_wrist - self.real_wrist_angle) * 0.05
+				self.control_wrist(wrist_speed)
 
-		# Stop movement if all targets are reached
-		if (
-			abs(self.real_elevator_position - self.target_elevator) <= 1 and
-			abs(self.real_arm_angle - self.target_shoulder) <= 2 and
-			abs(self.real_wrist_angle - self.target_wrist) <= 2
-		):
-			print(f"Reached preset target.")
-			self.target_elevator = None
-			self.target_shoulder = None
-			self.target_wrist = None
+			# Stop movement if all targets are reached
+			if (
+				abs(self.real_elevator_position - self.target_elevator) <= 1 and
+				abs(self.real_arm_angle - self.target_shoulder) <= 2 and
+				abs(self.real_wrist_angle - self.target_wrist) <= 2
+			):
+				print(f"Reached preset target.")
+				self.target_elevator = None
+				self.target_shoulder = None
+				self.target_wrist = None
 
 	def set_target_positions(self, elevator, shoulder, wrist):
 			"""Sets the target positions for movement."""
