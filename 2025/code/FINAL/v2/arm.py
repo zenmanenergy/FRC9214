@@ -95,24 +95,23 @@ class Arm:
 		self.prev_wrist_angle = 0
 		self.prev_grabber_angle = 0
 
-		self.shoulder_hold_position = None  # ✅ Fix for missing attribute
 		self.wrist_hold_position = None  # Ensure wrist PID has a hold position
 
 		self.prev_shoulder_position = self.shoulder_encoder.getPosition()
 		self.shoulder_movements = deque(maxlen=5)  # Store last 5 movements to smooth braking
 		self.braking_force = 0.0
 
-		self.shoulder_pid = PIDController(0.05, 0.0, 0.01)  # Tunable values
+		# self.shoulder_pid = PIDController(0.05, 0.0, 0.01)  # Tunable values
 
-		# Setpoint for PID (target: zero movement)
-		self.shoulder_pid.setSetpoint(0.0)
-		self.shoulder_pid.setTolerance(0.001)
+		# # Setpoint for PID (target: zero movement)
+		# self.shoulder_pid.setSetpoint(0.0)
+		# self.shoulder_pid.setTolerance(0.001)
 
 		self.prev_wrist_angle = self.wrist_encoder.getPosition()  # Initialize to avoid NoneType error
 
-		self.wrist_pid = PIDController(0.05, 0.0, 0.01)  # Tunable values
-		self.wrist_pid.setTolerance(0.5)  # Allow small error without corrections
-		self.wrist_pid.setIntegratorRange(-0.05, 0.05)  # Prevent windup
+		# self.wrist_pid = PIDController(0.05, 0.0, 0.01)  # Tunable values
+		# self.wrist_pid.setTolerance(0.5)  # Allow small error without corrections
+		# self.wrist_pid.setIntegratorRange(-0.05, 0.05)  # Prevent windup
 
 		# Last known position to hold when joystick is neutral
 		self.wrist_hold_position = None
@@ -241,9 +240,10 @@ class Arm:
 
 	def control_wrist(self, wrist_speed):
 		"""Controls the wrist motor with braking and limit checks."""
-		if not self.limit_wrist(wrist_speed):
-			wrist_speed = 0  # Prevent movement beyond limits
-		elif abs(wrist_speed) < 0.01:
+		# if not self.limit_wrist(wrist_speed):
+		# 	wrist_speed = 0  # Prevent movement beyond limits
+		# el
+		if abs(wrist_speed) < 0.01:
 			wrist_speed = self.wristBreakSpeed
 		elif wrist_speed > 0:
 			wrist_speed *= self.wristUpSpeedFactor
@@ -295,22 +295,6 @@ class Arm:
 
 
 
-	def check_current_limits(self):
-		"""Check if any motor exceeds max current and stop it immediately."""
-		if self.elevator_motor.getOutputCurrent() > self.MAX_CURRENT:
-			print("Elevator overcurrent detected! Stopping motor.")
-			self.elevator_motor.set(0)
-
-		if self.shoulder_motor.getOutputCurrent() > self.MAX_CURRENT:
-			print("Shoulder overcurrent detected! Stopping motor.")
-			self.shoulder_motor.set(0)
-
-		if self.wrist_motor.getOutputCurrent() > self.MAX_CURRENT:
-			print("Wrist overcurrent detected! Stopping motor.")
-			self.wrist_motor.set(0)
-
-		if self.grabber_motor.getOutputCurrent() > self.MAX_CURRENT:
-			print("Grabber overcurrent detected! Stopping motor.")
-			self.grabber_motor.set(0)
+	
 
 	

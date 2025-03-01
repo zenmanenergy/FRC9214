@@ -417,7 +417,6 @@ class Drive:
 		
 	
 		# Update travel while dynamically adjusting heading when needed
-		self.navigating = self.update_navigation()
 		return self.navigating
 
 	
