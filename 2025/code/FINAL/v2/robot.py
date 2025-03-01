@@ -3,6 +3,7 @@ from networktables import NetworkTables
 from arm import Arm
 from DriveNETWORKTABLES import Drive
 from arm_calibration import ArmCalibration
+import ArmPresets from Arm_Presets
 
 class MyRobot(wpilib.TimedRobot):
 	def robotInit(self):
@@ -88,6 +89,22 @@ class MyRobot(wpilib.TimedRobot):
 		if RightTrigger>0.1:
 			self.LeftORRightTrigger=RightTrigger
 			
+
+		if self.AButton:
+			ArmPresets.gotopreset("load")
+			print("load")
+		if self.YButton:
+			ArmPresets.gotopreset("L4")
+			print("L4")
+		if self.XButton:
+			ArmPresets.gotopreset("L3")
+			print("L3")
+		if self.BButton:
+			ArmPresets.gotopreset("L2")
+			print("L2")
+
+
+
 		if abs(self.LeftORRightTrigger) < 0.05:
 			self.LeftORRightTrigger=0
 
@@ -95,6 +112,11 @@ class MyRobot(wpilib.TimedRobot):
 		self.StartButton = self.ArmJoystick.getRawButton(8)  # Start button
 		self.AButton = self.ArmJoystick.getRawButton(1)  # A button
 		self.LBButton = self.ArmJoystick.getRawButton(5)  # LB button
+
+		self.YButton = self.ArmJoystick.getRawButton(4)
+		self.XButton = self.ArmJoystick.getRawButton(3)
+		self.BButton = self.ArmJoystick.getRawButton(2)
+
 
 		self.DRIVE_LEFT_THUMB_UPDOWN = self.DriveJoystick.getRawAxis(1)*0.5
 		self.DRIVE_RIGHT_THUMB_UPDOWN = self.DriveJoystick.getRawAxis(5)*0.5
@@ -130,7 +152,7 @@ class MyRobot(wpilib.TimedRobot):
 
 		# Get real-time data (real state)
 		self.arm.periodic(debug=True)
-
+		self.arm.update_movement()
 		# if self.StartButton and self.AButton and self.LBButton and self.calibration.state == "idle":
 		# 	print("[CALIBRATION] Triggered!")
 		# 	self.calibration.start_calibration(self.arm)

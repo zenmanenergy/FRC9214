@@ -6,7 +6,11 @@ from wpimath.controller import PIDController
 
 
 class Arm:
+	
 	def __init__(self, table):
+		self.target_elevator = None
+		self.target_shoulder = None
+		self.target_wrist = None
 		# Motor CAN IDs
 		self.ELEVATOR_MOTOR_ID = 10
 		self.WRIST_MOTOR_ID = 11
@@ -159,6 +163,45 @@ class Arm:
 
 		# Print debug info only if values change
 		
+
+	def update_movement(self):
+			"""Moves the arm toward target positions without blocking."""
+			if self.target_elevator is None or self.target_shoulder is None or self.target_wrist is None:
+				return  # No active movement target
+
+			# Move elevator if needed
+			if abs(self.real_elevator_position - self.target_elevator) > 1:
+				elevator_speed = (self.target_elevator - self.real_elevator_position) * 0.05
+				self.control_elevator(elevator_speed)
+
+			# Move shoulder if needed
+			if abs(self.real_arm_angle - self.target_shoulder) > 2:
+				shoulder_speed = (self.target_shoulder - self.real_arm_angle) * 0.05
+				self.control_shoulder(shoulder_speed)
+
+			# Move wrist if needed
+			if abs(self.real_wrist_angle - self.target_wrist) > 2:
+				wrist_speed = (self.target_wrist - self.real_wrist_angle) * 0.05
+				self.control_wrist(wrist_speed)
+
+			# Stop movement if all targets are reached
+			if (
+				abs(self.real_elevator_position - self.target_elevator) <= 1 and
+				abs(self.real_arm_angle - self.target_shoulder) <= 2 and
+				abs(self.real_wrist_angle - self.target_wrist) <= 2
+			):
+				print(f"Reached preset target.")
+				self.target_elevator = None
+				self.target_shoulder = None
+				self.target_wrist = None
+
+	def set_target_positions(self, elevator, shoulder, wrist):
+			"""Sets the target positions for movement."""
+			self.target_elevator = elevator
+			self.target_shoulder = shoulder
+			self.target_wrist = wrist
+
+
 
 
 	def limit_wrist(self, wrist_speed):
