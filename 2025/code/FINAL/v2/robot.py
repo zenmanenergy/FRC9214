@@ -162,13 +162,13 @@ class MyRobot(wpilib.TimedRobot):
 		self.BButton = self.ArmJoystick.getRawButton(2)
 
 		if self.AButton:
-			# self.ap.gotopreset("load")
+			self.ap.gotopreset("load")
 			print("load")
-		# if self.YButton:
-		# 	if self.drive.traveling == False:
-		# 		self.drive.start_travel(100)
-			# self.ap.gotopreset("L4")
-			# print("L4")
+		if self.YButton:
+			if self.drive.traveling == False:
+				self.drive.start_travel(100)
+			self.ap.gotopreset("load")
+			print("L4")
 		# if self.XButton:
 		# 	self.ap.gotopreset("L3")
 		# 	print("L3")

@@ -240,10 +240,9 @@ class Arm:
 
 	def control_wrist(self, wrist_speed):
 		"""Controls the wrist motor with braking and limit checks."""
-		# if not self.limit_wrist(wrist_speed):
-		# 	wrist_speed = 0  # Prevent movement beyond limits
-		# el
-		if abs(wrist_speed) < 0.01:
+		if not self.limit_wrist(wrist_speed):
+			wrist_speed = 0  # Prevent movement beyond limits
+		elif abs(wrist_speed) < 0.01:
 			wrist_speed = self.wristBreakSpeed
 		elif wrist_speed > 0:
 			wrist_speed *= self.wristUpSpeedFactor

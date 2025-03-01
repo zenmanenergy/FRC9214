@@ -5,9 +5,9 @@ class ArmPresets:
 
 		# Define preset positions
 		self.presets = {
-			"L2": {"elevator": 0, "shoulder": 0, "wrist": 0},
-			"L3": {"elevator": 0, "shoulder": 0, "wrist": 0},
-			"L4": {"elevator": 0, "shoulder": 0, "wrist": 0},
+			"L2": {"elevator": 40, "shoulder": 90, "wrist": 90},
+			"L3": {"elevator": 30, "shoulder": 80, "wrist": 30},
+			"L4": {"elevator": 20, "shoulder": 70, "wrist": 30},
 			"load": {"elevator": 2, "shoulder": 109, "wrist": 30},
 		}
 		
