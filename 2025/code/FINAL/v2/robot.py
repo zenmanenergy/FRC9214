@@ -105,8 +105,8 @@ class MyRobot(wpilib.TimedRobot):
 	def drive_forward_for_time(self, speed, duration):
 		if self.timer.get() == 0:
 			self.timer.start()
-			self.drive.left_front.set(-speed)
-			self.drive.left_rear.set(-speed)
+			self.drive.left_front.set(speed)
+			self.drive.left_rear.set(speed)
 			self.drive.right_front.set(speed)
 			self.drive.right_rear.set(speed)
 
@@ -167,7 +167,7 @@ class MyRobot(wpilib.TimedRobot):
 		if self.YButton:
 			if self.drive.traveling == False:
 				self.drive.start_travel(100)
-			self.ap.gotopreset("load")
+			self.ap.gotopreset("L4")
 			print("L4")
 		# if self.XButton:
 		# 	self.ap.gotopreset("L3")
