@@ -12,11 +12,11 @@ class Drive:
 		self.DRIVE_RIGHT_THUMB_UPDOWN = 0
 
 	def reset(self):
-		pass
+		self.set_motors(0,0)
 
 	def JoyStickPeriodic(self):
-		left_value = self.DriveJoystick.getRawAxis(1)
-		right_value = self.DriveJoystick.getRawAxis(5)
+		left_value = -1*self.DriveJoystick.getRawAxis(1)
+		right_value = -1*self.DriveJoystick.getRawAxis(5)
 
 		if abs(left_value) > 0.05: # this checks if the joystick is in a neutral position
 			self.DRIVE_LEFT_THUMB_UPDOWN = left_value * 0.5

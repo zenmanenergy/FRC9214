@@ -13,8 +13,8 @@ class MyRobot(wpilib.TimedRobot):
 		right_front = WPI_TalonSRX(3)
 		right_rear = WPI_TalonSRX(1)
 
-		left_front.setInverted(True)
-		left_rear.setInverted(True)
+		right_front.setInverted(True)
+		right_rear.setInverted(True)
 		left_front.setNeutralMode(NeutralMode.Brake)
 		left_rear.setNeutralMode(NeutralMode.Brake)
 		right_front.setNeutralMode(NeutralMode.Brake)
@@ -28,7 +28,7 @@ class MyRobot(wpilib.TimedRobot):
 
 		elevator_motor.setInverted(True)
 		shoulder_motor.setInverted(True)
-		wrist_motor.setInverted(True)
+		wrist_motor.setInverted(False)
 		grabber_motor.setInverted(True)
 		
 
@@ -45,6 +45,8 @@ class MyRobot(wpilib.TimedRobot):
 	def disabledInit(self):
 		self.Zeroed=False
 		self.arm.reset()
+		self.drive.reset()
+		self.auto.reset()
 		
 	def autonomousInit(self):
 		if not self.Zeroed:
@@ -65,7 +67,7 @@ class MyRobot(wpilib.TimedRobot):
 			
 	def teleopPeriodic(self):
 		self.drive.periodic()
-		self.arm.periodic()
+		self.arm.periodic(False)
 		
 
 if __name__ == "__main__":
