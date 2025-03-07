@@ -28,7 +28,7 @@ class Arm:
 		self.minShoulderBreakSpeed = 0.05
 		self.maxShoulderBreakSpeed = 0.05
 		self.shoulder_min_angle = 10
-		self.shoulder_max_angle = 190
+		self.shoulder_max_angle = 175
 
 		self.wristUpSpeedFactor = 0.2
 		self.wristDownSpeedFactor = 0.25
@@ -53,8 +53,6 @@ class Arm:
 		# self.wrist_deg_per_tick = -3.558673723404255
 		self.wrist_zero_offset = 0.000000
 
-		self.MAX_CURRENT = 60
-
 		self.real_elevator_position = 0.0
 		self.real_arm_angle = 0.0
 		self.real_wrist_angle = 0.0
@@ -75,10 +73,10 @@ class Arm:
 		self.prev_wrist_angle=None
 
 		self.presets = {
-			"A":    {"elevator": 25, "shoulder": 167, "wrist": -103},
-			"Y":    {"elevator": 63, "shoulder": 133, "wrist": 65},
-			"X":    {"elevator": 56,  "shoulder": 171, "wrist": -96},
-			"B":    {"elevator":19, "shoulder": 81, "wrist": 59},
+			"B":    {"elevator":19, "shoulder": 81, "wrist": 59},  #loading coral
+			"A":    {"elevator": 25, "shoulder": 167, "wrist": -103}, #scoring on L2
+			"X":    {"elevator": 56,  "shoulder": 171, "wrist": -96}, #scoring on L3
+			"Y":    {"elevator": 63, "shoulder": 133, "wrist": 65}, #scoring on L4
 
 			"LB+A": {"elevator": 25, "shoulder": 100, "wrist": 130},
 			"LB+Y": {"elevator": 30, "shoulder": 110, "wrist": 140},

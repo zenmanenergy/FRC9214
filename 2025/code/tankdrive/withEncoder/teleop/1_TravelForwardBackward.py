@@ -49,6 +49,14 @@ class MyRobot(wpilib.TimedRobot):
 		# If a travel operation is in progress, update it
 		if self.traveling:
 			self.traveling = self.travelDistance(self.targetDistance)
+	def setMotors(self, leftSpeed, rightSpeed):
+		"""
+		Sets the motor speeds.
+		"""
+		self.leftFront.set(leftSpeed)
+		self.leftRear.set(leftSpeed)
+		self.rightFront.set(rightSpeed)
+		self.rightRear.set(rightSpeed)
 
 	def startTravel(self, distance):
 		"""
@@ -59,14 +67,7 @@ class MyRobot(wpilib.TimedRobot):
 		self.targetDistance = distance
 		self.traveling = True
 
-	def setMotors(self, leftSpeed, rightSpeed):
-		"""
-		Sets the motor speeds.
-		"""
-		self.leftFront.set(leftSpeed)
-		self.leftRear.set(leftSpeed)
-		self.rightFront.set(rightSpeed)
-		self.rightRear.set(rightSpeed)
+	
 
 	def travelDistance(self, distance):
 		"""

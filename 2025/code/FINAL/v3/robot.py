@@ -55,7 +55,7 @@ class MyRobot(wpilib.TimedRobot):
 			self.auto.reset()
 			self.Zeroed = True
 
-		self.auto.start(speed=0.4, duration=2.0)
+		self.auto.start(speed=0.5, duration=2.0)
 	def autonomousPeriodic(self):
 		self.auto.periodic()
 

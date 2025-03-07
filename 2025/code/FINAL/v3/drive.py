@@ -11,6 +11,9 @@ class Drive:
 		self.DRIVE_LEFT_THUMB_UPDOWN = 0
 		self.DRIVE_RIGHT_THUMB_UPDOWN = 0
 
+		self.leftSpeedFactor=0.5
+		self.rightSpeedFactor=0.5
+
 	def reset(self):
 		self.set_motors(0,0)
 
@@ -19,12 +22,12 @@ class Drive:
 		right_value = -1*self.DriveJoystick.getRawAxis(5)
 
 		if abs(left_value) > 0.05: # this checks if the joystick is in a neutral position
-			self.DRIVE_LEFT_THUMB_UPDOWN = left_value * 0.5
+			self.DRIVE_LEFT_THUMB_UPDOWN = left_value * self.leftSpeedFactor
 		else:
 			self.DRIVE_LEFT_THUMB_UPDOWN = 0
 
 		if abs(right_value) > 0.05: # this checks if the joystick is in a neutral position
-			self.DRIVE_RIGHT_THUMB_UPDOWN = right_value * 0.5
+			self.DRIVE_RIGHT_THUMB_UPDOWN = right_value * self.rightSpeedFactor
 		else:
 			self.DRIVE_RIGHT_THUMB_UPDOWN = 0
 
@@ -32,9 +35,10 @@ class Drive:
 	def periodic(self):
 		self.JoyStickPeriodic()
 
-		if abs(self.DRIVE_LEFT_THUMB_UPDOWN) > 0.001 or abs(self.DRIVE_RIGHT_THUMB_UPDOWN) > 0.001:
-			self.set_motors(self.DRIVE_LEFT_THUMB_UPDOWN, self.DRIVE_RIGHT_THUMB_UPDOWN)
-
+		# if abs(self.DRIVE_LEFT_THUMB_UPDOWN) > 0.001 or abs(self.DRIVE_RIGHT_THUMB_UPDOWN) > 0.001:
+		# 	self.set_motors(self.DRIVE_LEFT_THUMB_UPDOWN, self.DRIVE_RIGHT_THUMB_UPDOWN)
+		self.set_motors(self.DRIVE_LEFT_THUMB_UPDOWN, self.DRIVE_RIGHT_THUMB_UPDOWN)
+		
 	def set_motors(self, left_speed, right_speed):
 		
 		self.left_front.set(left_speed)
