@@ -3,6 +3,9 @@ from wpimath.controller import PIDController
 class Arm:
 	
 	def __init__(self, wpilib, ArmJoystick, elevator_motor, shoulder_motor, wrist_motor, grabber_motor):
+		self.autoPreset = None
+		self.isAuto = False
+		
 		self.ArmJoystick=ArmJoystick
 		self.elevator_motor=elevator_motor
 		self.shoulder_motor=shoulder_motor
@@ -89,12 +92,14 @@ class Arm:
 			"B":    {"elevator":44, "shoulder": 8, "wrist": 41},  #loading coral
 			"A":    {"elevator": 48, "shoulder": 5, "wrist": -117}, #scoring on L2
 			"X":    {"elevator":98,  "shoulder": 32, "wrist": -53}, #scoring on L3
-			"Y":    {"elevator": 93, "shoulder": 57, "wrist": 31}, #scoring on L4
+			"Y":    {"elevator": 110, "shoulder": 57, "wrist": 55}, #scoring on L4
 
 			"LB+A": {"elevator": 69, "shoulder": 11, "wrist": -32},
 			"LB+Y": {"elevator": 30, "shoulder": 110, "wrist": 140},
 			"LB+X": {"elevator": 8,  "shoulder": 50, "wrist": 60},
-			"LB+B": {"elevator": 12, "shoulder": 75, "wrist": 95}
+			"LB+B": {"elevator": 12, "shoulder": 75, "wrist": 95},
+
+			"EUp": {"elevator": 70, "shoulder": -75, "wrist": -47}
 		}
 
 		# Elevator PID Controller
@@ -216,7 +221,7 @@ class Arm:
 			  f"(Encoder Value: {new_encoder_value:.6f})")
 
 
-	def periodic(self, debug):
+	def periodic(self):
 		preset_name=None
 		self.JoyStickPeriodic()
 		self.real_elevator_position = (self.elevator_encoder.getPosition() - self.elevator_zero_offset) * self.elevator_cm_per_tick
@@ -252,6 +257,10 @@ class Arm:
 		# If no button is pressed, reset active_preset
 		if not button_pressed:
 			self.active_preset = None  # Reset when the button is released
+		
+		if self.autoPreset:
+			self.active_preset = self.presets[self.autoPreset]
+
 
 		if self.active_preset:
 			self.move_to_preset()

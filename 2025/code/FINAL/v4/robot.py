@@ -40,17 +40,21 @@ class MyRobot(wpilib.TimedRobot):
 
 		self.arm = Arm(wpilib,ArmJoystick, elevator_motor, shoulder_motor, wrist_motor, grabber_motor)
 		self.drive = Drive(DriveJoystick, left_front, left_rear, right_front, right_rear, left_encoder, right_encoder)  # Fixed missing encoders
-		self.auto= Auto(wpilib, left_front,left_rear,right_front,right_rear)
+		self.auto= Auto(wpilib, left_front,left_rear,right_front,right_rear, self.arm, self.drive)
 
 		self.Zeroed=False
 
 	def disabledInit(self):
+		self.arm.autoPreset = None
+		self.arm.isAuto = False
 		self.Zeroed=False
 		# self.arm.reset()
 		self.drive.reset()
 		self.auto.reset()
 		
 	def autonomousInit(self):
+		self.arm.autoPreset = None
+		self.arm.isAuto = True
 		if not self.Zeroed:
 			self.arm.reset()
 			self.drive.reset()
@@ -60,18 +64,21 @@ class MyRobot(wpilib.TimedRobot):
 		self.auto.start(speed=0.4, duration=1.5)
 	def autonomousPeriodic(self):
 		self.auto.periodic()
+		self.arm.periodic()
 
 	def teleopInit(self):
-		print(self.Zeroed)
+		self.arm.autoPreset = None
+		self.arm.isAuto = False
+		# print(self.Zeroed)
 		if not self.Zeroed:
-			print("what")
-			self.arm.reset()
-			self.drive.reset()
+			# print("what")
+			# self.arm.reset()
+			# self.drive.reset()
 			self.Zeroed = True
 			
 	def teleopPeriodic(self):
 		self.drive.periodic()
-		self.arm.periodic(False)
+		self.arm.periodic()
 		
 
 if __name__ == "__main__":
