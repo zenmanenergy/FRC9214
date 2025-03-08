@@ -26,16 +26,16 @@ class Arm:
 		self.shoulderDownSpeedFactor = 0.3
 		self.shoulderBreakSpeed = 0.12
 		self.shoulderPresetFactor = 0.1
-		self.minShoulderBreakSpeed = 0.05
-		self.maxShoulderBreakSpeed = 0.05
+		self.minShoulderBreakSpeed = 0.053
+		self.maxShoulderBreakSpeed = 0.053
 		self.shoulder_min_angle = 10
 		self.shoulder_max_angle = 175
 
 		self.wristUpSpeedFactor = 0.2
 		self.wristDownSpeedFactor = 0.25
 		self.wristPresetFactor = 0.1
-		self.wristBreakSpeed = 0.02
-		self.wrist_min_angle = -130
+		self.wristBreakSpeed = 0.05
+		self.wrist_min_angle = -160
 		self.wrist_max_angle = 88
 
 		self.grabberInSpeedFactor = 0.5
@@ -86,7 +86,7 @@ class Arm:
 		self.prev_wrist_angle=None
 
 		self.presets = {
-			"B":    {"elevator":44, "shoulder": 4, "wrist": -23},  #loading coral
+			"B":    {"elevator":44, "shoulder": 8, "wrist": 41},  #loading coral
 			"A":    {"elevator": 48, "shoulder": 5, "wrist": -117}, #scoring on L2
 			"X":    {"elevator":98,  "shoulder": 32, "wrist": -53}, #scoring on L3
 			"Y":    {"elevator": 93, "shoulder": 57, "wrist": 31}, #scoring on L4
@@ -135,11 +135,10 @@ class Arm:
 		self.active_preset = None
 	
 	def resetEncoders(self):
-		self.elevator_encoder.setPosition(43.5)
-		self.shoulder_encoder.setPosition(-72)
-		self.wrist_encoder.setPosition(0)
-		self.grabber_encoder.setPosition(0)
-
+		self.set_joint_position("elevator", 51)
+		self.set_joint_position("shoulder", -75)
+		self.set_joint_position("wrist", -47)
+		
 	def JoyStickPeriodic(self):
 		self.LeftThumbUPDOWN=self.ArmJoystick.getRawAxis(1)*-1  #reverse the direction, so up is positive
 		if abs(self.LeftThumbUPDOWN) < 0.05:
@@ -179,8 +178,44 @@ class Arm:
 
 		# 🔥 **Manual Wrist Reset ONLY when Start button is pressed**
 		if self.StartButton:
-			self.wrist_encoder.setPosition(0)
-			print("[INFO] Wrist encoder manually reset to 0!")
+			self.set_joint_position("wrist", 0)  # Set wrist to 0 degrees
+
+		if self.LBButton:
+			self.set_joint_position("shoulder", 0)  # Set shoulder to 360 degrees
+
+	def set_joint_position(self, joint, target_value):
+		"""
+		Sets the encoder position for a given joint to match a desired angle (degrees) or height (cm).
+		
+		:param joint: The joint to modify ("wrist", "shoulder", or "elevator").
+		:param target_value: The desired position (degrees for wrist/shoulder, cm for elevator).
+		"""
+		# Determine which joint is being set and get the correct conversion factors
+		if joint == "wrist":
+			unit_per_tick = self.wrist_deg_per_tick
+			zero_offset = self.wrist_zero_offset
+			encoder = self.wrist_encoder
+		elif joint == "shoulder":
+			unit_per_tick = self.shoulder_deg_per_tick
+			zero_offset = self.shoulder_zero_offset
+			encoder = self.shoulder_encoder
+		elif joint == "elevator":
+			unit_per_tick = self.elevator_cm_per_tick  # Uses cm instead of degrees
+			zero_offset = self.elevator_zero_offset
+			encoder = self.elevator_encoder
+		else:
+			print(f"[ERROR] Unknown joint '{joint}' in set_joint_position()")
+			return
+
+		# Convert the desired value (degrees or cm) into an encoder position
+		new_encoder_value = (target_value / unit_per_tick) + zero_offset
+
+		# Set the encoder position
+		encoder.setPosition(new_encoder_value)
+		print(f"[INFO] {joint.upper()} set to {target_value} ({'cm' if joint == 'elevator' else 'degrees'}) "
+			  f"(Encoder Value: {new_encoder_value:.6f})")
+
+
 	def periodic(self, debug):
 		preset_name=None
 		self.JoyStickPeriodic()
@@ -241,15 +276,15 @@ class Arm:
 		# shoulder_speed = (target_shoulder - self.real_arm_angle) * self.shoulderPresetFactor
 		# wrist_speed = (target_wrist - self.real_wrist_angle) * self.wristPresetFactor
 
-		elevator_speed = self.elevator_pid.calculate(self.real_elevator_position, target_elevator) * 0.7
-		shoulder_speed = self.shoulder_pid.calculate(self.real_arm_angle, target_shoulder) * 0.4
-		wrist_speed = -self.wrist_pid.calculate(self.real_wrist_angle, target_wrist) * 0.4
+		elevator_speed = self.elevator_pid.calculate(self.real_elevator_position, target_elevator) * self.elevatorUpSpeedFactor
+		shoulder_speed = self.shoulder_pid.calculate(self.real_arm_angle, target_shoulder) * self.shoulderUpSpeedFactor
+		wrist_speed = -self.wrist_pid.calculate(self.real_wrist_angle, target_wrist) * self.wristUpSpeedFactor
 
 		# Apply speed limits
 
-		elevator_speed = max(min(elevator_speed, 0.5), -0.5)
-		shoulder_speed = max(min(shoulder_speed, 0.4), -0.4)
-		wrist_speed = max(min(wrist_speed, 0.3), -0.3)
+		elevator_speed = max(min(elevator_speed, 0.4), -0.4)
+		shoulder_speed = max(min(shoulder_speed, 0.3), -0.3)
+		wrist_speed = max(min(wrist_speed, 0.2), -0.2)
 
 		if self.elevator_pid.atSetpoint():
 			elevator_speed = 0
@@ -312,12 +347,20 @@ class Arm:
 
 	def control_elevator(self, elevator_speed):
 		"""Controls the elevator motor with braking and limit checks."""
+
+		if self.real_elevator_position < 44:
+			breakspeed=0
+		else:
+			breakspeed=self.elevatorBreakSpeed
+
 		if not self.limit_elevator(elevator_speed):  # Prevent movement beyond limits
 			elevator_speed = 0  # Prevent movement beyond limits
-		elif abs(elevator_speed) < 0.01: #Break the motor if the joystick is neutral
-			elevator_speed = self.elevatorBreakSpeed
+		elif abs(elevator_speed) < self.elevatorBreakSpeed: #Break the motor if the joystick is neutral
+			elevator_speed = breakspeed
 		else:
 			elevator_speed *= self.elevatorUpSpeedFactor if elevator_speed > 0 else self.elevatorDownSpeedFactor
+		
+
 
 		self.elevator_motor.set(elevator_speed)
 
@@ -344,17 +387,22 @@ class Arm:
 	
 	def control_shoulder(self, shoulder_speed):
 		"""Controls the shoulder motor with braking and limit checks, and adjusts the wrist if needed."""
+		
+		
 		if self.real_arm_angle < -30 or self.real_arm_angle > 40:
-			self.shoulderBreakSpeed = self.minShoulderBreakSpeed
+			breakSpeed = self.minShoulderBreakSpeed
 		else:
-			self.shoulderBreakSpeed = self.maxShoulderBreakSpeed
+			breakSpeed = self.maxShoulderBreakSpeed
+
+		if self.real_arm_angle < -50:
+			breakSpeed = 0
 
 		# Prevent exceeding shoulder limits
 		if not self.limit_shoulder(shoulder_speed):
 			shoulder_speed = 0  # Stop movement beyond limits
 
-		elif abs(shoulder_speed) < 0.01:  # Apply braking when joystick is neutral
-			shoulder_speed = self.shoulderBreakSpeed
+		elif abs(shoulder_speed) < self.maxShoulderBreakSpeed:  # Apply braking when joystick is neutral
+			shoulder_speed = breakSpeed
 
 		elif shoulder_speed > 0 and self.real_arm_angle <= 200:
 			shoulder_speed *= self.shoulderUpSpeedFactor
@@ -439,14 +487,23 @@ class Arm:
 		return True
 	def control_wrist(self, wrist_speed):
 		"""Controls the wrist motor with braking and limit checks."""
+
+		if self.real_arm_angle < -50:
+			breakSpeed = 0
+		else:
+			breakSpeed=-self.wristBreakSpeed
+
 		if not self.limit_wrist(wrist_speed):
 			wrist_speed = 0  # Prevent movement beyond limits
 		
-		elif abs(wrist_speed) < 0.01 and (self.real_wrist_angle + self.real_arm_angle)  >= -90:  # Break the motor if the joystick is neutral
-			wrist_speed = -self.wristBreakSpeed
+		elif abs(wrist_speed) < self.wristBreakSpeed:  # Break the motor if the joystick is neutral
+			wrist_speed = breakSpeed
+
+		# elif abs(wrist_speed) < 0.01 and (self.real_wrist_angle + self.real_arm_angle)  >= -90:  # Break the motor if the joystick is neutral
+		# 	wrist_speed = -self.wristBreakSpeed
 		
-		elif abs(wrist_speed) < 0.01 and (self.real_wrist_angle  + self.real_arm_angle) < -90:  # Break the motor if the joystick is neutral
-			wrist_speed = self.wristBreakSpeed
+		# elif abs(wrist_speed) < 0.01 and (self.real_wrist_angle  + self.real_arm_angle) < -90:  # Break the motor if the joystick is neutral
+		# 	wrist_speed = self.wristBreakSpeed
 		
 		elif wrist_speed > 0:  # Move up
 			wrist_speed *= -self.wristUpSpeedFactor

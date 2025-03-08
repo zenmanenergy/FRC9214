@@ -46,7 +46,7 @@ class MyRobot(wpilib.TimedRobot):
 
 	def disabledInit(self):
 		self.Zeroed=False
-		self.arm.reset()
+		# self.arm.reset()
 		self.drive.reset()
 		self.auto.reset()
 		
@@ -62,7 +62,9 @@ class MyRobot(wpilib.TimedRobot):
 		self.auto.periodic()
 
 	def teleopInit(self):
+		print(self.Zeroed)
 		if not self.Zeroed:
+			print("what")
 			self.arm.reset()
 			self.drive.reset()
 			self.Zeroed = True
