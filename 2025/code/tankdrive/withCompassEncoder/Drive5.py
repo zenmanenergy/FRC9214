@@ -1,6 +1,6 @@
 import wpilib
 from phoenix5 import WPI_TalonSRX, NeutralMode
-from wpilib.controller import PIDController
+from wpimath.controller import PIDController
 
 class Drive:
 	def __init__(self, DriveJoystick, left_front, left_rear, right_front, right_rear, left_encoder, right_encoder):
