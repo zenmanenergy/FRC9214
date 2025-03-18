@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>GrantWatch Search</title>
+	<style>
+		body { font-family: Arial, sans-serif; margin: 20px; }
+		input { width: 100%; padding: 10px; margin-bottom: 10px; font-size: 16px; }
+		table { width: 100%; border-collapse: collapse; }
+		th, td { padding: 10px; border: 1px solid #ccc; vertical-align: top; }
+		th { background-color: #f0f0f0; }
+	</style>
+</head>
+<body>
+
+	<h2>GrantWatch Search</h2>
+	<input type="text" id="searchBox" placeholder="Search grants...">
+	<button id="clearButton">Clear</button>
+
+	<table>
+		<thead>
+			<tr>
+				<th>Title</th>
+				<th>URL</th>
+				<th>Description</th>
+				<th>Deadline</th>
+				<th>GrantWatch ID</th>
+			</tr>
+		</thead>
+		<tbody id="tableBody"></tbody>
+	</table>
+
+	<script src="grant_data.js"></script>
+	<script>
+		let grants = [];
+		const states = ["Tribes","Medical","Agricultural","ontario","Saskatchewan ","british columbia", "alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada", "new hampshire", "new jersey", "new mexico", "new york", "north carolina", "north dakota", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", "tennessee", "texas", "utah", "vermont", "washington", "west virginia", "wisconsin", "wyoming"];
+
+		function parseCSV(csvArray) {
+			return csvArray.map(line => {
+				const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(val => val.replace(/^"|"$/g, '').replace(/""/g, '"'));
+				return {
+					title: values[0] || "",
+					url: values[1] || "",
+					description: values[2] || "",
+					deadline: values[3] || "",
+					grant_id: values[4] || "",
+					state: values[5] || "" // Assuming the state is the 6th column
+				};
+			});
+		}
+
+		function renderTable(data) {
+			const tbody = document.getElementById("tableBody");
+			tbody.innerHTML = "";
+			data.forEach(grant => {
+				const row = document.createElement("tr");
+				row.innerHTML = `
+					<td>${grant.title}</td>
+					<td><a href="${grant.url}" target="_blank">View Grant</a></td>
+					<td>${grant.description}</td>
+					<td>${grant.deadline}</td>
+					<td>${grant.grant_id}</td>
+				`;
+				tbody.appendChild(row);
+			});
+		}
+
+		function filterGrants(query) {
+			return grants.filter(g =>
+				(g.title.toLowerCase().includes(query) ||
+				g.description.toLowerCase().includes(query) ||
+				g.deadline.toLowerCase().includes(query) ||
+				g.grant_id.toLowerCase().includes(query)) &&
+				(g.state === "" || g.state.toLowerCase() === "virginia") &&
+				!states.some(state => g.title.toLowerCase().includes(state) && state !== "virginia")
+			);
+		}
+
+		document.getElementById("searchBox").addEventListener("input", function(e) {
+			const query = e.target.value.toLowerCase();
+			const filtered = filterGrants(query);
+			renderTable(filtered);
+		});
+
+		document.getElementById("clearButton").addEventListener("click", function() {
+			document.getElementById("searchBox").value = "";
+			renderTable(filterGrants(""));
+		});
+
+		grants = parseCSV(grantCSV);
+		renderTable(filterGrants(""));
+	</script>
+</body>
+</html>
