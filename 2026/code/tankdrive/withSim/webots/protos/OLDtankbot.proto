@@ -1,0 +1,204 @@
+#VRML_SIM R2025a utf8
+# license: Apache License 2.0
+# license url: http://www.apache.org/licenses/LICENSE-2.0
+# This is a proto file for Webots for the tankbot
+# Extracted from: C:\Apache24\htdocs\personalProjects\FRC9214\2025\code\tankdrive\withSim\solidworks\urdf\tankbot.SLDASM\urdf\tankbot.SLDASM.urdf
+
+PROTO tankbot [
+  field  SFVec3f     translation     0 0 0
+  field  SFRotation  rotation        0 0 1 0
+  field  SFString    name            "tankbot"  # Is `Robot.name`.
+  field  SFString    controller      "void"     # Is `Robot.controller`.
+  field  MFString    controllerArgs  []         # Is `Robot.controllerArgs`.
+  field  SFString    customData      ""         # Is `Robot.customData`.
+  field  SFBool      supervisor      FALSE      # Is `Robot.supervisor`.
+  field  SFBool      synchronization TRUE       # Is `Robot.synchronization`.
+  field  SFBool      selfCollision   FALSE      # Is `Robot.selfCollision`.
+]
+{
+  Robot {
+    translation IS translation
+    rotation IS rotation
+    controller IS controller
+    controllerArgs IS controllerArgs
+    customData IS customData
+    supervisor IS supervisor
+    synchronization IS synchronization
+    selfCollision IS selfCollision
+    children [
+      Shape {
+        appearance DEF base_link_material PBRAppearance {
+          baseColor 0.898039 0.917647 0.929412
+          roughness 1.000000
+          metalness 0
+        }
+        geometry DEF base_link Mesh {
+          url "C:/Apache24/htdocs/personalProjects/FRC9214/2025/code/tankdrive/withSim/solidworks/urdf/tankbot.SLDASM/meshes/base_link.STL"
+        }
+      }
+      HingeJoint {
+        jointParameters HingeJointParameters {
+          axis 0 0 1
+        }
+        device [
+          RotationalMotor {
+            name "left_front"
+            maxTorque 10000
+          }
+          PositionSensor {
+            name "left_front_sensor"
+          }
+        ]
+        endPoint Solid {
+          children [
+            Shape {
+              appearance DEF left_front_material PBRAppearance {
+                roughness 1.000000
+                metalness 0
+              }
+              geometry DEF left_front Mesh {
+                url "C:/Apache24/htdocs/personalProjects/FRC9214/2025/code/tankdrive/withSim/solidworks/urdf/tankbot.SLDASM/meshes/left_front.STL"
+              }
+            }
+          ]
+          name "left_front"
+          boundingObject USE left_front
+          physics Physics {
+            density -1
+            mass 1.032742
+            centerOfMass [ -0.004194 -0.100716 0.050711 ]
+            inertiaMatrix [
+              5.168500e-03 2.667023e-03 2.648857e-03
+              2.139448e-04 -6.098637e-20 1.897354e-19
+            ]
+          }
+        }
+      }
+      HingeJoint {
+        jointParameters HingeJointParameters {
+          axis 0 0 1
+        }
+        device [
+          RotationalMotor {
+            name "left_rear"
+            maxTorque 10000
+          }
+          PositionSensor {
+            name "left_rear_sensor"
+          }
+        ]
+        endPoint Solid {
+          children [
+            Shape {
+              appearance DEF left_rear_material PBRAppearance {
+                roughness 1.000000
+                metalness 0
+              }
+              geometry DEF left_rear Mesh {
+                url "C:/Apache24/htdocs/personalProjects/FRC9214/2025/code/tankdrive/withSim/solidworks/urdf/tankbot.SLDASM/meshes/left_rear.STL"
+              }
+            }
+          ]
+          name "left_rear"
+          boundingObject USE left_rear
+          physics Physics {
+            density -1
+            mass 1.032742
+            centerOfMass [ 0.063491 -0.897848 0.050711 ]
+            inertiaMatrix [
+              5.168500e-03 2.667023e-03 2.648857e-03
+              2.139448e-04 4.404571e-20 -6.776264e-19
+            ]
+          }
+        }
+      }
+      HingeJoint {
+        jointParameters HingeJointParameters {
+          axis 0 0 1
+        }
+        device [
+          RotationalMotor {
+            name "right_front"
+            maxTorque 10000
+          }
+          PositionSensor {
+            name "right_front_sensor"
+          }
+        ]
+        endPoint Solid {
+          children [
+            Shape {
+              appearance DEF right_front_material PBRAppearance {
+                roughness 1.000000
+                metalness 0
+              }
+              geometry DEF right_front Mesh {
+                url "C:/Apache24/htdocs/personalProjects/FRC9214/2025/code/tankdrive/withSim/solidworks/urdf/tankbot.SLDASM/meshes/right_front.STL"
+              }
+            }
+          ]
+          name "right_front"
+          boundingObject USE right_front
+          physics Physics {
+            density -1
+            mass 1.032742
+            centerOfMass [ 1.017530 -0.013961 0.050711 ]
+            inertiaMatrix [
+              5.168500e-03 2.667023e-03 2.648857e-03
+              2.139448e-04 -6.098637e-20 -2.168404e-19
+            ]
+          }
+        }
+      }
+      HingeJoint {
+        jointParameters HingeJointParameters {
+          axis 0 0 1
+        }
+        device [
+          RotationalMotor {
+            name "right_rear"
+            maxTorque 10000
+          }
+          PositionSensor {
+            name "right_rear_sensor"
+          }
+        ]
+        endPoint Solid {
+          children [
+            Shape {
+              appearance DEF right_rear_material PBRAppearance {
+                roughness 1.000000
+                metalness 0
+              }
+              geometry DEF right_rear Mesh {
+                url "C:/Apache24/htdocs/personalProjects/FRC9214/2025/code/tankdrive/withSim/solidworks/urdf/tankbot.SLDASM/meshes/right_rear.STL"
+              }
+            }
+          ]
+          name "right_rear"
+          boundingObject USE right_rear
+          physics Physics {
+            density -1
+            mass 1.032742
+            centerOfMass [ 1.085215 -0.811092 0.050711 ]
+            inertiaMatrix [
+              5.168500e-03 2.667023e-03 2.648857e-03
+              2.139448e-04 -2.371692e-19 -5.421011e-19
+            ]
+          }
+        }
+      }
+    ]
+    name IS name
+    boundingObject USE base_link
+    physics Physics {
+      density -1
+      mass 268.303540
+      centerOfMass [ 0.540510 -0.455904 0.049996 ]
+      inertiaMatrix [
+        2.245441e+01 2.258265e+01 4.458715e+01
+        -1.096818e-02 -1.360023e-15 4.440892e-16
+      ]
+    }
+  }
+}

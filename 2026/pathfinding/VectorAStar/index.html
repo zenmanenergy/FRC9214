@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Image Dot Connector</title>
+	<style>
+		body { text-align: center; }
+		canvas { border: 1px solid black; cursor: crosshair; }
+		button { margin: 10px; }
+	</style>
+</head>
+<body>
+	<button id="modeToggle">Switch to Driving Mode</button>
+	<canvas id="canvas" width="1351" height="651"></canvas>
+	<script>
+		const canvas = document.getElementById("canvas");
+		const ctx = canvas.getContext("2d");
+		const modeToggle = document.getElementById("modeToggle");
+		let image = new Image();
+		let robotImage = new Image();
+		let dots = [];
+		let connections = [];
+		let selectedDot = null;
+		let mode = "drawing";
+		let robot = null;
+		let path = [];
+		let robotAngle = 0;
+
+		function loadImage() {
+			image.src = "REEFSCAPE2025.png";
+			image.onload = () => {
+				ctx.drawImage(image, 0, 0);
+				draw();
+			};
+		}
+
+		robotImage.src = "https://tse1.mm.bing.net/th?id=OIP.k23XfFRFUpnXXNGcSlz-EgHaFj"; // Blue tank with turret
+
+		function draw() {
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			ctx.drawImage(image, 0, 0);
+			connections.forEach(({ start, end }, index) => {
+				ctx.beginPath();
+				ctx.moveTo(dots[start].x, dots[start].y);
+				ctx.lineTo(dots[end].x, dots[end].y);
+				ctx.strokeStyle = path.includes(index) ? "green" : "black";
+				ctx.stroke();
+			});
+			dots.forEach((dot, index) => {
+				ctx.beginPath();
+				ctx.arc(dot.x, dot.y, 5, 0, Math.PI * 2);
+				ctx.fillStyle = (index === selectedDot) ? "red" : "blue";
+				ctx.fill();
+			});
+			if (robot !== null) {
+				ctx.save();
+				ctx.translate(dots[robot].x, dots[robot].y);
+				ctx.rotate(robotAngle);
+				ctx.drawImage(robotImage, -12, -12, 25, 25);
+				ctx.restore();
+			}
+			saveData();
+		}
+
+		function getClickedDot(x, y) {
+			return dots.findIndex(dot => Math.hypot(dot.x - x, dot.y - y) < 5);
+		}
+
+		function findPath(start, end) {
+			let queue = [[start]];
+			let visited = new Set();
+			while (queue.length > 0) {
+				let path = queue.shift();
+				let node = path[path.length - 1];
+				if (node === end) return path;
+				if (!visited.has(node)) {
+					visited.add(node);
+					let neighbors = connections
+						.filter(conn => conn.start === node || conn.end === node)
+						.map(conn => (conn.start === node ? conn.end : conn.start));
+					neighbors.forEach(n => queue.push([...path, n]));
+				}
+			}
+			return [];
+		}
+
+		function animateRobot(path) {
+			let i = 0;
+			function move() {
+				if (i < path.length) {
+					let nextDot = path[i];
+					if (robot !== null) {
+						let dx = dots[nextDot].x - dots[robot].x;
+						let dy = dots[nextDot].y - dots[robot].y;
+						robotAngle = Math.atan2(dy, dx);
+					}
+					robot = nextDot;
+					draw();
+					i++;
+					setTimeout(move, 500);
+				}
+			}
+			move();
+		}
+
+		canvas.addEventListener("click", (e) => {
+			const rect = canvas.getBoundingClientRect();
+			const x = e.clientX - rect.left;
+			const y = e.clientY - rect.top;
+			const clickedIndex = getClickedDot(x, y);
+
+			if (mode === "drawing") {
+				if (clickedIndex !== -1) {
+					if (selectedDot !== null && selectedDot !== clickedIndex) {
+						connections.push({ start: selectedDot, end: clickedIndex });
+						selectedDot = null;
+					} else {
+						selectedDot = clickedIndex;
+					}
+				} else {
+					dots.push({ x, y });
+				}
+			} else if (mode === "driving" && clickedIndex !== -1) {
+				if (robot === null) {
+					robot = clickedIndex;
+				} else {
+					let pathIndices = findPath(robot, clickedIndex);
+					if (pathIndices.length > 0) {
+						path = pathIndices;
+						animateRobot(path);
+					}
+				}
+			}
+			draw();
+		});
+
+		modeToggle.addEventListener("click", () => {
+			mode = mode === "drawing" ? "driving" : "drawing";
+			modeToggle.textContent = mode === "drawing" ? "Switch to Driving Mode" : "Switch to Drawing Mode";
+			draw();
+		});
+
+		function saveData() {
+			localStorage.setItem("dots", JSON.stringify(dots));
+			localStorage.setItem("connections", JSON.stringify(connections));
+		}
+
+		function loadData() {
+			const savedDots = localStorage.getItem("dots");
+			const savedConnections = localStorage.getItem("connections");
+			if (savedDots) dots = JSON.parse(savedDots);
+			if (savedConnections) connections = JSON.parse(savedConnections);
+		}
+
+		loadData();
+		loadImage();
+	</script>
+</body>
+</html>

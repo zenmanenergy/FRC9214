@@ -1,0 +1,40 @@
+#this detects the april tags
+#this also makes the position and orientation of the cameras known
+
+import cv2
+import numpy as np
+
+#Tag size in Meters
+tag_size=0.165 #16.5 cm
+
+#Apriltag Dictionary
+dictionary=cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_APRILTAG_36h11)
+
+#Better compatibility
+cap=cv2.VideoCapture(1,cv2.CAP_DSHOW)
+
+#Camera Resolution
+cap.set(cv2.CAP_PROP_FRAME_WIDTH,1920)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT,1080)
+
+while True:
+    ret, frame=cap.read()#Capture frames from video feed
+    if not ret:
+        print("Failed to grab frame")#Print error of the frames arent captured
+        break
+
+    gray=cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)#converting image to grayscale for apriltags
+
+    corners,ids,regected=cv2.aruco.detectMarkers(gray,dictionary)#Detect Apriltags
+
+    if ids is not None:
+        cv2.aruco.drawDetectedMarkers(frame,corners,ids)#Draws the ids
+    
+    cv2.imshow('AprilTag Detcetion',frame)#Show the ids of the frame
+
+    if cv2.waitKey(1) & 0xFF ==ord('q'):#Break the loop when q is pressed
+        break
+
+#release the camera and close OpenCV windows
+cap.release()
+cv2.destroyAllWindows

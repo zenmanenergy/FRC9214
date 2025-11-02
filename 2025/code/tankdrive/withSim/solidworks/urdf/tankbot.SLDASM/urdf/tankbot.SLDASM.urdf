@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="tankbot.SLDASM">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="0.5 -0.5 0.0499955047509626"
+        rpy="0 0 0" />
+      <mass
+        value="268.303539967062" />
+      <inertia
+        ixx="22.453480708841"
+        ixy="2.61466463990094E-15"
+        ixz="1.15835887283115E-16"
+        iyy="22.5835850562004"
+        iyz="1.32529078891745E-18"
+        izz="44.5871523138175" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://tankbot.SLDASM/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.898039215686275 0.917647058823529 0.929411764705882 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://tankbot.SLDASM/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="left_front">
+    <inertial>
+      <origin
+        xyz="-0.0127 -0.1 0.0507109458557"
+        rpy="0 0 0" />
+      <mass
+        value="1.03274161975718" />
+      <inertia
+        ixx="0.00518666614972295"
+        ixy="2.35788576490018E-19"
+        ixz="-1.01335940419853E-19"
+        iyy="0.00264885670681169"
+        iyz="-2.40824062991046E-19"
+        izz="0.00264885670681169" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://tankbot.SLDASM/meshes/left_front.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://tankbot.SLDASM/meshes/left_front.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="left_front_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="left_front" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="left_rear">
+    <inertial>
+      <origin
+        xyz="-0.0126999999999989 -0.900000000000001 0.0507109458557"
+        rpy="0 0 0" />
+      <mass
+        value="1.03274161975718" />
+      <inertia
+        ixx="0.00518666614972295"
+        ixy="-3.19598129685603E-20"
+        ixz="-1.7176554196641E-19"
+        iyy="0.00264885670681169"
+        iyz="-3.1047561901453E-19"
+        izz="0.00264885670681169" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://tankbot.SLDASM/meshes/left_rear.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://tankbot.SLDASM/meshes/left_rear.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="left_rear_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="left_rear" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="right_front">
+    <inertial>
+      <origin
+        xyz="1.0127 -0.1 0.0507109458556997"
+        rpy="0 0 0" />
+      <mass
+        value="1.03274161975718" />
+      <inertia
+        ixx="0.00518666614972297"
+        ixy="2.26246851586113E-19"
+        ixz="-3.61700712539672E-19"
+        iyy="0.0026488567068117"
+        iyz="5.30704762873048E-19"
+        izz="0.0026488567068117" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://tankbot.SLDASM/meshes/right_front.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://tankbot.SLDASM/meshes/right_front.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="right_front_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="right_front" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="right_rear">
+    <inertial>
+      <origin
+        xyz="1.0127 -0.9 0.0507109458557001"
+        rpy="0 0 0" />
+      <mass
+        value="1.03274161975718" />
+      <inertia
+        ixx="0.00518666614972297"
+        ixy="4.22928903543602E-19"
+        ixz="-7.06551532336365E-20"
+        iyy="0.0026488567068117"
+        iyz="-1.07126816155454E-19"
+        izz="0.0026488567068117" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://tankbot.SLDASM/meshes/right_rear.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://tankbot.SLDASM/meshes/right_rear.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="right_rear_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="right_rear" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+</robot>
