@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<title>FRC Field Display</title>
+	<style>
+		body { display: flex; flex-direction: column; align-items: center; }
+		#status { font-size: 18px; margin-bottom: 10px; color: red; }
+		.container { display: flex; flex-direction: row; }
+		#overviewContainer, #zoomContainer { position: relative; margin: 0 10px; }
+		canvas { border: 1px solid #ccc; cursor: crosshair; }
+	</style>
+</head>
+<body>
+	<!-- Status Message -->
+	<div id="status">Loading field data...</div>
+
+	<!-- Split Screen View -->
+	<div class="container">
+		<div id="overviewContainer">
+			<canvas id="overviewCanvas" width="600" height="300"></canvas>
+		</div>
+		<div id="zoomContainer">
+			<canvas id="zoomCanvas" width="600" height="300"></canvas>
+		</div>
+	</div>
+
+	<script>
+		let ws;
+		let connectionTimeout;
+		const statusElement = document.getElementById("status");
+
+		const overviewCanvas = document.getElementById("overviewCanvas");
+		const overviewCtx = overviewCanvas.getContext("2d");
+
+		const zoomCanvas = document.getElementById("zoomCanvas");
+		const zoomCtx = zoomCanvas.getContext("2d");
+
+		// Field dimensions (meters)
+		const FIELD_WIDTH = 16.5;
+		const FIELD_HEIGHT = 8.2;
+		const HALF_FIELD_WIDTH = FIELD_WIDTH / 2;
+
+		// Scaling for overview canvas
+		const OVERVIEW_SCALE_X = overviewCanvas.width / HALF_FIELD_WIDTH;
+		const OVERVIEW_SCALE_Y = overviewCanvas.height / FIELD_HEIGHT;
+
+		// Zoom settings (3m x 2m region)
+		const ZOOM_WIDTH_METERS = 3.0;
+		const ZOOM_HEIGHT_METERS = 2.0;
+
+		let fieldImage = new Image();
+		fieldImage.src = "REEFSCAPE2025.png";
+
+		let robotState = { x: 0, y: 0, heading: 0, robot_number: 0, color: "red", other_robots: [] };
+
+		function startNT4() {
+			const rioIp = "10.XX.YY.2";
+			ws = new WebSocket(`ws://${rioIp}:5810/networktables`);
+
+			ws.onopen = () => {
+				console.log("NT4 WebSocket open");
+				statusElement.textContent = "Connected to NT4";
+				statusElement.style.color = "green";
+				const subscribeMsg = {
+					type: "subscribe",
+					topics: [
+						{ name: "/SmartDashboard/robotData", type: "pubsub" },
+						{ name: "/SmartDashboard/targetCoordinate", type: "pubsub" }
+					]
+				};
+				ws.send(JSON.stringify(subscribeMsg));
+				clearTimeout(connectionTimeout); // Stop error timeout if we connected
+			};
+
+			ws.onmessage = (event) => {
+				const msg = JSON.parse(event.data);
+				if (msg.type === "publish" && Array.isArray(msg.messages)) {
+					for (const m of msg.messages) {
+						if (m.name === "/SmartDashboard/robotData") {
+							robotState = JSON.parse(m.value);
+							drawAll();
+						}
+					}
+				}
+			};
+
+			ws.onerror = () => {
+				statusElement.textContent = "Error connecting to NT4";
+				statusElement.style.color = "red";
+			};
+
+			ws.onclose = () => {
+				statusElement.textContent = "Connection to NT4 lost";
+				statusElement.style.color = "red";
+			};
+
+			// If no connection in 5 seconds, show error
+			connectionTimeout = setTimeout(() => {
+				statusElement.textContent = "Failed to connect to NT4";
+				statusElement.style.color = "red";
+			}, 5000);
+		}
+
+		function drawAll() {
+			drawOverview();
+			drawZoom();
+		}
+
+		function drawOverview() {
+			overviewCtx.clearRect(0, 0, overviewCanvas.width, overviewCanvas.height);
+			if (fieldImage.complete) {
+				overviewCtx.drawImage(fieldImage, 0, 0, overviewCanvas.width, overviewCanvas.height);
+			}
+			drawRobot(overviewCtx, robotState, OVERVIEW_SCALE_X, OVERVIEW_SCALE_Y);
+			robotState.other_robots.forEach(r => drawRobot(overviewCtx, r, OVERVIEW_SCALE_X, OVERVIEW_SCALE_Y));
+		}
+
+		function drawZoom() {
+			zoomCtx.clearRect(0, 0, zoomCanvas.width, zoomCanvas.height);
+			drawRobot(zoomCtx, robotState, zoomCanvas.width / ZOOM_WIDTH_METERS, zoomCanvas.height / ZOOM_HEIGHT_METERS);
+			robotState.other_robots.forEach(r => drawRobot(zoomCtx, r, zoomCanvas.width / ZOOM_WIDTH_METERS, zoomCanvas.height / ZOOM_HEIGHT_METERS));
+		}
+
+		function drawRobot(ctx, r, scaleX, scaleY) {
+			let rx = r.x * scaleX;
+			let ry = ctx.canvas.height - (r.y * scaleY);
+
+			ctx.save();
+			ctx.translate(rx, ry);
+			ctx.rotate((r.heading * Math.PI) / 180);
+
+			ctx.beginPath();
+			ctx.arc(0, 0, 10, 0, 2 * Math.PI);
+			ctx.fillStyle = r.color === "red" ? "rgba(255,0,0,0.7)" : "rgba(0,0,255,0.7)";
+			ctx.fill();
+
+			ctx.beginPath();
+			ctx.moveTo(0, 0);
+			ctx.lineTo(15, 0);
+			ctx.strokeStyle = "black";
+			ctx.stroke();
+
+			ctx.restore();
+		}
+
+		// Click-to-Send Feature
+		overviewCanvas.addEventListener("click", (event) => {
+			const rect = overviewCanvas.getBoundingClientRect();
+			const x = (event.clientX - rect.left) / OVERVIEW_SCALE_X;
+			const y = (overviewCanvas.height - (event.clientY - rect.top)) / OVERVIEW_SCALE_Y;
+			
+			const targetData = { x: x.toFixed(2), y: y.toFixed(2) };
+			console.log("Sending target:", targetData);
+			ws.send(JSON.stringify({ type: "publish", topic: "/SmartDashboard/targetCoordinate", value: JSON.stringify(targetData) }));
+		});
+
+		// Handle Field Image Loading Errors
+		fieldImage.onload = () => {
+			console.log("Field image loaded");
+			statusElement.textContent = "Field loaded, waiting for NT4...";
+			statusElement.style.color = "blue";
+			drawAll();
+		};
+
+		fieldImage.onerror = () => {
+			console.error("Field image failed to load!");
+			statusElement.textContent = "Error loading field image!";
+			statusElement.style.color = "red";
+		};
+
+		window.onload = startNT4;
+	</script>
+</body>
+</html>

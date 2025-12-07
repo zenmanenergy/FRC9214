@@ -1,0 +1,11 @@
+{
+	"manifest_version": 3,
+	"name": "GrantWatch Scraper",
+	"version": "1.0",
+	"description": "Scrape all education grants from GrantWatch across all pages.",
+	"permissions": ["scripting", "activeTab", "downloads"],
+	"host_permissions": ["https://www.grantwatch.com/*"],
+	"action": {
+		"default_popup": "popup.html"
+	}
+}

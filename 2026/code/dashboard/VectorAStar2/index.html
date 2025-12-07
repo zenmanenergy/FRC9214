@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Image Dot Connector</title>
+	<style>
+		body { text-align: center; }
+		canvas { border: 1px solid black; cursor: crosshair; }
+		button { margin: 10px; }
+		#modal {
+			display: none;
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			background: white;
+			padding: 20px;
+			border: 1px solid black;
+			z-index: 1000;
+		}
+		#overlay {
+			display: none;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.5);
+			z-index: 999;
+		}
+	</style>
+</head>
+<body>
+	<button id="openModal">Open Menu</button>
+	<div id="overlay"></div>
+	<div id="modal">
+		<label>
+			Mode:
+			<select id="modeSelect">
+				<option value="drawing">Drawing</option>
+				<option value="driving">Driving</option>
+			</select>
+		</label>
+		<br>
+		<button id="closeModal">OK</button>
+	</div>
+	<canvas id="canvas" width="1351" height="651"></canvas>
+	<script>
+		const canvas = document.getElementById("canvas");
+		const ctx = canvas.getContext("2d");
+		const openModal = document.getElementById("openModal");
+		const closeModal = document.getElementById("closeModal");
+		const modal = document.getElementById("modal");
+		const overlay = document.getElementById("overlay");
+		let ws = new WebSocket("ws://localhost:8765");
+		let image = new Image();
+		let robotImage = new Image();
+		let actualRobotImage = new Image();
+		let robotState = { x: 100, y: 100, heading: 0 };
+		let mode = "drawing";
+		let selectedDot = null;
+		let path = [];
+		let dots = [];
+		let connections = [];
+
+		image.src = "REEFSCAPE2025.png";
+		robotImage.src = "https://tse1.mm.bing.net/th?id=OIP.k23XfFRFUpnXXNGcSlz-EgHaFj"; 
+		actualRobotImage.src = "https://tse1.mm.bing.net/th?id=OIP.k23XfFRFUpnXXNGcSlz-EgHaFj";
+
+		function draw() {
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			ctx.drawImage(image, 0, 0);
+			connections.forEach(({ start, end }) => {
+				ctx.beginPath();
+				ctx.moveTo(dots[start].x, dots[start].y);
+				ctx.lineTo(dots[end].x, dots[end].y);
+				ctx.strokeStyle = "black";
+				ctx.stroke();
+			});
+			dots.forEach((dot, index) => {
+				ctx.beginPath();
+				ctx.arc(dot.x, dot.y, 5, 0, Math.PI * 2);
+				ctx.fillStyle = "blue";
+				ctx.fill();
+			});
+			ctx.save();
+			ctx.translate(robotState.x, robotState.y);
+			ctx.rotate(robotState.heading);
+			ctx.drawImage(actualRobotImage, -12, -12, 25, 25);
+			ctx.restore();
+		}
+
+		canvas.addEventListener("click", (e) => {
+			const rect = canvas.getBoundingClientRect();
+			const x = e.clientX - rect.left;
+			const y = e.clientY - rect.top;
+			const clickedIndex = dots.findIndex(dot => Math.hypot(dot.x - x, dot.y - y) < 5);
+
+			if (mode === "driving" && clickedIndex !== -1) {
+				if (selectedDot === null) {
+					selectedDot = clickedIndex;
+				} else {
+					path = [selectedDot, clickedIndex];
+					ws.send(JSON.stringify({ path }));
+					selectedDot = null;
+				}
+			}
+			draw();
+		});
+
+		ws.onmessage = function(event) {
+			const data = JSON.parse(event.data);
+			if (data.x !== undefined && data.y !== undefined && data.heading !== undefined) {
+				robotState = data;
+				draw();
+			}
+		};
+
+		openModal.addEventListener("click", () => {
+			modal.style.display = "block";
+			overlay.style.display = "block";
+		});
+
+		closeModal.addEventListener("click", () => {
+			mode = document.getElementById("modeSelect").value;
+			modal.style.display = "none";
+			overlay.style.display = "none";
+		});
+	</script>
+</body>
+</html>
