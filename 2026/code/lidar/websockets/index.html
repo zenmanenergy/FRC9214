@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YDLidar GS2 Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        header {
+            background: #2a2a2a;
+            border-bottom: 2px solid #0066cc;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 24px;
+            color: #00ccff;
+        }
+        
+        .status {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff3333;
+            animation: pulse 1s infinite;
+        }
+        
+        .status-indicator.connected {
+            background: #33ff33;
+            animation: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .container {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            background: #0a0a0a;
+            border: 2px solid #0066cc;
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .canvases {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+        }
+        
+        canvas {
+            flex: 1;
+            background: #0a0a0a;
+            cursor: crosshair;
+        }
+        
+        .sidebar {
+            width: 300px;
+            background: #2a2a2a;
+            border: 2px solid #0066cc;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .info-group {
+            background: #1a1a1a;
+            border-left: 3px solid #00ccff;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .info-group h3 {
+            color: #00ccff;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin: 5px 0;
+        }
+        
+        .info-label {
+            color: #999;
+        }
+        
+        .info-value {
+            color: #00ff88;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .distance-warning {
+            color: #ff6600;
+        }
+        
+        .distance-danger {
+            color: #ff3333;
+        }
+        
+        .obstacle {
+            color: #ff3333;
+        }
+        
+        .no-obstacle {
+            color: #33ff33;
+        }
+        
+        .points-list {
+            flex: 1;
+            overflow-y: auto;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 8px;
+            font-size: 11px;
+        }
+        
+        .point-item {
+            padding: 3px 5px;
+            margin: 2px 0;
+            background: #111;
+            border-radius: 2px;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            max-height: 20px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .point-item.near {
+            background: #332200;
+            color: #ffaa00;
+        }
+        
+        .point-item.danger {
+            background: #330000;
+            color: #ff3333;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+        }
+        
+        button {
+            flex: 1;
+            padding: 10px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #0052a3;
+        }
+        
+        button:active {
+            background: #003d7a;
+        }
+        
+        .legend {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 8px;
+            font-size: 11px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 3px 0;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #0066cc #1a1a1a;
+        }
+        
+        .scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .scrollbar::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        
+        .scrollbar::-webkit-scrollbar-thumb {
+            background: #0066cc;
+            border-radius: 4px;
+        }
+        
+        .scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #0052a3;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>⚡ YDLidar GS2 Visualizer</h1>
+        <div class="status">
+            <div class="status-item">
+                <div class="status-indicator" id="connectionStatus"></div>
+                <span id="connectionText">Connecting...</span>
+            </div>
+            <div class="status-item">
+                Frame: <span id="frameCount">0</span>
+            </div>
+            <div class="status-item">
+                <span id="fps">0</span> FPS
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="canvases">
+            <div class="canvas-container">
+                <canvas id="lidarCanvas"></canvas>
+            </div>
+            <div class="canvas-container">
+                <canvas id="distanceAngleCanvas"></canvas>
+            </div>
+        </div>
+        
+        <div class="sidebar scrollbar">
+            <div class="info-group">
+                <h3>Distances</h3>
+                <div class="info-item">
+                    <span class="info-label">Front (±20°)</span>
+                    <span class="info-value" id="frontDistance">-- mm</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Min</span>
+                    <span class="info-value" id="minDistance">-- mm</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Max</span>
+                    <span class="info-value" id="maxDistance">-- mm</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Avg</span>
+                    <span class="info-value" id="avgDistance">-- mm</span>
+                </div>
+            </div>
+            
+            <div class="info-group">
+                <h3>Obstacles</h3>
+                <div class="info-item">
+                    <span class="info-label">Left</span>
+                    <span class="info-value no-obstacle" id="leftObstacle">Clear</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Front</span>
+                    <span class="info-value no-obstacle" id="frontObstacle">Clear</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Right</span>
+                    <span class="info-value no-obstacle" id="rightObstacle">Clear</span>
+                </div>
+            </div>
+            
+            <div class="info-group">
+                <h3>Data</h3>
+                <div class="info-item">
+                    <span class="info-label">Valid Points</span>
+                    <span class="info-value" id="validPoints">0/160</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Intensity (Avg)</span>
+                    <span class="info-value" id="avgIntensity">-- </span>
+                </div>
+            </div>
+            
+            <div style="border-top: 1px solid #333; padding-top: 10px;">
+                <h3 style="color: #00ccff; font-size: 12px; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;">Top Points</h3>
+                <div class="points-list scrollbar" id="topPointsList"></div>
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #00ff88;"></div>
+                    <span>Valid Point (&lt;500mm)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ffaa00;"></div>
+                    <span>Near (&lt;300mm)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff3333;"></div>
+                    <span>Danger (&lt;150mm)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #cccccc;"></div>
+                    <span>FOV Bounds</span>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button onclick="resetView()">Reset View</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('lidarCanvas');
+        const ctx = canvas.getContext('2d');
+        const distanceAngleCanvas = document.getElementById('distanceAngleCanvas');
+        const distanceAngleCtx = distanceAngleCanvas.getContext('2d');
+        
+        // Resize canvases
+        function resizeCanvas() {
+            const containers = document.querySelectorAll('.canvas-container');
+            containers.forEach(container => {
+                const canvas = container.querySelector('canvas');
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+            });
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // State
+        let currentFrame = null;
+        let frameCount = 0;
+        let lastFpsTime = Date.now();
+        let fpsCounter = 0;
+        let zoomLevel = 1;
+        let panX = 0;
+        let panY = 0;
+        
+        // WebSocket connection
+        const ws = new WebSocket(`ws://${window.location.hostname}:${window.location.port}/ws`);
+        
+        ws.onopen = () => {
+            console.log('Connected to LIDAR server');
+            document.getElementById('connectionStatus').classList.add('connected');
+            document.getElementById('connectionText').textContent = 'Connected';
+        };
+        
+        ws.onmessage = (event) => {
+            currentFrame = JSON.parse(event.data);
+            frameCount = currentFrame.frame_count;
+            fpsCounter++;
+            updateDisplay();
+            drawLidarData();
+            drawDistanceAnglePlot();
+            
+            // Update FPS every second
+            const now = Date.now();
+            if (now - lastFpsTime > 1000) {
+                document.getElementById('fps').textContent = fpsCounter;
+                fpsCounter = 0;
+                lastFpsTime = now;
+            }
+        };
+        
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            document.getElementById('connectionStatus').classList.remove('connected');
+            document.getElementById('connectionText').textContent = 'Error';
+        };
+        
+        ws.onclose = () => {
+            console.log('Disconnected from LIDAR server');
+            document.getElementById('connectionStatus').classList.remove('connected');
+            document.getElementById('connectionText').textContent = 'Disconnected';
+        };
+        
+        function drawLidarData() {
+            if (!currentFrame) return;
+            
+            const centerX = canvas.width / 2 + panX;
+            const centerY = canvas.height / 2 + panY;
+            const maxRange = 500; // mm
+            const pixelsPerMm = Math.min(canvas.width, canvas.height) / (maxRange * 2 * zoomLevel);
+            
+            // Clear canvas
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw cartesian grid
+            ctx.strokeStyle = '#1a3a5a';
+            ctx.lineWidth = 1;
+            
+            // Draw grid lines every 100mm
+            for (let dist = 100; dist <= maxRange; dist += 100) {
+                const pixelDist = dist * pixelsPerMm;
+                
+                // Horizontal lines
+                ctx.beginPath();
+                ctx.moveTo(centerX - pixelDist, centerY - pixelDist);
+                ctx.lineTo(centerX + pixelDist, centerY - pixelDist);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX - pixelDist, centerY + pixelDist);
+                ctx.lineTo(centerX + pixelDist, centerY + pixelDist);
+                ctx.stroke();
+                
+                // Vertical lines
+                ctx.beginPath();
+                ctx.moveTo(centerX - pixelDist, centerY - pixelDist);
+                ctx.lineTo(centerX - pixelDist, centerY + pixelDist);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX + pixelDist, centerY - pixelDist);
+                ctx.lineTo(centerX + pixelDist, centerY + pixelDist);
+                ctx.stroke();
+            }
+            
+            // Draw distance labels
+            ctx.fillStyle = '#666';
+            ctx.font = '10px monospace';
+            ctx.textAlign = 'right';
+            for (let dist = 100; dist <= maxRange; dist += 100) {
+                const pixelDist = dist * pixelsPerMm;
+                ctx.fillText(dist + 'mm', centerX + pixelDist - 5, centerY - 2);
+            }
+            
+            // Draw coordinate axes
+            ctx.strokeStyle = '#0066cc';
+            ctx.lineWidth = 2;
+            const axisLength = maxRange * pixelsPerMm;
+            
+            // X axis (left-right)
+            ctx.beginPath();
+            ctx.moveTo(centerX - axisLength, centerY);
+            ctx.lineTo(centerX + axisLength, centerY);
+            ctx.stroke();
+            
+            // Y axis (forward-back)
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY - axisLength);
+            ctx.lineTo(centerX, centerY + axisLength);
+            ctx.stroke();
+            
+            // Draw FOV boundaries (-50° to +50°)
+            ctx.strokeStyle = '#cccccc';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            
+            // Left boundary (-50°)
+            const leftAngle = -50 * Math.PI / 180;
+            const leftX = axisLength * Math.sin(leftAngle);
+            const leftY = axisLength * Math.cos(leftAngle);
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + leftX, centerY - leftY);
+            ctx.stroke();
+            
+            // Right boundary (+50°)
+            const rightAngle = 50 * Math.PI / 180;
+            const rightX = axisLength * Math.sin(rightAngle);
+            const rightY = axisLength * Math.cos(rightAngle);
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + rightX, centerY - rightY);
+            ctx.stroke();
+            
+            ctx.setLineDash([]);
+            
+            // Draw points
+            const points = currentFrame.points || [];
+            points.forEach(point => {
+                const x = centerX + point.x * pixelsPerMm;
+                const y = centerY - point.y * pixelsPerMm;
+                
+                if (x > 0 && x < canvas.width && y > 0 && y < canvas.height) {
+                    // Color based on distance
+                    let color;
+                    if (point.distance < 150) {
+                        color = '#ff3333'; // Red - danger
+                    } else if (point.distance < 300) {
+                        color = '#ffaa00'; // Orange - near
+                    } else {
+                        color = '#00ff88'; // Green - normal
+                    }
+                    
+                    // Brightness based on intensity
+                    const intensity = point.intensity / 127;
+                    
+                    ctx.fillStyle = color;
+                    ctx.globalAlpha = 0.3 + intensity * 0.7;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            
+            ctx.globalAlpha = 1;
+            
+            // Draw origin
+            ctx.fillStyle = '#0066cc';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw origin crosshair
+            ctx.strokeStyle = '#0066cc';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(centerX - 10, centerY);
+            ctx.lineTo(centerX + 10, centerY);
+            ctx.moveTo(centerX, centerY - 10);
+            ctx.lineTo(centerX, centerY + 10);
+            ctx.stroke();
+            
+            // Draw labels
+            ctx.fillStyle = '#0066cc';
+            ctx.font = 'bold 12px monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText('Y', centerX + 5, centerY - axisLength - 5);
+            ctx.textAlign = 'right';
+            ctx.fillText('X', centerX + axisLength + 5, centerY + 15);
+        }
+        
+        function drawDistanceAnglePlot() {
+            if (!currentFrame) return;
+            
+            const padding = 40;
+            const width = distanceAngleCanvas.width - padding * 2;
+            const height = distanceAngleCanvas.height - padding * 2;
+            const maxDistance = 500;
+            const minAngle = -50;
+            const maxAngle = 50;
+            
+            // Clear canvas
+            distanceAngleCtx.fillStyle = '#0a0a0a';
+            distanceAngleCtx.fillRect(0, 0, distanceAngleCanvas.width, distanceAngleCanvas.height);
+            
+            // Draw grid
+            distanceAngleCtx.strokeStyle = '#1a3a5a';
+            distanceAngleCtx.lineWidth = 1;
+            
+            // Horizontal grid lines (distance)
+            for (let d = 100; d <= maxDistance; d += 100) {
+                const y = padding + height - (d / maxDistance) * height;
+                distanceAngleCtx.beginPath();
+                distanceAngleCtx.moveTo(padding, y);
+                distanceAngleCtx.lineTo(padding + width, y);
+                distanceAngleCtx.stroke();
+                
+                distanceAngleCtx.fillStyle = '#666';
+                distanceAngleCtx.font = '10px monospace';
+                distanceAngleCtx.textAlign = 'right';
+                distanceAngleCtx.fillText(d + 'mm', padding - 5, y + 3);
+            }
+            
+            // Vertical grid lines (angle)
+            for (let a = minAngle; a <= maxAngle; a += 10) {
+                const x = padding + ((a - minAngle) / (maxAngle - minAngle)) * width;
+                distanceAngleCtx.beginPath();
+                distanceAngleCtx.moveTo(x, padding);
+                distanceAngleCtx.lineTo(x, padding + height);
+                distanceAngleCtx.stroke();
+                
+                distanceAngleCtx.fillStyle = '#666';
+                distanceAngleCtx.font = '10px monospace';
+                distanceAngleCtx.textAlign = 'center';
+                distanceAngleCtx.fillText(a + '°', x, padding + height + 15);
+            }
+            
+            // Draw axes
+            distanceAngleCtx.strokeStyle = '#0066cc';
+            distanceAngleCtx.lineWidth = 2;
+            distanceAngleCtx.beginPath();
+            distanceAngleCtx.moveTo(padding, padding);
+            distanceAngleCtx.lineTo(padding, padding + height);
+            distanceAngleCtx.lineTo(padding + width, padding + height);
+            distanceAngleCtx.stroke();
+            
+            // Axis labels
+            distanceAngleCtx.fillStyle = '#0066cc';
+            distanceAngleCtx.font = 'bold 12px monospace';
+            distanceAngleCtx.textAlign = 'center';
+            distanceAngleCtx.fillText('Angle (degrees)', padding + width / 2, distanceAngleCanvas.height - 5);
+            distanceAngleCtx.save();
+            distanceAngleCtx.translate(15, padding + height / 2);
+            distanceAngleCtx.rotate(-Math.PI / 2);
+            distanceAngleCtx.fillText('Distance (mm)', 0, 0);
+            distanceAngleCtx.restore();
+            
+            // Plot points
+            const points = currentFrame.points || [];
+            points.forEach(point => {
+                if (point.distance > 0 && point.distance < maxDistance) {
+                    const x = padding + ((point.angle - minAngle) / (maxAngle - minAngle)) * width;
+                    const y = padding + height - (point.distance / maxDistance) * height;
+                    
+                    // Color based on distance
+                    let color;
+                    if (point.distance < 150) {
+                        color = '#ff3333';
+                    } else if (point.distance < 300) {
+                        color = '#ffaa00';
+                    } else {
+                        color = '#00ff88';
+                    }
+                    
+                    // Size based on intensity
+                    const intensity = point.intensity / 127;
+                    
+                    distanceAngleCtx.fillStyle = color;
+                    distanceAngleCtx.globalAlpha = 0.5 + intensity * 0.5;
+                    distanceAngleCtx.beginPath();
+                    distanceAngleCtx.arc(x, y, 2 + intensity * 2, 0, Math.PI * 2);
+                    distanceAngleCtx.fill();
+                }
+            });
+            
+            distanceAngleCtx.globalAlpha = 1;
+            
+            // Draw best fit line if we have enough points
+            const validPoints = points.filter(p => p.distance > 0 && p.distance < maxDistance);
+            if (validPoints.length > 2) {
+                // Simple linear regression: distance = m * angle + b
+                const n = validPoints.length;
+                let sumAngle = 0, sumDistance = 0, sumAngleDistance = 0, sumAngle2 = 0;
+                
+                validPoints.forEach(p => {
+                    sumAngle += p.angle;
+                    sumDistance += p.distance;
+                    sumAngleDistance += p.angle * p.distance;
+                    sumAngle2 += p.angle * p.angle;
+                });
+                
+                const m = (n * sumAngleDistance - sumAngle * sumDistance) / (n * sumAngle2 - sumAngle * sumAngle);
+                const b = (sumDistance - m * sumAngle) / n;
+                
+                // Draw best fit line
+                distanceAngleCtx.strokeStyle = '#ff00ff';
+                distanceAngleCtx.lineWidth = 2;
+                distanceAngleCtx.setLineDash([5, 5]);
+                distanceAngleCtx.beginPath();
+                
+                const x1 = padding;
+                const d1 = m * minAngle + b;
+                const y1 = padding + height - (Math.max(0, Math.min(maxDistance, d1)) / maxDistance) * height;
+                
+                const x2 = padding + width;
+                const d2 = m * maxAngle + b;
+                const y2 = padding + height - (Math.max(0, Math.min(maxDistance, d2)) / maxDistance) * height;
+                
+                distanceAngleCtx.moveTo(x1, y1);
+                distanceAngleCtx.lineTo(x2, y2);
+                distanceAngleCtx.stroke();
+                distanceAngleCtx.setLineDash([]);
+                
+                // Draw equation
+                distanceAngleCtx.fillStyle = '#ff00ff';
+                distanceAngleCtx.font = 'bold 11px monospace';
+                distanceAngleCtx.textAlign = 'left';
+                const equation = `d = ${m.toFixed(2)}a + ${b.toFixed(1)}`;
+                distanceAngleCtx.fillText(equation, padding + 10, padding + 20);
+            }
+        }
+        
+        function updateDisplay() {
+            if (!currentFrame) return;
+            
+            // Update frame count
+            document.getElementById('frameCount').textContent = currentFrame.frame_count;
+            
+            // Update distances
+            const distances = currentFrame.points
+                .filter(p => p.distance > 0 && p.distance < 500)
+                .map(p => p.distance);
+            
+            if (distances.length > 0) {
+                const min = Math.min(...distances);
+                const max = Math.max(...distances);
+                const avg = Math.round(distances.reduce((a, b) => a + b) / distances.length);
+                
+                document.getElementById('minDistance').textContent = min + ' mm';
+                document.getElementById('maxDistance').textContent = max + ' mm';
+                document.getElementById('avgDistance').textContent = avg + ' mm';
+            }
+            
+            // Update front distance
+            const frontDist = currentFrame.front_distance || 0;
+            const frontElem = document.getElementById('frontDistance');
+            frontElem.textContent = (frontDist > 0 ? frontDist : '--') + ' mm';
+            if (frontDist > 0 && frontDist < 150) {
+                frontElem.className = 'info-value distance-danger';
+            } else if (frontDist > 0 && frontDist < 300) {
+                frontElem.className = 'info-value distance-warning';
+            } else {
+                frontElem.className = 'info-value';
+            }
+            
+            // Update obstacles
+            updateObstacleStatus('leftObstacle', currentFrame.obstacle_left);
+            updateObstacleStatus('frontObstacle', distances.length > 80 && Math.min(...distances) < 300);
+            updateObstacleStatus('rightObstacle', currentFrame.obstacle_right);
+            
+            // Update data
+            document.getElementById('validPoints').textContent = 
+                currentFrame.valid_points + '/' + currentFrame.total_points;
+            
+            const intensities = currentFrame.points.map(p => p.intensity);
+            const avgIntensity = Math.round(intensities.reduce((a, b) => a + b) / intensities.length);
+            document.getElementById('avgIntensity').textContent = avgIntensity + '/127';
+            
+            // Update top points list
+            const topPoints = currentFrame.points
+                .filter(p => p.distance > 0)
+                .sort((a, b) => a.distance - b.distance)
+                .slice(0, 5);
+            
+            const listHTML = topPoints.map(p => {
+                let className = 'point-item';
+                if (p.distance < 150) className += ' danger';
+                else if (p.distance < 300) className += ' near';
+                
+                return `<div class="${className}">
+                    X${p.x.toFixed(0).padStart(5)} | 
+                    Y${p.y.toFixed(0).padStart(5)} | 
+                    I${p.intensity.toString().padStart(3)}
+                </div>`;
+            }).join('');
+            
+            document.getElementById('topPointsList').innerHTML = listHTML;
+        }
+        
+        function updateObstacleStatus(elementId, hasObstacle) {
+            const elem = document.getElementById(elementId);
+            if (hasObstacle) {
+                elem.textContent = '⚠ BLOCKED';
+                elem.className = 'info-value obstacle';
+            } else {
+                elem.textContent = '✓ Clear';
+                elem.className = 'info-value no-obstacle';
+            }
+        }
+        
+        function resetView() {
+            zoomLevel = 1;
+            panX = 0;
+            panY = 0;
+        }
+        
+        // Mouse wheel zoom
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const factor = e.deltaY > 0 ? 0.9 : 1.1;
+            zoomLevel *= factor;
+            zoomLevel = Math.max(0.5, Math.min(zoomLevel, 5));
+        });
+        
+        // Mouse pan
+        let isPanning = false;
+        let lastX, lastY;
+        
+        canvas.addEventListener('mousedown', (e) => {
+            isPanning = true;
+            lastX = e.clientX;
+            lastY = e.clientY;
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (isPanning) {
+                panX += e.clientX - lastX;
+                panY += e.clientY - lastY;
+                lastX = e.clientX;
+                lastY = e.clientY;
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isPanning = false;
+        });
+        
+        // Initial draw
+        drawLidarData();
+        drawDistanceAnglePlot();
+    </script>
+</body>
+</html>
