@@ -5,6 +5,10 @@ echo.
 REM Get the directory where this batch file is located
 cd /d "%~dp0"
 
+REM Configure COM6 to 921600 baud (as specified in LIDAR docs)
+echo Configuring COM6 port...
+mode COM6: baud=921600 parity=n data=8 stop=1
+
 REM Run the Python script using the virtual environment
 "C:\Apache24\htdocs\personalProjects\FRC9214\.venv\Scripts\python.exe" lidar.py
 

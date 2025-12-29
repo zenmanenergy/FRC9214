@@ -139,7 +139,7 @@ class LidarWebSocketServer:
         print(f"[WS] Initializing LIDAR...")
         
         # Connect to LIDAR
-        self.lidar = GS2Lidar()
+        self.lidar = GS2Lidar(port='COM6')
         if not self.lidar.connect():
             print("[ERR] Failed to connect to LIDAR")
             return False

@@ -263,7 +263,7 @@
 </head>
 <body>
     <header>
-        <h1>⚡ YDLidar GS2 Visualizer</h1>
+        <h1>YDLidar GS2 Visualizer</h1>
         <div class="status">
             <div class="status-item">
                 <div class="status-indicator" id="connectionStatus"></div>
@@ -292,7 +292,7 @@
             <div class="info-group">
                 <h3>Distances</h3>
                 <div class="info-item">
-                    <span class="info-label">Front (±20°)</span>
+                    <span class="info-label">Front (±20 deg)</span>
                     <span class="info-value" id="frontDistance">-- mm</span>
                 </div>
                 <div class="info-item">
@@ -477,7 +477,7 @@
             }
             
             // Draw distance labels
-            ctx.fillStyle = '#666';
+            ctx.fillStyle = '#ffffff';
             ctx.font = '10px monospace';
             ctx.textAlign = 'right';
             for (let dist = 100; dist <= maxRange; dist += 100) {
@@ -527,8 +527,54 @@
             
             ctx.setLineDash([]);
             
-            // Draw points
+            // Draw line segments connecting adjacent points (to show edges)
             const points = currentFrame.points || [];
+            if (points.length > 1) {
+                ctx.lineWidth = 1.5;
+                for (let i = 0; i < points.length - 1; i++) {
+                    const p1 = points[i];
+                    const p2 = points[i + 1];
+                    
+                    // Only connect if both points are valid and not too far apart (indicates an edge)
+                    if (p1.distance > 0 && p2.distance > 0) {
+                        const distDiff = Math.abs(p1.distance - p2.distance);
+                        
+                        // If distance difference is large, it's likely an edge - skip this connection
+                        if (distDiff < 100) {
+                            const x1 = centerX + p1.x * pixelsPerMm;
+                            const y1 = centerY - p1.y * pixelsPerMm;
+                            const x2 = centerX + p2.x * pixelsPerMm;
+                            const y2 = centerY - p2.y * pixelsPerMm;
+                            
+                            if ((x1 > 0 && x1 < canvas.width && y1 > 0 && y1 < canvas.height) ||
+                                (x2 > 0 && x2 < canvas.width && y2 > 0 && y2 < canvas.height)) {
+                                // Color based on average distance
+                                const avgDist = (p1.distance + p2.distance) / 2;
+                                let color;
+                                if (avgDist < 150) {
+                                    color = '#ff3333'; // Red - danger
+                                } else if (avgDist < 300) {
+                                    color = '#ffaa00'; // Orange - near
+                                } else {
+                                    color = '#00ff88'; // Green - normal
+                                }
+                                
+                                const avgIntensity = (p1.intensity + p2.intensity) / 2 / 127;
+                                ctx.strokeStyle = color;
+                                ctx.globalAlpha = 0.4 + avgIntensity * 0.6;
+                                ctx.beginPath();
+                                ctx.moveTo(x1, y1);
+                                ctx.lineTo(x2, y2);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                }
+            }
+            
+            ctx.globalAlpha = 1;
+            
+            // Draw points
             points.forEach(point => {
                 const x = centerX + point.x * pixelsPerMm;
                 const y = centerY - point.y * pixelsPerMm;
@@ -608,7 +654,7 @@
                 distanceAngleCtx.lineTo(padding + width, y);
                 distanceAngleCtx.stroke();
                 
-                distanceAngleCtx.fillStyle = '#666';
+                distanceAngleCtx.fillStyle = '#ffffff';
                 distanceAngleCtx.font = '10px monospace';
                 distanceAngleCtx.textAlign = 'right';
                 distanceAngleCtx.fillText(d + 'mm', padding - 5, y + 3);
@@ -622,10 +668,10 @@
                 distanceAngleCtx.lineTo(x, padding + height);
                 distanceAngleCtx.stroke();
                 
-                distanceAngleCtx.fillStyle = '#666';
+                distanceAngleCtx.fillStyle = '#ffffff';
                 distanceAngleCtx.font = '10px monospace';
                 distanceAngleCtx.textAlign = 'center';
-                distanceAngleCtx.fillText(a + '°', x, padding + height + 15);
+                distanceAngleCtx.fillText(a + 'deg', x, padding + height + 15);
             }
             
             // Draw axes
@@ -648,8 +694,52 @@
             distanceAngleCtx.fillText('Distance (mm)', 0, 0);
             distanceAngleCtx.restore();
             
-            // Plot points
+            // Plot points and connect with line segments
             const points = currentFrame.points || [];
+            
+            // Draw line segments first (so they appear behind points)
+            if (points.length > 1) {
+                distanceAngleCtx.lineWidth = 1.5;
+                for (let i = 0; i < points.length - 1; i++) {
+                    const p1 = points[i];
+                    const p2 = points[i + 1];
+                    
+                    if (p1.distance > 0 && p2.distance > 0 && p1.distance < maxDistance && p2.distance < maxDistance) {
+                        // Only connect if distance difference is small (not an edge)
+                        const distDiff = Math.abs(p1.distance - p2.distance);
+                        
+                        if (distDiff < 100) {
+                            const x1 = padding + ((p1.angle - minAngle) / (maxAngle - minAngle)) * width;
+                            const y1 = padding + height - (p1.distance / maxDistance) * height;
+                            const x2 = padding + ((p2.angle - minAngle) / (maxAngle - minAngle)) * width;
+                            const y2 = padding + height - (p2.distance / maxDistance) * height;
+                            
+                            // Color based on average distance
+                            const avgDist = (p1.distance + p2.distance) / 2;
+                            let color;
+                            if (avgDist < 150) {
+                                color = '#ff3333';
+                            } else if (avgDist < 300) {
+                                color = '#ffaa00';
+                            } else {
+                                color = '#00ff88';
+                            }
+                            
+                            const avgIntensity = (p1.intensity + p2.intensity) / 2 / 127;
+                            distanceAngleCtx.strokeStyle = color;
+                            distanceAngleCtx.globalAlpha = 0.3 + avgIntensity * 0.4;
+                            distanceAngleCtx.beginPath();
+                            distanceAngleCtx.moveTo(x1, y1);
+                            distanceAngleCtx.lineTo(x2, y2);
+                            distanceAngleCtx.stroke();
+                        }
+                    }
+                }
+            }
+            
+            distanceAngleCtx.globalAlpha = 1;
+            
+            // Draw points
             points.forEach(point => {
                 if (point.distance > 0 && point.distance < maxDistance) {
                     const x = padding + ((point.angle - minAngle) / (maxAngle - minAngle)) * width;
@@ -695,24 +785,35 @@
                 const m = (n * sumAngleDistance - sumAngle * sumDistance) / (n * sumAngle2 - sumAngle * sumAngle);
                 const b = (sumDistance - m * sumAngle) / n;
                 
-                // Draw best fit line
-                distanceAngleCtx.strokeStyle = '#ff00ff';
-                distanceAngleCtx.lineWidth = 2;
-                distanceAngleCtx.setLineDash([5, 5]);
-                distanceAngleCtx.beginPath();
+                // Find the actual angle range of valid data
+                const dataMinAngle = Math.min(...validPoints.map(p => p.angle));
+                const dataMaxAngle = Math.max(...validPoints.map(p => p.angle));
                 
-                const x1 = padding;
-                const d1 = m * minAngle + b;
-                const y1 = padding + height - (Math.max(0, Math.min(maxDistance, d1)) / maxDistance) * height;
+                // Add some padding but stay within FOV bounds
+                const padding_angle = Math.min(5, (dataMaxAngle - dataMinAngle) * 0.2);
+                const lineStartAngle = Math.max(minAngle, dataMinAngle - padding_angle);
+                const lineEndAngle = Math.min(maxAngle, dataMaxAngle + padding_angle);
                 
-                const x2 = padding + width;
-                const d2 = m * maxAngle + b;
-                const y2 = padding + height - (Math.max(0, Math.min(maxDistance, d2)) / maxDistance) * height;
-                
-                distanceAngleCtx.moveTo(x1, y1);
-                distanceAngleCtx.lineTo(x2, y2);
-                distanceAngleCtx.stroke();
-                distanceAngleCtx.setLineDash([]);
+                // Only draw if we have a valid segment
+                if (lineStartAngle < lineEndAngle) {
+                    const x1 = padding + ((lineStartAngle - minAngle) / (maxAngle - minAngle)) * width;
+                    const d1 = m * lineStartAngle + b;
+                    const y1 = padding + height - (Math.max(0, Math.min(maxDistance, d1)) / maxDistance) * height;
+                    
+                    const x2 = padding + ((lineEndAngle - minAngle) / (maxAngle - minAngle)) * width;
+                    const d2 = m * lineEndAngle + b;
+                    const y2 = padding + height - (Math.max(0, Math.min(maxDistance, d2)) / maxDistance) * height;
+                    
+                    // Draw best fit line
+                    distanceAngleCtx.strokeStyle = '#ff00ff';
+                    distanceAngleCtx.lineWidth = 2;
+                    distanceAngleCtx.setLineDash([5, 5]);
+                    distanceAngleCtx.beginPath();
+                    distanceAngleCtx.moveTo(x1, y1);
+                    distanceAngleCtx.lineTo(x2, y2);
+                    distanceAngleCtx.stroke();
+                    distanceAngleCtx.setLineDash([]);
+                }
                 
                 // Draw equation
                 distanceAngleCtx.fillStyle = '#ff00ff';
