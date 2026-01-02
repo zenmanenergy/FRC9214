@@ -3,6 +3,7 @@
 <head>
 	<meta charset="UTF-8" />
 	<title>FRC Field Display</title>
+	<script src="./msgpack5.js"></script>
 	<style>
 		body { display: flex; flex-direction: column; align-items: center; }
 		#status { font-size: 18px; margin-bottom: 10px; color: red; }
@@ -12,10 +13,8 @@
 	</style>
 </head>
 <body>
-	<!-- Status Message -->
 	<div id="status">Loading field data...</div>
 
-	<!-- Split Screen View -->
 	<div class="container">
 		<div id="overviewContainer">
 			<canvas id="overviewCanvas" width="600" height="300"></canvas>
@@ -26,62 +25,107 @@
 	</div>
 
 	<script>
+
 		let ws;
 		let connectionTimeout;
 		const statusElement = document.getElementById("status");
-
 		const overviewCanvas = document.getElementById("overviewCanvas");
 		const overviewCtx = overviewCanvas.getContext("2d");
-
 		const zoomCanvas = document.getElementById("zoomCanvas");
 		const zoomCtx = zoomCanvas.getContext("2d");
 
-		// Field dimensions (meters)
 		const FIELD_WIDTH = 16.5;
 		const FIELD_HEIGHT = 8.2;
 		const HALF_FIELD_WIDTH = FIELD_WIDTH / 2;
-
-		// Scaling for overview canvas
 		const OVERVIEW_SCALE_X = overviewCanvas.width / HALF_FIELD_WIDTH;
 		const OVERVIEW_SCALE_Y = overviewCanvas.height / FIELD_HEIGHT;
-
-		// Zoom settings (3m x 2m region)
 		const ZOOM_WIDTH_METERS = 3.0;
 		const ZOOM_HEIGHT_METERS = 2.0;
 
 		let fieldImage = new Image();
 		fieldImage.src = "REEFSCAPE2025.png";
-
 		let robotState = { x: 0, y: 0, heading: 0, robot_number: 0, color: "red", other_robots: [] };
+		let topicIdMap = {};  // Maps topic names to IDs received in announce messages
+		const msgpack = msgpack5();  // Initialize msgpack5 library
+
+		// Parse MessagePack Blob data
+		async function parseMessagePackBlob(blob) {
+			const arrayBuffer = await blob.arrayBuffer();
+			const uint8array = new Uint8Array(arrayBuffer);
+			try {
+				const decoded = msgpack.decode(uint8array);
+				// NT4 format: [topicId, timestamp, dataType, value]
+				if (Array.isArray(decoded) && decoded.length === 4) {
+					const [topicId, timestamp, dataType, value] = decoded;
+					console.log("MessagePack decoded:", { topicId, dataType, value });
+					return value;
+				}
+			} catch (e) {
+				console.error("MessagePack decode error:", e);
+			}
+			return null;
+		}
 
 		function startNT4() {
-			const rioIp = "10.XX.YY.2";
-			ws = new WebSocket(`ws://${rioIp}:5810/networktables`);
+			const rioIp = "10.92.14.2";
+			// According to NT4 spec: "Servers shall support a resource name of /nt/<name>"
+			ws = new WebSocket(`ws://${rioIp}:5810/nt/browser`);
 
 			ws.onopen = () => {
 				console.log("NT4 WebSocket open");
 				statusElement.textContent = "Connected to NT4";
 				statusElement.style.color = "green";
-				const subscribeMsg = {
-					type: "subscribe",
-					topics: [
-						{ name: "/SmartDashboard/robotData", type: "pubsub" },
-						{ name: "/SmartDashboard/targetCoordinate", type: "pubsub" }
-					]
-				};
+				
+				// Subscribe to robot data topic
+				// Message must be wrapped in an array (JSON array at top level)
+				const subscribeMsg = [{
+					method: "subscribe",
+					params: {
+						topics: ["/SmartDashboard/robotData"],
+						subuid: 1,
+						options: {
+							periodic: 0.05,  // 50ms = 20Hz (match robot loop rate)
+							all: false,
+							topicsonly: false,
+							prefix: false
+						}
+					}
+				}];
+				console.log("Sending subscribe message:", subscribeMsg);
 				ws.send(JSON.stringify(subscribeMsg));
-				clearTimeout(connectionTimeout); // Stop error timeout if we connected
+				clearTimeout(connectionTimeout);
 			};
 
 			ws.onmessage = (event) => {
-				const msg = JSON.parse(event.data);
-				if (msg.type === "publish" && Array.isArray(msg.messages)) {
-					for (const m of msg.messages) {
-						if (m.name === "/SmartDashboard/robotData") {
-							robotState = JSON.parse(m.value);
-							drawAll();
+				// Handle binary Blob data from robot
+				if (event.data instanceof Blob) {
+					parseMessagePackBlob(event.data).then(value => {
+						if (typeof value === 'string') {
+							try {
+								const data = JSON.parse(value);
+								if (data.x !== undefined && data.y !== undefined && data.heading !== undefined) {
+									robotState = data;
+									console.log("Updated robot state:", robotState);
+									drawAll();
+								}
+							} catch (e) {
+								console.error("Failed to parse JSON value:", e);
+							}
 						}
+					});
+					return;
+				}
+				
+				// Handle text JSON messages (control messages)
+				try {
+					const msg = JSON.parse(event.data);
+					
+					if (msg.method === "announce") {
+						console.log("Topic announced:", msg.params.name, "ID:", msg.params.id);
+						topicIdMap[msg.params.name] = msg.params.id;
 					}
+				} catch (e) {
+					// Ignore parse errors
 				}
 			};
 
@@ -143,17 +187,6 @@
 
 			ctx.restore();
 		}
-
-		// Click-to-Send Feature
-		overviewCanvas.addEventListener("click", (event) => {
-			const rect = overviewCanvas.getBoundingClientRect();
-			const x = (event.clientX - rect.left) / OVERVIEW_SCALE_X;
-			const y = (overviewCanvas.height - (event.clientY - rect.top)) / OVERVIEW_SCALE_Y;
-			
-			const targetData = { x: x.toFixed(2), y: y.toFixed(2) };
-			console.log("Sending target:", targetData);
-			ws.send(JSON.stringify({ type: "publish", topic: "/SmartDashboard/targetCoordinate", value: JSON.stringify(targetData) }));
-		});
 
 		// Handle Field Image Loading Errors
 		fieldImage.onload = () => {
