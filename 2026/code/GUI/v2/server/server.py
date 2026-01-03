@@ -7,7 +7,7 @@ from ntcore import NetworkTableInstance
 def main():
 	ntinst = NetworkTableInstance.getDefault()
 	ntinst.startClient4("coprocessor")
-	ntinst.setServer("10.XX.YY.2")  # Change to your RoboRIO IP or MDNS name
+	ntinst.setServer("10.92.14.2")  # Change to your RoboRIO IP or MDNS name
 
 	table = ntinst.getTable("SmartDashboard")
 
