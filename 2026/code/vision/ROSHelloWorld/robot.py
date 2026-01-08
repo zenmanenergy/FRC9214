@@ -11,17 +11,20 @@ class MyRobot(wpilib.TimedRobot):
 			print("[RoboRIO] NetworkTables connected!")
 		except Exception as e:
 			print(f"[RoboRIO] Connection failed: {e}")
+		print("Robot Initialization")
+		# Initialize NetworkTables client to connect to the Ubuntu computer (10.92.14.200)
+		NetworkTables.initialize(server="10.92.14.200")
+		self.ros_table = NetworkTables.getTable("ros_data")
 		
-		self.last_message = ""
+		print("[RoboRIO] Connecting to NetworkTables at 10.92.14.200")
 	
 	def teleopPeriodic(self):
-		try:
-			message = self.ros_table.getString("message", "")
-			if message and message != self.last_message:
-				print(f"[RoboRIO] Received: {message}")
-				self.last_message = message
-		except Exception as e:
-			print(f"[RoboRIO] Error reading message: {e}")
+		
+		# Retrieve and print the message from the Ubuntu NetworkTables server
+		message = self.ros_table.getString("message", "")
+		
+		if message:
+			print(f"[RoboRIO] Received: {message}")
 		
 if __name__ == "__main__":
 	wpilib.run(MyRobot)
