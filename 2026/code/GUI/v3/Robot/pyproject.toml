@@ -5,19 +5,18 @@ build-backend = "robotpy_build.build"
 [project]
 name = "frc9214-robot-2026"
 description = "2026 FRC 9214 Robot Code"
-readme = "README.md"
-requires-python = ">=3.8"
-license = {text = "MIT"}
-authors = [{name = "FRC Team 9214"}]
 version = "2026.1"
 
-dependencies = [
-    "wpilib>=2025.3",
-    "robotpy-ctre>=2025.0",
-    "robotpy-navx>=2025.0",
-    "robotpy-commands-v2>=2025.0",
+[tool.robotpy]
+robotpy_version = "2025.3.2.2"
+robot_package = "robot"
+
+robotpy_extras = [
+    "phoenix5",
+    "navx",
+    "commands2",
 ]
 
-[tool.robotpy]
-# RoboRIO team number
-robot_package = "robot"
+requires = [
+    "robotpy-ctre>=2025.0.3",
+]
