@@ -1,4 +1,4 @@
-# FRC Team 9214 - 2026 Season Repository
+# FRC Team 9214 - Honking Narwhals Repository
 
 ## About the Honking Narwhals
 
@@ -8,91 +8,74 @@ The **Honking Narwhals** are a FIRST Robotics Competition (FRC) team based in No
 
 ## Repository Overview
 
-This folder contains all code and CAD design files for the Honking Narwhals' 2026 robot platform. The repository is organized to support both mechanical design (SolidWorks CAD files) and software development (Python-based robot control code).
+This repository contains code, CAD designs, and documentation for the Honking Narwhals' FRC robots across multiple seasons. Each season folder contains all the code and mechanical design files needed for that year's competition.
 
 ## Folder Structure
 
-### 📁 `/CAD` - Mechanical Design Files
+- **`2023/`** - 2023 FRC Season
+  - Code and CAD files for the 2023 robot
+  
+- **`2025/`** - 2025 FRC Season
+  - Code and CAD files for the 2025 robot
+  - Includes vision processing, pathfinding, and GUI experiments
+  
+- **`2026/`** - 2026 FRC Season (Current)
+  - [See 2026 README](2026/README.md) for detailed information
+  - Code experiments (V1-V6)
+  - CAD designs and assemblies
 
-Contains all SolidWorks CAD files for the 2026 robot design:
+## Navigation by Season
 
-- **`2026 ROBOT/`** - Main robot assembly and components
-  - `_9214_V2_tank_drive.SLDASM` - Tank drive base assembly
-  - `tank base/` - Frame and drive structure
-  - `elevator/` - Vertical lift mechanism
-  - `upper arm/` & `lower arm/` - Multi-jointed arm system
-  - `vertical rails/` - Rail systems for linear motion
-  - `cameras/` - Camera mount systems
-  - `sidewall/` - Side panel components
-  - `shared/` - Shared/common parts used across assemblies
-  - `Drawings/` - Engineering drawings and documentation
-  - `FTC Intake Device.SLDPRT` - Game piece intake mechanism
+For season-specific documentation, code structure, and CAD file organization, see the README in each season's folder:
 
-- **`ToolBox/`** - Tools and utilities for design
-
-### 📁 `/code` - Robot Software
-
-Python-based software for robot control and experimentation:
-
-- **`experiments/`** - Experimental code and prototypes
-  - `V1 odometry/` - Odometry calculations and position tracking (Version 1)
-  - `V2 ROS helloworld/` - ROS (Robot Operating System) integration experiments
-  - `V3 GUI hello world/` - GUI/dashboard interface prototypes
-  - `V4 GUI Odometry/` - Advanced GUI with odometry integration
-  - `V5 Gyro/` - Gyroscope sensor integration
-  - `V6 Lidar/` - LIDAR sensor integration and processing
-
-## Getting Started
-
-### Prerequisites
-
-- Python 3.x
-- WPILib (FRC Python library)
-- Any specific dependencies listed in individual experiment folders
-
-### Running Code
-
-1. Navigate to the desired experiment version folder
-2. Install any required dependencies
-3. Run the main robot code file
-
-### CAD Design
-
-All CAD files are created using **SolidWorks**. To view or edit:
-1. Open files with SolidWorks 2020 or later
-2. Main assembly: `CAD/2026 ROBOT/_9214_V2_tank_drive.SLDASM`
+- [**2026 Season Details**](2026/README.md)
+- 2025 Season (see `2025/README.md`)
+- 2023 Season (see `2023/README.md`)
 
 ## Team Information
 
 - **Team Number:** 9214
+- **Team Name:** Honking Narwhals
 - **Location:** Norfolk, Virginia
 - **Workspace:** 757 Makerspace
 - **Competition:** FIRST Robotics Competition (FRC)
 
-## Repository Structure
+## Repository Contents
 
-This is part of a larger FRC9214 repository that also contains:
-- Historical code and designs from previous seasons (2023, 2025)
-- Vision processing (AprilTags, stereocameras)
-- Path-finding algorithms
-- Dashboard and GUI frameworks
-- Student-led experiments and learning projects
+### Code
 
-For information about other seasons, see the parent directory README.
+- Python-based robot control code
+- Vision processing systems (AprilTags, stereocameras)
+- Path-finding algorithms (A* implementation)
+- GUI/Dashboard frameworks
+- Sensor integration (gyroscope, LIDAR, encoders)
+
+### CAD Design
+
+- SolidWorks mechanical designs
+- Robot assemblies
+- Component drawings
+- 3D models of mechanisms
 
 ## Contributing
 
-This is the official repository for the Honking Narwhals FRC Team. 
+This is the official repository for the Honking Narwhals FRC Team.
 
 - **Code contributions** should follow Python best practices
 - **CAD files** should maintain the folder structure and naming conventions
-- **Documentation** should be kept up-to-date with code changes
+- **Documentation** should be kept up-to-date with changes
 
-## License
+## Getting Started
 
-This repository contains design and code for the Honking Narwhals FRC Team 9214. Usage rights and licensing information can be found in the parent repository.
+1. Navigate to the season folder you're interested in (e.g., `2026/`)
+2. See that season's README for specific setup instructions
+3. Check individual experiment or code folders for additional documentation
+
+## Contact & Links
+
+- **Website:** [honkingnarwhals.com](http://www.honkingnarwhals.com)
+- **Workspace:** [757 Makerspace](http://www.757makerspace.org/)
 
 ---
 
-**Last Updated:** 2026 Season  
-**Contact:** Visit [honkingnarwhals.com](http://www.honkingnarwhals.com) for team information
+**Last Updated:** January 2026
