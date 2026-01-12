@@ -6,7 +6,7 @@ from networktables import NetworkTables
 
 
 class BallClusterVision:
-	def __init__(self, server_ip):
+	def __init__(self, server_ip, enable_debug=True):
 		# ---------------- NetworkTables ----------------
 		NetworkTables.initialize(server=server_ip)
 		self.nt = NetworkTables.getTable("vision")
@@ -45,6 +45,19 @@ class BallClusterVision:
 		self.frames_since_seen = 0
 		self.max_missing_frames = 10
 		self.min_confidence = 5
+		
+		# ---------------- Debug Visualization ----------------
+		self.enable_debug = enable_debug
+		self.debug_stats = {
+			'left_balls': 0,
+			'right_balls': 0,
+			'stereo_matches': 0,
+			'valid_points': 0,
+			'clusters': 0,
+			'largest_cluster_size': 0,
+			'locked_confidence': 0,
+			'frames_since_seen': 0
+		}
 
 	# ---------------------------------------------------------
 	# Robot pose from RoboRIO
@@ -89,7 +102,7 @@ class BallClusterVision:
 
 			centers.append((int(x), int(y)))
 
-		return centers
+		return centers, mask
 
 	# ---------------------------------------------------------
 	# Match left/right balls by scanline
@@ -143,26 +156,130 @@ class BallClusterVision:
 		self.nt.putBoolean("target/valid", True)
 
 	# ---------------------------------------------------------
+	# Debug visualization
+	# ---------------------------------------------------------
+	def _draw_detection_debug(self, left_frame, right_frame, left_pts, right_pts, matches):
+		"""Draw detection and matching debug visualization."""
+		left_debug = left_frame.copy()
+		right_debug = right_frame.copy()
+		
+		# Draw detected balls
+		for x, y in left_pts:
+			cv2.circle(left_debug, (x, y), 8, (0, 255, 0), 2)
+			cv2.circle(left_debug, (x, y), 3, (0, 255, 0), -1)
+		
+		for x, y in right_pts:
+			cv2.circle(right_debug, (x, y), 8, (0, 255, 0), 2)
+			cv2.circle(right_debug, (x, y), 3, (0, 255, 0), -1)
+		
+		# Draw matches with lines
+		match_debug = np.hstack([left_debug, right_debug])
+		for lx, rx in matches:
+			# Find y-coordinate (should be similar for both)
+			ly = next((y for x, y in left_pts if x == lx), 0)
+			ry = next((y for x, y in right_pts if x == rx), 0)
+			
+			cv2.line(match_debug, (lx, ly), (left_frame.shape[1] + rx, ry), (255, 0, 0), 2)
+			cv2.circle(match_debug, (lx, ly), 5, (0, 0, 255), -1)
+			cv2.circle(match_debug, (left_frame.shape[1] + rx, ry), 5, (0, 0, 255), -1)
+		
+		# Add stats
+		cv2.putText(match_debug, f"Left: {len(left_pts)} | Right: {len(right_pts)} | Matches: {len(matches)}", 
+					(10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+		
+		return match_debug
+	
+	def _draw_clustering_debug(self, points, labels, largest_label=None):
+		"""Create a 2D plot visualization of 3D points (Top-down view)."""
+		# Create a blank canvas (forward x depth: 0-6m, left y width: -2 to 2m)
+		canvas_height = 600  # 6 meters forward
+		canvas_width = 400   # 4 meters left/right
+		
+		debug_img = np.ones((canvas_height, canvas_width, 3), dtype=np.uint8) * 255
+		
+		# Draw grid
+		cv2.line(debug_img, (canvas_width//2, 0), (canvas_width//2, canvas_height), (200, 200, 200), 1)
+		for i in range(0, canvas_height, 100):
+			cv2.putText(debug_img, f"{i//100}m", (5, i+20), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (100, 100, 100), 1)
+		
+		# Draw points
+		for i, point in enumerate(points):
+			z, y = point  # forward, left
+			px = int(canvas_width//2 + (y / 3.0) * (canvas_width//2))  # left = ±3m
+			py = int((z / 6.0) * canvas_height)  # forward = 0-6m
+			
+			if 0 <= px < canvas_width and 0 <= py < canvas_height:
+				label = labels[i]
+				color = (0, 255, 0) if label == -1 else (255, 100, int(100 + 155 * (label % 10) / 10))
+				if largest_label is not None and label == largest_label:
+					cv2.circle(debug_img, (px, py), 8, (0, 0, 255), -1)
+					cv2.circle(debug_img, (px, py), 8, (255, 255, 255), 2)
+				else:
+					cv2.circle(debug_img, (px, py), 5, color, -1)
+		
+		cv2.putText(debug_img, "Top-down view (Robot at bottom)", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+		cv2.putText(debug_img, "Red = Target Cluster | Green = Outliers", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0), 1)
+		
+		return debug_img
+	
+	def _draw_stats_panel(self):
+		"""Create a statistics panel."""
+		panel_height = 250
+		panel_width = 400
+		panel = np.ones((panel_height, panel_width, 3), dtype=np.uint8) * 240
+		
+		y_pos = 25
+		line_height = 25
+		
+		stats_text = [
+			f"Left Balls: {self.debug_stats['left_balls']}",
+			f"Right Balls: {self.debug_stats['right_balls']}",
+			f"Stereo Matches: {self.debug_stats['stereo_matches']}",
+			f"Valid Points: {self.debug_stats['valid_points']}",
+			f"Clusters Found: {self.debug_stats['clusters']}",
+			f"Largest Cluster: {self.debug_stats['largest_cluster_size']}",
+			f"Locked Confidence: {self.debug_stats['locked_confidence']}",
+			f"Frames Missing: {self.debug_stats['frames_since_seen']}",
+		]
+		
+		for text in stats_text:
+			cv2.putText(panel, text, (15, y_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+			y_pos += line_height
+		
+		return panel
+
+	# ---------------------------------------------------------
 	# MAIN UPDATE
 	# ---------------------------------------------------------
 	def update(self, left_frame, right_frame):
 		robot_pose = self._get_robot_pose()
 		if robot_pose is None:
 			self._publish_invalid()
+			if self.enable_debug:
+				print("[DEBUG] No robot pose available")
 			return
 
 		# --- Detect balls ---
-		left_pts = self._detect_balls(left_frame)
-		right_pts = self._detect_balls(right_frame)
+		left_pts, left_mask = self._detect_balls(left_frame)
+		right_pts, right_mask = self._detect_balls(right_frame)
+		
+		self.debug_stats['left_balls'] = len(left_pts)
+		self.debug_stats['right_balls'] = len(right_pts)
 
 		if len(left_pts) == 0 or len(right_pts) == 0:
 			self._publish_invalid()
+			if self.enable_debug:
+				print(f"[DEBUG] Insufficient balls detected - Left: {len(left_pts)}, Right: {len(right_pts)}")
 			return
 
 		# --- Stereo matching ---
 		matches = self._match_stereo(left_pts, right_pts)
+		self.debug_stats['stereo_matches'] = len(matches)
+		
 		if len(matches) < self.cluster_min:
 			self._publish_invalid()
+			if self.enable_debug:
+				print(f"[DEBUG] Not enough stereo matches: {len(matches)} < {self.cluster_min}")
 			return
 
 		# --- Stereo points ---
@@ -172,8 +289,12 @@ class BallClusterVision:
 			if p is not None:
 				points.append(p)
 
+		self.debug_stats['valid_points'] = len(points)
+		
 		if len(points) < self.cluster_min:
 			self._publish_invalid()
+			if self.enable_debug:
+				print(f"[DEBUG] Not enough valid stereo points: {len(points)} < {self.cluster_min}")
 			return
 
 		# --- Clustering ---
@@ -185,13 +306,19 @@ class BallClusterVision:
 
 		labels = db.labels_
 		valid = labels[labels != -1]
+		
+		self.debug_stats['clusters'] = len(set(valid)) if len(valid) > 0 else 0
 
 		if len(valid) == 0:
 			self._publish_invalid()
+			if self.enable_debug:
+				print("[DEBUG] No valid clusters found")
 			return
 
 		largest_label = max(set(valid), key=list(valid).count)
 		cluster = X[labels == largest_label]
+		
+		self.debug_stats['largest_cluster_size'] = len(cluster)
 
 		# --- New cluster centroid (robot frame) ---
 		new_cx = np.mean(cluster[:, 0])		# forward
@@ -216,12 +343,17 @@ class BallClusterVision:
 			else:
 				self.frames_since_seen += 1
 
+		self.debug_stats['locked_confidence'] = self.locked_confidence
+		self.debug_stats['frames_since_seen'] = self.frames_since_seen
+
 		if (
 			self.frames_since_seen > self.max_missing_frames
 			or self.locked_confidence < self.min_confidence
 		):
 			self.locked_cluster = None
 			self._publish_invalid()
+			if self.enable_debug:
+				print(f"[DEBUG] Cluster lock lost - Frames: {self.frames_since_seen}, Confidence: {self.locked_confidence}")
 			return
 
 		cx, cy = self.locked_cluster
@@ -269,3 +401,30 @@ class BallClusterVision:
 			smoothed_heading,
 			self.locked_confidence
 		)
+	
+	# ---------------------------------------------------------
+	# Display debug visualization (call after update)
+	# ---------------------------------------------------------
+	def show_debug(self, left_frame, right_frame, left_pts, right_pts, matches, points=None, labels=None, largest_label=None):
+		"""Display all debug visualizations."""
+		if not self.enable_debug:
+			return
+		
+		# Draw detection and stereo matching
+		detection_debug = self._draw_detection_debug(left_frame, right_frame, left_pts, right_pts, matches)
+		cv2.imshow("Stereo Detection & Matching", detection_debug)
+		
+		# Draw clustering
+		if points is not None and labels is not None:
+			clustering_debug = self._draw_clustering_debug(points, labels, largest_label)
+			cv2.imshow("Clustering (Top-Down View)", clustering_debug)
+		
+		# Draw stats panel
+		stats_panel = self._draw_stats_panel()
+		cv2.imshow("Vision Stats", stats_panel)
+		
+		# Handle key presses
+		key = cv2.waitKey(1) & 0xFF
+		if key == ord('q'):
+			return False
+		return True
