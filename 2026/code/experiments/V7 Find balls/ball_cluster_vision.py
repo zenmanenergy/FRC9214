@@ -1,0 +1,271 @@
+import cv2
+import numpy as np
+import math
+from sklearn.cluster import DBSCAN
+from networktables import NetworkTables
+
+
+class BallClusterVision:
+	def __init__(self, server_ip):
+		# ---------------- NetworkTables ----------------
+		NetworkTables.initialize(server=server_ip)
+		self.nt = NetworkTables.getTable("vision")
+
+		# ---------------- Camera / Stereo Params ----------------
+		self.image_width = 640
+		self.cx = self.image_width / 2.0
+		self.fx = 700.0				# pixels (CALIBRATE)
+		self.baseline = 0.60			# meters
+
+		# ---------------- Ball Detection Params ----------------
+		self.yellow_lower = np.array([20, 100, 100])
+		self.yellow_upper = np.array([35, 255, 255])
+
+		self.min_radius_px = 6
+		self.max_radius_px = 200
+		self.min_circularity = 0.6
+
+		# ---------------- Range Limits ----------------
+		self.min_range = 0.4
+		self.max_range = 6.0
+
+		# ---------------- Clustering ----------------
+		self.cluster_eps = 0.35			# meters
+		self.cluster_min = 6
+
+		# ---------------- Temporal Smoothing ----------------
+		self.alpha = 0.3
+		self.smoothed_x = None
+		self.smoothed_y = None
+		self.smoothed_heading_vec = None
+
+		# ---------------- Cluster Locking ----------------
+		self.locked_cluster = None		# (forward, left)
+		self.locked_confidence = 0
+		self.frames_since_seen = 0
+		self.max_missing_frames = 10
+		self.min_confidence = 5
+
+	# ---------------------------------------------------------
+	# Robot pose from RoboRIO
+	# ---------------------------------------------------------
+	def _get_robot_pose(self):
+		x = self.nt.getNumber("robot/x", None)
+		y = self.nt.getNumber("robot/y", None)
+		h = self.nt.getNumber("robot/heading", None)
+
+		if x is None or y is None or h is None:
+			return None
+
+		return x, y, h
+
+	# ---------------------------------------------------------
+	# Ball detection
+	# ---------------------------------------------------------
+	def _detect_balls(self, frame):
+		hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+		mask = cv2.inRange(hsv, self.yellow_lower, self.yellow_upper)
+		mask = cv2.medianBlur(mask, 7)
+
+		contours, _ = cv2.findContours(
+			mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+		)
+
+		centers = []
+
+		for c in contours:
+			(x, y), r = cv2.minEnclosingCircle(c)
+
+			if r < self.min_radius_px or r > self.max_radius_px:
+				continue
+
+			area = cv2.contourArea(c)
+			circle_area = math.pi * r * r
+			if circle_area <= 0:
+				continue
+
+			if area / circle_area < self.min_circularity:
+				continue
+
+			centers.append((int(x), int(y)))
+
+		return centers
+
+	# ---------------------------------------------------------
+	# Match left/right balls by scanline
+	# ---------------------------------------------------------
+	def _match_stereo(self, left_pts, right_pts, max_y_diff=10):
+		matches = []
+
+		for lx, ly in left_pts:
+			best_rx = None
+			best_dy = max_y_diff
+
+			for rx, ry in right_pts:
+				dy = abs(ly - ry)
+				if dy < best_dy:
+					best_dy = dy
+					best_rx = rx
+
+			if best_rx is not None:
+				matches.append((lx, best_rx))
+
+		return matches
+
+	# ---------------------------------------------------------
+	# Stereo disparity → robot-frame point
+	# Robot frame: +X forward, +Y left
+	# ---------------------------------------------------------
+	def _stereo_to_point(self, lx, rx):
+		disparity = lx - rx
+		if abs(disparity) < 2:
+			return None
+
+		Z = (self.fx * self.baseline) / disparity
+		if Z < self.min_range or Z > self.max_range:
+			return None
+
+		Y = Z * (lx - self.cx) / self.fx
+		return Z, Y
+
+	# ---------------------------------------------------------
+	# NetworkTables helpers
+	# ---------------------------------------------------------
+	def _publish_invalid(self):
+		self.nt.putBoolean("target/valid", False)
+		self.nt.putNumber("target/confidence", 0)
+
+	def _publish_target(self, x, y, heading, confidence):
+		self.nt.putNumber("target/x", x)
+		self.nt.putNumber("target/y", y)
+		self.nt.putNumber("target/heading", heading)
+		self.nt.putNumber("target/confidence", confidence)
+		self.nt.putBoolean("target/valid", True)
+
+	# ---------------------------------------------------------
+	# MAIN UPDATE
+	# ---------------------------------------------------------
+	def update(self, left_frame, right_frame):
+		robot_pose = self._get_robot_pose()
+		if robot_pose is None:
+			self._publish_invalid()
+			return
+
+		# --- Detect balls ---
+		left_pts = self._detect_balls(left_frame)
+		right_pts = self._detect_balls(right_frame)
+
+		if len(left_pts) == 0 or len(right_pts) == 0:
+			self._publish_invalid()
+			return
+
+		# --- Stereo matching ---
+		matches = self._match_stereo(left_pts, right_pts)
+		if len(matches) < self.cluster_min:
+			self._publish_invalid()
+			return
+
+		# --- Stereo points ---
+		points = []
+		for lx, rx in matches:
+			p = self._stereo_to_point(lx, rx)
+			if p is not None:
+				points.append(p)
+
+		if len(points) < self.cluster_min:
+			self._publish_invalid()
+			return
+
+		# --- Clustering ---
+		X = np.array(points)
+		db = DBSCAN(
+			eps=self.cluster_eps,
+			min_samples=self.cluster_min
+		).fit(X)
+
+		labels = db.labels_
+		valid = labels[labels != -1]
+
+		if len(valid) == 0:
+			self._publish_invalid()
+			return
+
+		largest_label = max(set(valid), key=list(valid).count)
+		cluster = X[labels == largest_label]
+
+		# --- New cluster centroid (robot frame) ---
+		new_cx = np.mean(cluster[:, 0])		# forward
+		new_cy = np.mean(cluster[:, 1])		# left
+		new_conf = len(cluster)
+
+		# --- Cluster locking ---
+		if self.locked_cluster is None:
+			self.locked_cluster = (new_cx, new_cy)
+			self.locked_confidence = new_conf
+			self.frames_since_seen = 0
+		else:
+			dist = math.hypot(
+				new_cx - self.locked_cluster[0],
+				new_cy - self.locked_cluster[1]
+			)
+
+			if dist < 0.75:
+				self.locked_cluster = (new_cx, new_cy)
+				self.locked_confidence = new_conf
+				self.frames_since_seen = 0
+			else:
+				self.frames_since_seen += 1
+
+		if (
+			self.frames_since_seen > self.max_missing_frames
+			or self.locked_confidence < self.min_confidence
+		):
+			self.locked_cluster = None
+			self._publish_invalid()
+			return
+
+		cx, cy = self.locked_cluster
+
+		# --- Convert to field frame ---
+		rx, ry, rh = robot_pose
+
+		tx = rx + math.cos(rh)*cx - math.sin(rh)*cy
+		ty = ry + math.sin(rh)*cx + math.cos(rh)*cy
+		raw_heading = math.atan2(ty - ry, tx - rx)
+
+		# --- Temporal smoothing ---
+		if self.smoothed_x is None:
+			self.smoothed_x = tx
+			self.smoothed_y = ty
+			self.smoothed_heading_vec = (
+				math.cos(raw_heading),
+				math.sin(raw_heading)
+			)
+		else:
+			self.smoothed_x = (
+				self.alpha * tx +
+				(1.0 - self.alpha) * self.smoothed_x
+			)
+			self.smoothed_y = (
+				self.alpha * ty +
+				(1.0 - self.alpha) * self.smoothed_y
+			)
+
+			hx, hy = self.smoothed_heading_vec
+			hx = self.alpha * math.cos(raw_heading) + (1.0 - self.alpha) * hx
+			hy = self.alpha * math.sin(raw_heading) + (1.0 - self.alpha) * hy
+
+			n = math.hypot(hx, hy)
+			self.smoothed_heading_vec = (hx / n, hy / n)
+
+		smoothed_heading = math.atan2(
+			self.smoothed_heading_vec[1],
+			self.smoothed_heading_vec[0]
+		)
+
+		self._publish_target(
+			self.smoothed_x,
+			self.smoothed_y,
+			smoothed_heading,
+			self.locked_confidence
+		)
