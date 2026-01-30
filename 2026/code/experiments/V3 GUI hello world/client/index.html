@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<title>FRC Field Display</title>
+	<script src="./msgpack5.js"></script>
+	<style>
+		body { display: flex; flex-direction: column; align-items: center; }
+		#status { font-size: 18px; margin-bottom: 10px; color: red; }
+		.container { display: flex; flex-direction: row; }
+		#overviewContainer, #zoomContainer { position: relative; margin: 0 10px; }
+		canvas { border: 1px solid #ccc; cursor: crosshair; }
+	</style>
+</head>
+<body>
+	<div id="status">Loading field data...</div>
+
+	<div class="container">
+		<div id="overviewContainer">
+			<canvas id="overviewCanvas" width="600" height="300"></canvas>
+		</div>
+		<div id="zoomContainer">
+			<canvas id="zoomCanvas" width="600" height="300"></canvas>
+		</div>
+	</div>
+
+	<script>
+
+		let ws;
+		let connectionTimeout;
+		const statusElement = document.getElementById("status");
+		const overviewCanvas = document.getElementById("overviewCanvas");
+		const overviewCtx = overviewCanvas.getContext("2d");
+		const zoomCanvas = document.getElementById("zoomCanvas");
+		const zoomCtx = zoomCanvas.getContext("2d");
+
+		const FIELD_WIDTH = 16.5;
+		const FIELD_HEIGHT = 8.2;
+		const HALF_FIELD_WIDTH = FIELD_WIDTH / 2;
+		const OVERVIEW_SCALE_X = overviewCanvas.width / HALF_FIELD_WIDTH;
+		const OVERVIEW_SCALE_Y = overviewCanvas.height / FIELD_HEIGHT;
+		const ZOOM_WIDTH_METERS = 3.0;
+		const ZOOM_HEIGHT_METERS = 2.0;
+
+		let fieldImage = new Image();
+		fieldImage.src = "REEFSCAPE2025.png";
+		let robotState = { x: 0, y: 0, heading: 0, robot_number: 0, color: "red", other_robots: [] };
+		let topicIdMap = {};  // Maps topic names to IDs received in announce messages
+		const msgpack = msgpack5();  // Initialize msgpack5 library
+
+		// Parse MessagePack Blob data
+		async function parseMessagePackBlob(blob) {
+			const arrayBuffer = await blob.arrayBuffer();
+			const uint8array = new Uint8Array(arrayBuffer);
+			try {
+				const decoded = msgpack.decode(uint8array);
+				// NT4 format: [topicId, timestamp, dataType, value]
+				if (Array.isArray(decoded) && decoded.length === 4) {
+					const [topicId, timestamp, dataType, value] = decoded;
+					console.log("MessagePack decoded:", { topicId, dataType, value });
+					return value;
+				}
+			} catch (e) {
+				console.error("MessagePack decode error:", e);
+			}
+			return null;
+		}
+
+		function startNT4() {
+			const rioIp = "10.92.14.2";
+			// According to NT4 spec: "Servers shall support a resource name of /nt/<name>"
+			ws = new WebSocket(`ws://${rioIp}:5810/nt/browser`);
+
+			ws.onopen = () => {
+				console.log("NT4 WebSocket open");
+				statusElement.textContent = "Connected to NT4";
+				statusElement.style.color = "green";
+				
+				// Subscribe to robot data topic
+				// Message must be wrapped in an array (JSON array at top level)
+				const subscribeMsg = [{
+					method: "subscribe",
+					params: {
+						topics: ["/SmartDashboard/robotData"],
+						subuid: 1,
+						options: {
+							periodic: 0.05,  // 50ms = 20Hz (match robot loop rate)
+							all: false,
+							topicsonly: false,
+							prefix: false
+						}
+					}
+				}];
+				console.log("Sending subscribe message:", subscribeMsg);
+				ws.send(JSON.stringify(subscribeMsg));
+				clearTimeout(connectionTimeout);
+			};
+
+			ws.onmessage = (event) => {
+				// Handle binary Blob data from robot
+				if (event.data instanceof Blob) {
+					parseMessagePackBlob(event.data).then(value => {
+						if (typeof value === 'string') {
+							try {
+								const data = JSON.parse(value);
+								if (data.x !== undefined && data.y !== undefined && data.heading !== undefined) {
+									robotState = data;
+									console.log("Updated robot state:", robotState);
+									drawAll();
+								}
+							} catch (e) {
+								console.error("Failed to parse JSON value:", e);
+							}
+						}
+					});
+					return;
+				}
+				
+				// Handle text JSON messages (control messages)
+				try {
+					const msg = JSON.parse(event.data);
+					
+					if (msg.method === "announce") {
+						console.log("Topic announced:", msg.params.name, "ID:", msg.params.id);
+						topicIdMap[msg.params.name] = msg.params.id;
+					}
+				} catch (e) {
+					// Ignore parse errors
+				}
+			};
+
+			ws.onerror = () => {
+				statusElement.textContent = "Error connecting to NT4";
+				statusElement.style.color = "red";
+			};
+
+			ws.onclose = () => {
+				statusElement.textContent = "Connection to NT4 lost";
+				statusElement.style.color = "red";
+			};
+
+			// If no connection in 5 seconds, show error
+			connectionTimeout = setTimeout(() => {
+				statusElement.textContent = "Failed to connect to NT4";
+				statusElement.style.color = "red";
+			}, 5000);
+		}
+
+		function drawAll() {
+			drawOverview();
+			drawZoom();
+		}
+
+		function drawOverview() {
+			overviewCtx.clearRect(0, 0, overviewCanvas.width, overviewCanvas.height);
+			if (fieldImage.complete) {
+				overviewCtx.drawImage(fieldImage, 0, 0, overviewCanvas.width, overviewCanvas.height);
+			}
+			drawRobot(overviewCtx, robotState, OVERVIEW_SCALE_X, OVERVIEW_SCALE_Y);
+			robotState.other_robots.forEach(r => drawRobot(overviewCtx, r, OVERVIEW_SCALE_X, OVERVIEW_SCALE_Y));
+		}
+
+		function drawZoom() {
+			zoomCtx.clearRect(0, 0, zoomCanvas.width, zoomCanvas.height);
+			drawRobot(zoomCtx, robotState, zoomCanvas.width / ZOOM_WIDTH_METERS, zoomCanvas.height / ZOOM_HEIGHT_METERS);
+			robotState.other_robots.forEach(r => drawRobot(zoomCtx, r, zoomCanvas.width / ZOOM_WIDTH_METERS, zoomCanvas.height / ZOOM_HEIGHT_METERS));
+		}
+
+		function drawRobot(ctx, r, scaleX, scaleY) {
+			let rx = r.x * scaleX;
+			let ry = ctx.canvas.height - (r.y * scaleY);
+
+			ctx.save();
+			ctx.translate(rx, ry);
+			ctx.rotate((r.heading * Math.PI) / 180);
+
+			ctx.beginPath();
+			ctx.arc(0, 0, 10, 0, 2 * Math.PI);
+			ctx.fillStyle = r.color === "red" ? "rgba(255,0,0,0.7)" : "rgba(0,0,255,0.7)";
+			ctx.fill();
+
+			ctx.beginPath();
+			ctx.moveTo(0, 0);
+			ctx.lineTo(15, 0);
+			ctx.strokeStyle = "black";
+			ctx.stroke();
+
+			ctx.restore();
+		}
+
+		// Handle Field Image Loading Errors
+		fieldImage.onload = () => {
+			console.log("Field image loaded");
+			statusElement.textContent = "Field loaded, waiting for NT4...";
+			statusElement.style.color = "blue";
+			drawAll();
+		};
+
+		fieldImage.onerror = () => {
+			console.error("Field image failed to load!");
+			statusElement.textContent = "Error loading field image!";
+			statusElement.style.color = "red";
+		};
+
+		window.onload = startNT4;
+	</script>
+</body>
+</html>

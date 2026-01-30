@@ -1,0 +1,22 @@
+[build-system]
+requires = ["robotpy-build"]
+build-backend = "robotpy_build.build"
+
+[project]
+name = "frc9214-robot-2026"
+description = "2026 FRC 9214 Robot Code"
+version = "2026.1"
+
+[tool.robotpy]
+robotpy_version = "2025.3.2.2"
+robot_package = "robot"
+
+robotpy_extras = [
+    "phoenix5",
+    "navx",
+    "commands2",
+]
+
+requires = [
+    "robotpy-ctre>=2025.0.3",
+]
