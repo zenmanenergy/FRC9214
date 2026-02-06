@@ -28,7 +28,7 @@ class MyRobot(wpilib.TimedRobot):
 		left_encoder = wpilib.Encoder(0, 1)
 		right_encoder = wpilib.Encoder(8,9)
 		
-		self.drive_joystick = wpilib.Joystick(1)
+		self.drive_joystick = wpilib.Joystick(0)
 
 		# Create odometry first, then pass to drive
 		self.odometry = Odometry(left_encoder, right_encoder, wheel_diameter_cm=15.24)

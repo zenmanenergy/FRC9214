@@ -1,0 +1,13 @@
+[build-system]
+requires = ["robotpy-build"]
+build-backend = "robotpy_build.build"
+
+[project]
+name = "frc9214"
+version = "0.1.0"
+
+[tool.robotpy]
+robotpy_version = "2025.3.2.2"
+requires = [
+    "phoenix5",
+]
