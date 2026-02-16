@@ -20,6 +20,7 @@ class DriverJoystickConfig:
 	# Buttons
 	SLOW_MODE_BUTTON = 1  # A button
 	STOP_BUTTON = 2  # B button
+	FIELD_RELATIVE_BUTTON = 3  # X button
 
 
 # ==============================================================================
@@ -44,8 +45,9 @@ class DriverJoystick:
 
 	def get_forward(self) -> float:
 		"""Get forward/backward speed with deadband applied."""
-		return self._apply_deadband(self.joystick.getRawAxis(self.config.FORWARD_AXIS))
-
+		# Negate because forward is negative on controller Y axis
+		return -self._apply_deadband(self.joystick.getRawAxis(self.config.FORWARD_AXIS))
+		
 	def get_strafe(self) -> float:
 		"""Get left/right strafe speed with deadband applied."""
 		return self._apply_deadband(self.joystick.getRawAxis(self.config.STRAFE_AXIS))
