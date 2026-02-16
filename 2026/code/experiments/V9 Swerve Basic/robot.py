@@ -7,7 +7,6 @@ from drive import SwerveDrive, SwerveModule
 from joystick_drive import DriverJoystick
 from joystick_arm import ArmJoystick
 
-print(">>> robot.py loaded <<<")
 
 
 # ==============================================================================
