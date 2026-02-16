@@ -135,17 +135,18 @@ class Robot(wpilib.TimedRobot):
 	def disabledInit(self):
 		"""Called when robot enters disabled state."""
 		print("[ROBOT] Disabled state entered")
-		self.swerve.stop()
-		# Reset module states so angle tracking starts fresh on re-enable
-		try:
-			for module in [self.front_left, self.front_right, self.rear_left, self.rear_right]:
-				module.current_state = SwerveModuleState()
-			self.front_left.stop()
-			self.front_right.stop()
-			self.rear_left.stop()
-			self.rear_right.stop()
-		except Exception:
-			pass
+		if self.swerve is not None:
+			self.swerve.stop()
+			# Reset module states so angle tracking starts fresh on re-enable
+			try:
+				for module in [self.front_left, self.front_right, self.rear_left, self.rear_right]:
+					module.current_state = SwerveModuleState()
+				self.front_left.stop()
+				self.front_right.stop()
+				self.rear_left.stop()
+				self.rear_right.stop()
+			except Exception:
+				pass
 
 	def disabledPeriodic(self):
 		"""Called periodically while robot is disabled."""
