@@ -1,0 +1,18 @@
+[project]
+name = "frc-robot"
+version = "2025.1.0"
+description = "FRC 9214 Robot Code - EasySwerve Drive"
+authors = [
+	{name = "Team 9214"}
+]
+requires-python = ">=3.8"
+
+dependencies = [
+	"robotpy>=2025.0.0",
+	"robotpy-rev>=2025.0.0",
+	"robotpy-wpilib-firmware>=2025.0.0",
+	"pynetworktables>=2021.0.0"
+]
+
+[tool.robotpy]
+robotCommand = "python -m robot"

@@ -40,3 +40,7 @@ class DriverJoystick:
 			print("Rotation: 0.0")
 			self.last_rotation = 0.0
 		return 0.0
+	
+	def get_y_button(self) -> bool:
+		"""Get Y button press (button 4 on Xbox controller)."""
+		return self.joystick.getRawButton(4)
