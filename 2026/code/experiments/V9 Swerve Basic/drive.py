@@ -67,7 +67,8 @@ class SwerveModule:
 		# If the desired angle is ~180° different from current, flip speed and rotate 180°
 		optimized_state = desired_state
 		try:
-			current_angle = self.current_state.angle if self.current_state else Rotation2d()
+			# Use actual current angle from encoder, not the commanded state
+			current_angle = self.get_angle()
 			desired_angle = desired_state.angle
 			
 			# Calculate angle difference
@@ -122,18 +123,22 @@ class SwerveModule:
 				while angle_error < -180:
 					angle_error += 360
 				
-				# Simple proportional control
-				# Divide by 180 to normalize to [-1, 1] range at max error
-				turn_cmd = angle_error / 180.0
+				# Proportional control with stronger gain to overcome friction
+				# Use 2.0 multiplier so 90 degrees = full power (was too weak at 0.167)
+				turn_cmd = angle_error / 180.0 * 2.0
 				
 				# Clamp to [-1.0, 1.0]
 				turn_cmd = max(-1.0, min(1.0, turn_cmd))
+				
+				if abs(turn_cmd) > 0.01:
+					print("M%d TURN: Error=%.1f° Cmd=%.3f" % (self.turn_motor_id, angle_error, turn_cmd))
 				
 				self.turn_motor.set(turn_cmd)
 		except Exception:
 			pass
 
-		# Store the OPTIMIZED state, not the desired state
+		# Store the OPTIMIZED state (represents what we're trying to command)
+		# Note: The actual module state may differ due to motor response lag
 		self.current_state = optimized_state
 
 	def stop(self):
