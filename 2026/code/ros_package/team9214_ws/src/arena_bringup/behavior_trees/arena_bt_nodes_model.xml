@@ -1,0 +1,136 @@
+<root BTCPP_format="4">
+    <TreeNodesModel>
+        <Action ID="AlwaysFailure"/>
+        <Action ID="AlwaysSuccess"/>
+        <Control ID="AsyncFallback"/>
+        <Control ID="AsyncSequence"/>
+        <Decorator ID="Delay">
+            <input_port name="delay_msec" type="unsigned int">Tick the child after a few milliseconds</input_port>
+        </Decorator>
+        <Control ID="Fallback"/>
+        <Decorator ID="ForceFailure"/>
+        <Decorator ID="ForceSuccess"/>
+        <Control ID="IfThenElse"/>
+        <Decorator ID="Inverter"/>
+        <Condition ID="IsBatteryOk">
+            <input_port name="battery_voltage" type="double" default="12.000000">Current battery voltage</input_port>
+            <input_port name="min_voltage" type="double" default="11.000000">Minimum battery voltage required</input_port>
+            <MetadataFields>
+                <Metadata category="custom"/>
+                <Metadata doc="Returns SUCCESS when battery_voltage &gt;= min_voltage."/>
+            </MetadataFields>
+        </Condition>
+        <Decorator ID="KeepRunningUntilFailure"/>
+        <Decorator ID="LoopBool">
+            <output_port name="value" type="bool"/>
+            <input_port name="if_empty" type="BT::NodeStatus" default="SUCCESS">Status to return if queue is empty: SUCCESS, FAILURE, SKIPPED</input_port>
+            <inout_port name="queue" type="std::shared_ptr&lt;std::deque&lt;bool, std::allocator&lt;bool&gt; &gt; &gt;"/>
+        </Decorator>
+        <Decorator ID="LoopDouble">
+            <output_port name="value" type="double"/>
+            <input_port name="if_empty" type="BT::NodeStatus" default="SUCCESS">Status to return if queue is empty: SUCCESS, FAILURE, SKIPPED</input_port>
+            <inout_port name="queue" type="std::shared_ptr&lt;std::deque&lt;double, std::allocator&lt;double&gt; &gt; &gt;"/>
+        </Decorator>
+        <Decorator ID="LoopInt">
+            <output_port name="value" type="int"/>
+            <input_port name="if_empty" type="BT::NodeStatus" default="SUCCESS">Status to return if queue is empty: SUCCESS, FAILURE, SKIPPED</input_port>
+            <inout_port name="queue" type="std::shared_ptr&lt;std::deque&lt;int, std::allocator&lt;int&gt; &gt; &gt;"/>
+        </Decorator>
+        <Decorator ID="LoopString">
+            <output_port name="value" type="std::string"/>
+            <input_port name="if_empty" type="BT::NodeStatus" default="SUCCESS">Status to return if queue is empty: SUCCESS, FAILURE, SKIPPED</input_port>
+            <inout_port name="queue" type="std::shared_ptr&lt;std::deque&lt;std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt;, std::allocator&lt;std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; &gt; &gt; &gt;"/>
+        </Decorator>
+        <Control ID="Parallel">
+            <input_port name="failure_count" type="int" default="1">number of children that need to fail to trigger a FAILURE</input_port>
+            <input_port name="success_count" type="int" default="-1">number of children that need to succeed to trigger a SUCCESS</input_port>
+        </Control>
+        <Control ID="ParallelAll">
+            <input_port name="max_failures" type="int" default="1">If the number of children returning FAILURE exceeds this value, ParallelAll returns FAILURE</input_port>
+        </Control>
+        <Decorator ID="Precondition">
+            <input_port name="else" type="BT::NodeStatus" default="FAILURE">Return status if condition is false</input_port>
+            <input_port name="if" type="std::string"/>
+        </Decorator>
+        <Control ID="ReactiveFallback"/>
+        <Control ID="ReactiveSequence"/>
+        <Decorator ID="Repeat">
+            <input_port name="num_cycles" type="int">Repeat a successful child up to N times. Use -1 to create an infinite loop.</input_port>
+        </Decorator>
+        <Decorator ID="RetryUntilSuccessful">
+            <input_port name="num_attempts" type="int">Execute again a failing child up to N times. Use -1 to create an infinite loop.</input_port>
+        </Decorator>
+        <Decorator ID="RunOnce">
+            <input_port name="then_skip" type="bool" default="true">If true, skip after the first execution, otherwise return the same NodeStatus returned once by the child.</input_port>
+        </Decorator>
+        <Action ID="Script">
+            <input_port name="code" type="std::string">Piece of code that can be parsed</input_port>
+        </Action>
+        <Condition ID="ScriptCondition">
+            <input_port name="code" type="BT::AnyTypeAllowed">Piece of code that can be parsed. Must return false or true</input_port>
+        </Condition>
+        <Control ID="Sequence"/>
+        <Control ID="SequenceWithMemory"/>
+        <Action ID="SetBlackboard">
+            <inout_port name="output_key" type="BT::AnyTypeAllowed">Name of the blackboard entry where the value should be written</inout_port>
+            <input_port name="value" type="BT::AnyTypeAllowed">Value to be written into the output_key</input_port>
+        </Action>
+        <Decorator ID="SkipUnlessUpdated">
+            <input_port name="entry" type="BT::Any">Entry to check</input_port>
+        </Decorator>
+        <Action ID="Sleep">
+            <input_port name="msec" type="unsigned int"/>
+        </Action>
+        <SubTree ID="SubTree">
+            <input_port name="_autoremap" type="bool" default="false">If true, all the ports with the same name will be remapped</input_port>
+        </SubTree>
+        <Control ID="Switch2">
+            <input_port name="case_2" type="std::string"/>
+            <input_port name="case_1" type="std::string"/>
+            <input_port name="variable" type="std::string"/>
+        </Control>
+        <Control ID="Switch3">
+            <input_port name="case_3" type="std::string"/>
+            <input_port name="case_2" type="std::string"/>
+            <input_port name="case_1" type="std::string"/>
+            <input_port name="variable" type="std::string"/>
+        </Control>
+        <Control ID="Switch4">
+            <input_port name="case_4" type="std::string"/>
+            <input_port name="case_3" type="std::string"/>
+            <input_port name="case_2" type="std::string"/>
+            <input_port name="case_1" type="std::string"/>
+            <input_port name="variable" type="std::string"/>
+        </Control>
+        <Control ID="Switch5">
+            <input_port name="case_5" type="std::string"/>
+            <input_port name="case_4" type="std::string"/>
+            <input_port name="case_3" type="std::string"/>
+            <input_port name="case_2" type="std::string"/>
+            <input_port name="case_1" type="std::string"/>
+            <input_port name="variable" type="std::string"/>
+        </Control>
+        <Control ID="Switch6">
+            <input_port name="case_5" type="std::string"/>
+            <input_port name="case_4" type="std::string"/>
+            <input_port name="case_6" type="std::string"/>
+            <input_port name="case_3" type="std::string"/>
+            <input_port name="case_2" type="std::string"/>
+            <input_port name="case_1" type="std::string"/>
+            <input_port name="variable" type="std::string"/>
+        </Control>
+        <Decorator ID="Timeout">
+            <input_port name="msec" type="unsigned int">After a certain amount of time, halt() the child if it is still running.</input_port>
+        </Decorator>
+        <Action ID="UnsetBlackboard">
+            <input_port name="key" type="std::string">Key of the entry to remove</input_port>
+        </Action>
+        <Decorator ID="WaitValueUpdate">
+            <input_port name="entry" type="BT::Any">Entry to check</input_port>
+        </Decorator>
+        <Action ID="WasEntryUpdated">
+            <input_port name="entry" type="BT::Any">Entry to check</input_port>
+        </Action>
+        <Control ID="WhileDoElse"/>
+    </TreeNodesModel>
+</root>

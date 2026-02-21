@@ -1,0 +1,5 @@
+tag_pose_observer:
+  ros__parameters:
+    tag_map_yaml: "/home/robots/source_code/first_robotics_comp/frc/team9214_ws/src/arena_tag_map/config/757-lab_arena_tags.yaml"
+    detection_topics: ["/cam1/detections", "/cam2/detections"]
+    publish_topic: /tag_global_pose

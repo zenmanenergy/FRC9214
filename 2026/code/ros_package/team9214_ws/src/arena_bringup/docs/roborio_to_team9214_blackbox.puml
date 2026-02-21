@@ -1,0 +1,34 @@
+@startuml
+skinparam shadowing false
+skinparam packageStyle rectangle
+left to right direction
+
+title team9214 ROS2 -> RoboRIO interface (black box)
+
+legend right
+Solid arrows: data/message flow
+endlegend
+
+component "team9214 ROS stack\n(black box)" as team_stack
+component "cmd_vel_nt4_bridge\n(arena_bringup)" as cmd_bridge
+database "NetworkTables 4\nTable: ROS" as nt4
+component "RoboRIO code" as rio
+
+team_stack --> cmd_bridge : ROS inputs (cmd_vel_nav, /tag_global_pose,\n/nav status, /odom, optional mode/safety topics)
+cmd_bridge --> nt4 : cmd_vel_x, cmd_vel_y, cmd_vel_theta,\ncmd_vel (array), cmd_vel_stamp
+cmd_bridge --> nt4 : status_mode, status_cmd_source,\nstatus_cmd_valid, status_cmd_age_sec
+cmd_bridge --> nt4 : status_localization_ok,\nstatus_localization_age_sec
+cmd_bridge --> nt4 : status_nav_state, status_nav_goal_active,\nstatus_nav_status_code
+cmd_bridge --> nt4 : status_safety_stop, status_safety_state
+cmd_bridge --> nt4 : status_odom_vx, status_odom_vy,\nstatus_odom_wz
+cmd_bridge --> nt4 : status_heartbeat, status_stamp
+
+nt4 --> rio : RoboRIO reads NT4 keys
+
+note right of cmd_bridge
+Direction shown here is ROS2 -> RoboRIO only.
+The reverse direction (NT4 -> ROS robot_mode)
+is documented separately by nt4_mode_bridge.
+end note
+
+@enduml

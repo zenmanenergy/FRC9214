@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Minimal Nav2 behavior tree for NavigateToPose testing.
+  ComputePathToPose -> FollowPath with a simple recovery that clears 
+  costmaps and retries once.
+  Intended as a working starter and a prototype for visual BT tools (e.g., Groot).
+  Includes a starter custom node check (IsBatteryOk) from arena_bt_nodes.
+-->
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <RecoveryNode name="NavigateWithSimpleRecovery" number_of_retries="1">
+      <Sequence name="PlanThenControl">
+        <IsBatteryOk min_voltage="11.0" battery_voltage="12.0"/>
+        <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+        <FollowPath path="{path}" controller_id="FollowPath" goal_checker_id="general_goal_checker"/>
+      </Sequence>
+      <Sequence name="ClearCostmapsRecovery">
+        <ClearEntireCostmap name="ClearLocalCostmap" service_name="local_costmap/clear_entirely_local_costmap"/>
+        <ClearEntireCostmap name="ClearGlobalCostmap" service_name="global_costmap/clear_entirely_global_costmap"/>
+      </Sequence>
+    </RecoveryNode>
+  </BehaviorTree>
+</root>

@@ -1,0 +1,16 @@
+  # Fully qualified namespace from launch file setup name=usb_cam and namespace=camera
+  /camera/usb_cam:
+    ros__parameters:
+      video_device: /dev/video0
+      # video_device: /dev/v4l/by-id/usb-Creality_3D_Technology_CREALITY_CAM_00000000-video-index0 
+      framerate: 30.0
+      image_width: 640
+      image_height: 480
+      pixel_format: yuyv
+      io_method: mmap
+
+      # IMPORTANT: this must be a URL, not a plain path
+      # (file:///...) is the safe pattern for camera calibration YAMLs. :contentReference[oaicite:2]{index=2}
+      camera_name: usb_cam
+      # camera_name: camera
+      camera_info_url: file:///home/robots/source_code/first_robotics_comp/frc/team9214_ws/src/multi_cam_apriltag/config/camera_1.yaml

@@ -1,0 +1,28 @@
+# Camera is currently broken
+# Camera calibration parameters for camera_1
+image_width: 640
+image_height: 480
+camera_name: narrow_stereo
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [566.34324,   0.     , 346.26742,
+           0.     , 754.88063, 260.66744,
+           0.     ,   0.     ,   1.     ]
+distortion_model: plumb_bob
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [-0.425686, 0.121540, -0.013236, -0.007210, 0.000000]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1., 0., 0.,
+         0., 1., 0.,
+         0., 0., 1.]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [468.83853,   0.     , 350.91191,   0.     ,
+           0.     , 719.73889, 258.55625,   0.     ,
+           0.     ,   0.     ,   1.     ,   0.     ]

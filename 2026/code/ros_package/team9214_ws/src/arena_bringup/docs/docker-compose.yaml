@@ -1,0 +1,9 @@
+services:
+  plantuml:
+    image: plantuml/plantuml:latest
+    working_dir: /workspace
+    entrypoint: ["/bin/sh", "-c"]
+    volumes:
+      - .:/workspace
+    command:
+      - "/opt/java/openjdk/bin/java -jar /opt/plantuml.jar -tsvg *.puml"

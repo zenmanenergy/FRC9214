@@ -1,0 +1,26 @@
+tag_pose_observer:
+  ros__parameters:
+    map_frame: "map"
+    base_frame: "base_link"
+
+    # One or more detection topics (per camera). Your mux node can unify these.
+    detection_topics:
+      - "/camera_1/tag_detections"
+      - "/camera_2/tag_detections"
+      - "/camera_3/tag_detections"
+
+    tag_map_yaml: ""   # set via launch (path to arena_tags.yaml)
+
+    # Gating / quality controls
+    min_decision_margin: 0.0
+    max_pose_jump_m: 1.0
+    max_yaw_jump_rad: 1.0
+    
+    position_std_m: 0.10
+    yaw_std_rad: 0.15
+    tf_timeout_sec: 0.05
+
+    publish_topic: "/tag_global_pose"
+    publish_covariance:
+      position_std_m: 0.10
+      yaw_std_rad: 0.15

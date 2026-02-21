@@ -1,0 +1,34 @@
+@startuml
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 90
+skinparam ranksep 90
+left to right direction
+
+title bringup_multi_cam.launch.py node/topic flow
+
+legend right
+Solid arrows: topic flow between launched nodes
+Dashed arrows: TF flow between launched nodes
+endlegend
+
+component "robot_state_publisher" as rsp
+component "apriltag\n/camera_1/apriltag" as apriltag_1
+component "apriltag\n/camera_2/apriltag" as apriltag_2
+component "tag_pose_observer" as observer
+component "ekf_map\n(robot_localization/ekf_node)" as ekf
+component "rviz2" as rviz
+
+' Keep observer anchored directly under robot_state_publisher.
+rsp -[hidden]down-> observer
+
+apriltag_1 -down-> observer : /camera_1/tag_detections
+apriltag_2 -up-> observer : /camera_2/tag_detections
+observer -down-> ekf : /tag_global_pose
+
+rsp ..> observer : /tf, /tf_static
+rsp ..> rviz : /tf, /tf_static
+ekf ..> rviz : /tf
+
+@enduml
