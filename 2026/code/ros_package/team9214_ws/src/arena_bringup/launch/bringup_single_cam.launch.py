@@ -7,6 +7,7 @@ still work and override YAML values.
 
 import os
 import subprocess
+import tempfile
 import yaml
 
 from ament_index_python.packages import get_package_share_directory
@@ -71,6 +72,45 @@ def _load_apriltag_params(apriltag_params_path: str) -> dict:
         return sanitize(ros_params)
 
     return {}
+
+
+def _prepare_ekf_params_yaml(
+    src_yaml_path: str,
+    node_name: str,
+    use_wheel_odom: bool,
+    use_imu: bool,
+    world_frame_override: str = "",
+    odom_frame_override: str = "",
+) -> str:
+    with open(src_yaml_path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+
+    node_block = data.get(node_name, {})
+    ros_params = node_block.get("ros__parameters", {}) if isinstance(node_block, dict) else {}
+    if not isinstance(ros_params, dict):
+        ros_params = {}
+
+    if not use_wheel_odom:
+        for key in ("odom0", "odom0_config", "odom0_queue_size", "odom0_differential", "odom0_relative"):
+            ros_params.pop(key, None)
+
+    if not use_imu:
+        for key in ("imu0", "imu0_config", "imu0_queue_size", "imu0_differential", "imu0_relative"):
+            ros_params.pop(key, None)
+
+    if world_frame_override:
+        ros_params["world_frame"] = world_frame_override
+    if odom_frame_override:
+        ros_params["odom_frame"] = odom_frame_override
+
+    data[node_name] = {"ros__parameters": ros_params}
+
+    fd, temp_path = tempfile.mkstemp(prefix=f"{node_name}_", suffix=".yaml")
+    os.close(fd)
+    with open(temp_path, "w", encoding="utf-8") as f:
+        yaml.safe_dump(data, f, sort_keys=False)
+
+    return temp_path
 
 
 def _resolve_value(name: str, raw_value: str, cfg: dict, fallback: str) -> str:
@@ -226,6 +266,30 @@ def _make_nodes(context, *args, **kwargs):
             "true",
         )
     )
+    use_wheel_odom = _to_bool(
+        _resolve_value(
+            "use_wheel_odom",
+            LaunchConfiguration("use_wheel_odom").perform(context),
+            cfg,
+            "true",
+        )
+    )
+    use_imu = _to_bool(
+        _resolve_value(
+            "use_imu",
+            LaunchConfiguration("use_imu").perform(context),
+            cfg,
+            "true",
+        )
+    )
+    run_ekf_odom = _to_bool(
+        _resolve_value(
+            "run_ekf_odom",
+            LaunchConfiguration("run_ekf_odom").perform(context),
+            cfg,
+            "true",
+        )
+    )
 
     video_device = _resolve_value(
         "video_device",
@@ -339,6 +403,22 @@ def _make_nodes(context, *args, **kwargs):
     detection_topic = f"/{camera_ns}/{detections_topic}"
     robot_description = _load_robot_description(urdf_xacro)
     apriltag_params = _load_apriltag_params(apriltag_params_yaml)
+    ekf_world_frame_override = "map" if not run_ekf_odom else ""
+    ekf_odom_frame_override = "map" if not run_ekf_odom else ""
+    ekf_map_params_yaml = _prepare_ekf_params_yaml(
+        ekf_map_yaml,
+        "ekf_map",
+        use_wheel_odom=use_wheel_odom,
+        use_imu=use_imu,
+        world_frame_override=ekf_world_frame_override,
+        odom_frame_override=ekf_odom_frame_override,
+    )
+    ekf_odom_params_yaml = _prepare_ekf_params_yaml(
+        ekf_odom_yaml,
+        "ekf_odom",
+        use_wheel_odom=use_wheel_odom,
+        use_imu=use_imu,
+    )
 
     nodes = [
         Node(
@@ -437,21 +517,28 @@ def _make_nodes(context, *args, **kwargs):
                 },
             ],
         ),
-        Node(
-            package="robot_localization",
-            executable="ekf_node",
-            name="ekf_odom",
-            output="screen",
-            parameters=[ekf_odom_yaml],
-        ),
+    ])
+
+    if run_ekf_odom:
+        nodes.append(
+            Node(
+                package="robot_localization",
+                executable="ekf_node",
+                name="ekf_odom",
+                output="screen",
+                parameters=[ekf_odom_params_yaml],
+            )
+        )
+
+    nodes.append(
         Node(
             package="robot_localization",
             executable="ekf_node",
             name="ekf_map",
             output="screen",
-            parameters=[ekf_map_yaml],
-        ),
-    ])
+            parameters=[ekf_map_params_yaml],
+        )
+    )
 
     if use_rviz:
         nodes.append(
@@ -500,6 +587,9 @@ def generate_launch_description():
         DeclareLaunchArgument("camera_frame", default_value=AUTO),
         DeclareLaunchArgument("camera_info_url", default_value=AUTO),
         DeclareLaunchArgument("use_static_camera_tf", default_value=AUTO),
+        DeclareLaunchArgument("use_wheel_odom", default_value=AUTO),
+        DeclareLaunchArgument("use_imu", default_value=AUTO),
+        DeclareLaunchArgument("run_ekf_odom", default_value=AUTO),
         DeclareLaunchArgument("camera_tf_x", default_value=AUTO),
         DeclareLaunchArgument("camera_tf_y", default_value=AUTO),
         DeclareLaunchArgument("camera_tf_z", default_value=AUTO),

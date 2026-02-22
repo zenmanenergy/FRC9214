@@ -5,7 +5,7 @@ Starter package for custom BehaviorTree.CPP nodes used by Nav2, plus a helper ex
 ## Build
 
 ```bash
-cd /home/robots/source_code/github/sidenoteemail/frc_team9214/team9214_ws
+cd /home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws
 colcon build --packages-select arena_bt_nodes
 source install/setup.bash
 ```
@@ -14,7 +14,7 @@ source install/setup.bash
 
 ```bash
 ros2 run arena_bt_nodes generate_bt_model_xml \
-  /home/robots/source_code/github/sidenoteemail/frc_team9214/team9214_ws/src/arena_bringup/behavior_trees/arena_bt_nodes_model.xml
+  /home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_bringup/behavior_trees/arena_bt_nodes_model.xml
 ```
 
 ## Enable plugin in Nav2
@@ -59,7 +59,7 @@ plugin_lib_names:
 ### How to use now
 1. Build + source
   ```bash
-  cd /home/robots/source_code/github/sidenoteemail/frc_team9214/team9214_ws
+  cd /home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws
   source /opt/ros/jazzy/setup.bash
   colcon build --packages-select arena_bt_nodes
   source install/setup.bash
@@ -68,7 +68,7 @@ plugin_lib_names:
 2. Regenerate model XML anytime
   ```bash
   ros2 run arena_bt_nodes generate_bt_model_xml \
-  /home/robots/source_code/github/sidenoteemail/frc_team9214/team9214_ws/src/arena_bringup/behavior_trees/arena_bt_nodes_model.xml
+  /home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_bringup/behavior_trees/arena_bt_nodes_model.xml
   ```
 
 3. Enable plugin in Nav2 (`plugin_lib_names`) in `nav2_params.xml`
@@ -91,7 +91,7 @@ plugin_lib_names:
 #### Run
 
 ```bash
-cd /home/robots/source_code/github/sidenoteemail/frc_team9214/team9214_ws
+cd /home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws
 source /opt/ros/jazzy/setup.bash
 colcon build --packages-select arena_bt_nodes
 source install/setup.bash
