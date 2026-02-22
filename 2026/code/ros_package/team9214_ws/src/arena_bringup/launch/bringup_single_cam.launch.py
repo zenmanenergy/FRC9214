@@ -84,6 +84,17 @@ def _resolve_value(name: str, raw_value: str, cfg: dict, fallback: str) -> str:
     return str(cfg_value)
 
 
+def _normalize_camera_info_url(value: str) -> str:
+    # usb_cam expects a URL (for local files: file:///abs/path).
+    if not value:
+        return value
+    if "://" in value:
+        return value
+    if os.path.isabs(value):
+        return f"file://{value}"
+    return value
+
+
 def _to_bool(value: str) -> bool:
     return str(value).strip().lower() in ("1", "true", "yes", "on")
 
@@ -270,6 +281,7 @@ def _make_nodes(context, *args, **kwargs):
         cfg,
         default_camera_info_url,
     )
+    camera_info_url = _normalize_camera_info_url(camera_info_url)
     camera_tf_x = _resolve_value(
         "camera_tf_x",
         LaunchConfiguration("camera_tf_x").perform(context),
