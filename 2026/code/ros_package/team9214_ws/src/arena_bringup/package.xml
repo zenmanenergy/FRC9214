@@ -23,6 +23,7 @@
   <exec_depend>tf2_ros</exec_depend>
 
   <exec_depend>arena_description</exec_depend>
+  <exec_depend>arena_bt_nodes</exec_depend> <!-- libarena_bt_nodes.so -->
   <exec_depend>arena_tag_map</exec_depend>
   <exec_depend>localization_fusion</exec_depend>
   <exec_depend>tag_pose_observer</exec_depend>

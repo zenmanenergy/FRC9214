@@ -96,7 +96,7 @@
 
 ## Build package
 
-`colcon build --packages-select arena_bringup --event-handlers console_direct+`
+`colcon build --packages-up-to arena_bringup --event-handlers console_direct+`
 
 ## Build Troubleshooting
 

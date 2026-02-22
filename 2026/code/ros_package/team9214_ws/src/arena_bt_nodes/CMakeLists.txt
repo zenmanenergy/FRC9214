@@ -13,6 +13,10 @@ add_library(${PROJECT_NAME} SHARED
   src/register_nodes.cpp
   src/plugin_entrypoint.cpp
 )
+target_compile_definitions(${PROJECT_NAME}
+  PRIVATE
+    BT_PLUGIN_EXPORT
+)
 target_include_directories(${PROJECT_NAME}
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

@@ -11,16 +11,25 @@ from launch_ros.actions import Node
 
 def generate_launch_description() -> LaunchDescription:
     bringup_share = get_package_share_directory("arena_bringup")
-    default_nav_params = os.path.join(bringup_share, "params", "nav2_params.yaml")
+    arena_tag_map_share = get_package_share_directory("arena_tag_map")
+    default_nav_params = os.path.join(bringup_share, "params", "nav2_params_sim.yaml")
+    default_nav_map_yaml = os.path.join(arena_tag_map_share, "config", "frc2026_field_blank.yaml")
     navigation_launch = os.path.join(bringup_share, "launch", "navigation.launch.py")
 
     launch_navigation = LaunchConfiguration("launch_navigation")
     nav_params_file = LaunchConfiguration("nav_params_file")
     nav_autostart = LaunchConfiguration("nav_autostart")
+    nav_launch_map_server = LaunchConfiguration("nav_launch_map_server")
+    nav_map_yaml = LaunchConfiguration("nav_map_yaml")
+    use_keepout_zones = LaunchConfiguration("use_keepout_zones")
+    use_speed_zones = LaunchConfiguration("use_speed_zones")
 
     mode_schedule = LaunchConfiguration("mode_schedule")
     sim_vx = LaunchConfiguration("sim_vx")
     sim_wz = LaunchConfiguration("sim_wz")
+    sim_start_x = LaunchConfiguration("sim_start_x")
+    sim_start_y = LaunchConfiguration("sim_start_y")
+    sim_start_yaw = LaunchConfiguration("sim_start_yaw")
     tag_pose_x = LaunchConfiguration("tag_pose_x")
     tag_pose_y = LaunchConfiguration("tag_pose_y")
     tag_pose_yaw = LaunchConfiguration("tag_pose_yaw")
@@ -46,8 +55,15 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument("launch_navigation", default_value="true"),
         DeclareLaunchArgument("nav_params_file", default_value=default_nav_params),
         DeclareLaunchArgument("nav_autostart", default_value="true"),
+        DeclareLaunchArgument("nav_launch_map_server", default_value="true"),
+        DeclareLaunchArgument("nav_map_yaml", default_value=default_nav_map_yaml),
+        DeclareLaunchArgument("use_keepout_zones", default_value="false"),
+        DeclareLaunchArgument("use_speed_zones", default_value="false"),
 
         DeclareLaunchArgument("mode_schedule", default_value="disabled:2,teleop:4,autonomous:10,disabled:2"),
+        DeclareLaunchArgument("sim_start_x", default_value="1.0"),
+        DeclareLaunchArgument("sim_start_y", default_value="1.0"),
+        DeclareLaunchArgument("sim_start_yaw", default_value="0.0"),
         DeclareLaunchArgument("sim_vx", default_value="0.0"),
         DeclareLaunchArgument("sim_wz", default_value="0.0"),
         DeclareLaunchArgument("tag_pose_x", default_value="0.0"),
@@ -67,8 +83,8 @@ def generate_launch_description() -> LaunchDescription:
 
         DeclareLaunchArgument("enable_autonomy_mode_manager", default_value="true"),
         DeclareLaunchArgument("autonomy_mode_value", default_value="autonomous"),
-        DeclareLaunchArgument("autonomy_goal_x", default_value="1.0"),
-        DeclareLaunchArgument("autonomy_goal_y", default_value="0.0"),
+        DeclareLaunchArgument("autonomy_goal_x", default_value="2.0"),
+        DeclareLaunchArgument("autonomy_goal_y", default_value="1.0"),
         DeclareLaunchArgument("autonomy_goal_yaw", default_value="0.0"),
 
         Node(
@@ -78,8 +94,13 @@ def generate_launch_description() -> LaunchDescription:
             output="screen",
             parameters=[{
                 "mode_schedule": mode_schedule,
+                "start_x": sim_start_x,
+                "start_y": sim_start_y,
+                "start_yaw": sim_start_yaw,
                 "linear_velocity_x": sim_vx,
                 "angular_velocity_z": sim_wz,
+                "follow_cmd_vel": True,
+                "cmd_vel_topic": "/cmd_vel_nav",
                 "tag_pose_x": tag_pose_x,
                 "tag_pose_y": tag_pose_y,
                 "tag_pose_yaw": tag_pose_yaw,
@@ -92,6 +113,10 @@ def generate_launch_description() -> LaunchDescription:
             launch_arguments={
                 "params_file": nav_params_file,
                 "autostart": nav_autostart,
+                "launch_map_server": nav_launch_map_server,
+                "map": nav_map_yaml,
+                "use_keepout_zones": use_keepout_zones,
+                "use_speed_zones": use_speed_zones,
                 "enable_nt4_mode_bridge": enable_nt4_mode_bridge,
                 "nt4_mode_team": nt4_mode_team,
                 "nt4_mode_server": nt4_mode_server,
@@ -113,4 +138,3 @@ def generate_launch_description() -> LaunchDescription:
             }.items(),
         ),
     ])
-

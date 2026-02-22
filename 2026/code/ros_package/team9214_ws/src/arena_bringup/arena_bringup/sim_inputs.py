@@ -3,7 +3,7 @@
 import math
 from typing import List, Tuple
 
-from geometry_msgs.msg import PoseWithCovarianceStamped, TransformStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped, TransformStamped, Twist
 from nav_msgs.msg import Odometry
 import rclpy
 from rclpy.node import Node
@@ -62,6 +62,9 @@ class SimInputs(Node):
         self.declare_parameter("linear_velocity_x", 0.0)
         self.declare_parameter("angular_velocity_z", 0.0)
         self.declare_parameter("publish_tf", True)
+        self.declare_parameter("follow_cmd_vel", False)
+        self.declare_parameter("cmd_vel_topic", "/cmd_vel_nav")
+        self.declare_parameter("cmd_vel_timeout_sec", 0.5)
 
         self._rate_hz = float(self.get_parameter("publish_rate_hz").value)
         self._publish_mode = bool(self.get_parameter("publish_mode").value)
@@ -87,6 +90,12 @@ class SimInputs(Node):
         self._vx = float(self.get_parameter("linear_velocity_x").value)
         self._wz = float(self.get_parameter("angular_velocity_z").value)
         self._publish_tf = bool(self.get_parameter("publish_tf").value)
+        self._follow_cmd_vel = bool(self.get_parameter("follow_cmd_vel").value)
+        self._cmd_vel_topic = str(self.get_parameter("cmd_vel_topic").value)
+        self._cmd_vel_timeout_sec = max(0.0, float(self.get_parameter("cmd_vel_timeout_sec").value))
+        self._cmd_vx = 0.0
+        self._cmd_wz = 0.0
+        self._last_cmd_sec = -1.0
 
         self._last_tick_sec = self.get_clock().now().nanoseconds / 1e9
         self._mode_index = 0
@@ -106,6 +115,10 @@ class SimInputs(Node):
             self._pub_odom = self.create_publisher(Odometry, self._odom_topic, 10)
             if self._wheel_odom_topic and self._wheel_odom_topic != self._odom_topic:
                 self._pub_wheel_odom = self.create_publisher(Odometry, self._wheel_odom_topic, 10)
+
+        self._sub_cmd = None
+        if self._follow_cmd_vel:
+            self._sub_cmd = self.create_subscription(Twist, self._cmd_vel_topic, self._cmd_cb, 10)
 
         self._tfb = TransformBroadcaster(self) if self._publish_tf else None
         self._timer = self.create_timer(max(0.02, 1.0 / max(self._rate_hz, 0.1)), self._tick)
@@ -135,10 +148,18 @@ class SimInputs(Node):
         dt = max(0.0, now_sec - self._last_tick_sec)
         self._last_tick_sec = now_sec
 
+        if self._follow_cmd_vel:
+            cmd_fresh = self._last_cmd_sec >= 0.0 and (now_sec - self._last_cmd_sec) <= self._cmd_vel_timeout_sec
+            vx = self._cmd_vx if cmd_fresh else 0.0
+            wz = self._cmd_wz if cmd_fresh else 0.0
+        else:
+            vx = self._vx
+            wz = self._wz
+
         # Integrate simple planar motion for odometry.
-        self._x += self._vx * math.cos(self._yaw) * dt
-        self._y += self._vx * math.sin(self._yaw) * dt
-        self._yaw += self._wz * dt
+        self._x += vx * math.cos(self._yaw) * dt
+        self._y += vx * math.sin(self._yaw) * dt
+        self._yaw += wz * dt
 
         self._advance_mode(dt)
 
@@ -176,8 +197,8 @@ class SimInputs(Node):
             odom_msg.pose.pose.orientation.y = qy
             odom_msg.pose.pose.orientation.z = qz
             odom_msg.pose.pose.orientation.w = qw
-            odom_msg.twist.twist.linear.x = self._vx
-            odom_msg.twist.twist.angular.z = self._wz
+            odom_msg.twist.twist.linear.x = vx
+            odom_msg.twist.twist.angular.z = wz
             self._pub_odom.publish(odom_msg)
             if self._pub_wheel_odom is not None:
                 self._pub_wheel_odom.publish(odom_msg)
@@ -203,6 +224,11 @@ class SimInputs(Node):
             tf_map_odom.transform.rotation.w = 1.0
             self._tfb.sendTransform(tf_map_odom)
 
+    def _cmd_cb(self, msg: Twist) -> None:
+        self._cmd_vx = float(msg.linear.x)
+        self._cmd_wz = float(msg.angular.z)
+        self._last_cmd_sec = self.get_clock().now().nanoseconds / 1e9
+
 
 def main(args=None) -> None:
     rclpy.init(args=args)
@@ -216,4 +242,3 @@ def main(args=None) -> None:
 
 if __name__ == "__main__":
     main()
-

@@ -33,10 +33,14 @@ def launch_config_as_bool(name: str):
 def generate_launch_description() -> LaunchDescription:
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
+    # Added map-server launch args and default map yaml from arena_tag_map package
+    arena_tag_map_dir = get_package_share_directory('arena_tag_map')
 
     namespace = LaunchConfiguration('namespace')
     use_sim_time = launch_config_as_bool('use_sim_time')
     autostart = launch_config_as_bool('autostart')
+    launch_map_server = launch_config_as_bool('launch_map_server')
+    map_yaml = LaunchConfiguration('map')
     graph_filepath = LaunchConfiguration('graph')
     params_file = LaunchConfiguration('params_file')
     use_composition = launch_config_as_bool('use_composition')
@@ -135,6 +139,20 @@ def generate_launch_description() -> LaunchDescription:
         'params_file',
         default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes',
+    )
+    # New arg launch_map_server defaulted to true, 
+    # meaning the map server will be launched by default with this launch file. 
+    declare_launch_map_server_cmd = DeclareLaunchArgument(
+        'launch_map_server',
+        default_value='True',
+        description='Whether to launch nav2_map_server and lifecycle manager for map',
+    )
+    # The map yaml arg is also added, with a default pointing to a blank field map 
+    # in the arena_tag_map package.
+    declare_map_yaml_cmd = DeclareLaunchArgument(
+        'map',
+        default_value=os.path.join(arena_tag_map_dir, 'config', 'frc2026_field_blank.yaml'),
+        description='Full path to map yaml file to load in map_server',
     )
 
     declare_graph_file_cmd = DeclareLaunchArgument(
@@ -565,6 +583,33 @@ def generate_launch_description() -> LaunchDescription:
             'ros_mode_topic': ros_mode_topic,
         }],
     )
+    # map_server node added with condition to only launch if launch_map_server is true.
+    map_server = Node(
+        condition=IfCondition(launch_map_server),
+        package='nav2_map_server',
+        executable='map_server',
+        name='map_server',
+        output='screen',
+        respawn=use_respawn,
+        respawn_delay=2.0,
+        parameters=[configured_params, {'yaml_filename': map_yaml}],
+        arguments=['--ros-args', '--log-level', log_level],
+        remappings=remappings,
+    )
+    # lifecycle manager for map server added, also conditioned on launch_map_server
+    lifecycle_manager_map = Node(
+        condition=IfCondition(launch_map_server),
+        package='nav2_lifecycle_manager',
+        executable='lifecycle_manager',
+        name='lifecycle_manager_map_server',
+        output='screen',
+        arguments=['--ros-args', '--log-level', log_level],
+        parameters=[{
+            'use_sim_time': use_sim_time,
+            'autostart': autostart,
+            'node_names': ['map_server'],
+        }],
+    )
 
     # Create the launch description and populate
     ld = LaunchDescription()
@@ -576,6 +621,8 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_launch_map_server_cmd)
+    ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_graph_file_cmd)
     ld.add_action(declare_use_composition_cmd)
@@ -610,6 +657,9 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_nt4_mode_table_cmd)
     ld.add_action(declare_nt4_mode_key_cmd)
     ld.add_action(declare_ros_mode_topic_cmd)
+    # Wired both map_server and its lifecycle manager before Nav2 stack actions
+    ld.add_action(map_server)
+    ld.add_action(lifecycle_manager_map)
     # Add the actions to launch all of the navigation nodes
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
