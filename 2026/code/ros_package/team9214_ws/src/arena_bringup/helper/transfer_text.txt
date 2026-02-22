@@ -69,3 +69,23 @@ ekf_map node:
     - configured to consume /tag_global_pose as a global pose input (pose0) in the map/world context, 
     so it should be in map frame.
     - That matches tag_pose_observer publishing /tag_global_pose with header.frame_id = map.
+
+In your current setup, base_link in map comes from this chain:
+- apriltag_ros 
+  - gives camera→tag (from detections + calibration)
+- tag_pose_observer 
+  - combines the following to compute map→base_link
+    - known map→tag (from tag map YAML)
+    - camera→tag
+    - base_link→camera (static TF)
+- It publishes that as /tag_global_pose (map frame pose of base_link)
+
+ekf_map 
+- fuses it and publishes /odometry/filtered (also map→base_link in your current config)
+So practically, your map→base_link transform is whatever you see on:
+  /tag_global_pose pose, and/or
+  /odometry/filtered pose (smoothed)
+
+  And on TF:
+
+    `ros2 run tf2_ros tf2_echo map base_link`
