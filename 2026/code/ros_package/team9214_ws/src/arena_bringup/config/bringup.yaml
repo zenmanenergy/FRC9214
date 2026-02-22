@@ -1,12 +1,12 @@
 bringup:
   ros__parameters:
-    urdf_xacro: "/home/robots/source_code/github/sidenoteemail/frc_team9214/team9214_ws/src/arena_description/urdf/robot.urdf.xacro"
-    tag_map_yaml: "/home/robots/source_code/github/sidenoteemail/frc_team9214/team9214_ws/src/arena_tag_map/config/camera_test_arena_tags.yaml"
-    observer_yaml: "/home/robots/source_code/github/sidenoteemail/frc_team9214/team9214_ws/src/tag_pose_observer/config/observer.yaml"
-    ekf_map_yaml: "/home/robots/source_code/github/sidenoteemail/frc_team9214/team9214_ws/src/localization_fusion/config/ekf_map.yaml"
-    ekf_odom_yaml: "/home/robots/source_code/github/sidenoteemail/frc_team9214/team9214_ws/src/localization_fusion/config/ekf_odom.yaml"
-    rviz_config: "/home/robots/source_code/github/sidenoteemail/frc_team9214/team9214_ws/src/arena_bringup/config/rviz.rviz"
-    apriltag_params_yaml: "/home/robots/source_code/github/sidenoteemail/frc_team9214/team9214_ws/src/arena_tag_map/config/frc2026_apriltag_ros.yaml"
+    urdf_xacro: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_description/urdf/robot.urdf.xacro"
+    tag_map_yaml: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_tag_map/config/camera_test_arena_tags.yaml"
+    observer_yaml: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/tag_pose_observer/config/observer.yaml"
+    ekf_map_yaml: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/localization_fusion/config/ekf_map.yaml"
+    ekf_odom_yaml: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/localization_fusion/config/ekf_odom.yaml"
+    rviz_config: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_bringup/config/rviz.rviz"
+    apriltag_params_yaml: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_tag_map/config/frc2026_apriltag_ros.yaml"
     use_rviz: true
 
     camera_ns: "camera_1"
@@ -23,7 +23,7 @@ bringup:
     pixel_format: "yuyv"
     io_method: "mmap"
     camera_frame: "camera_1_optical_frame"
-    # camera_info_url: "file:///home/robots/source_code/github/sidenoteemail/frc_team9214/team9214_ws/src/multi_cam_apriltag/config/camera_1_new.yaml"
+    # camera_info_url: "file:///home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/multi_cam_apriltag/config/camera_1_new.yaml"
     camera_info_url: "file:///home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/multi_cam_apriltag/config/camera_1_new.yaml"
 
     use_static_camera_tf: true

@@ -12,7 +12,7 @@ apriltags:
   family: "tag36h11"
   default_size_m: 0.1651
   tags:
-    - id: 2
+    - id: 1
       size_m: 0.1651
       pose:
         # Assumptions:
