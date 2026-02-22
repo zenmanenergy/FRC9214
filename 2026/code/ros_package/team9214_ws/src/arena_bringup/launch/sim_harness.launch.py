@@ -49,6 +49,10 @@ def generate_launch_description() -> LaunchDescription:
     autonomy_goal_x = LaunchConfiguration("autonomy_goal_x")
     autonomy_goal_y = LaunchConfiguration("autonomy_goal_y")
     autonomy_goal_yaw = LaunchConfiguration("autonomy_goal_yaw")
+    autonomy_goal_mode = LaunchConfiguration("autonomy_goal_mode")
+    autonomy_waypoints = LaunchConfiguration("autonomy_waypoints")
+    autonomy_loop_on_success = LaunchConfiguration("autonomy_loop_on_success")
+    autonomy_skip_failed_waypoint = LaunchConfiguration("autonomy_skip_failed_waypoint")
     autonomy_mode_value = LaunchConfiguration("autonomy_mode_value")
 
     return LaunchDescription([
@@ -86,6 +90,13 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument("autonomy_goal_x", default_value="2.0"),
         DeclareLaunchArgument("autonomy_goal_y", default_value="1.0"),
         DeclareLaunchArgument("autonomy_goal_yaw", default_value="0.0"),
+        DeclareLaunchArgument("autonomy_goal_mode", default_value="loop_waypoints"),
+        DeclareLaunchArgument(
+            "autonomy_waypoints",
+            default_value="1.0,1.0,0.0;3.0,1.0,0.0;3.0,2.0,1.57;1.0,2.0,3.14",
+        ),
+        DeclareLaunchArgument("autonomy_loop_on_success", default_value="true"),
+        DeclareLaunchArgument("autonomy_skip_failed_waypoint", default_value="true"),
 
         Node(
             package="arena_bringup",
@@ -135,6 +146,10 @@ def generate_launch_description() -> LaunchDescription:
                 "autonomy_goal_x": autonomy_goal_x,
                 "autonomy_goal_y": autonomy_goal_y,
                 "autonomy_goal_yaw": autonomy_goal_yaw,
+                "autonomy_goal_mode": autonomy_goal_mode,
+                "autonomy_waypoints": autonomy_waypoints,
+                "autonomy_loop_on_success": autonomy_loop_on_success,
+                "autonomy_skip_failed_waypoint": autonomy_skip_failed_waypoint,
             }.items(),
         ),
     ])

@@ -51,7 +51,9 @@ Current working defaults in `sim_harness.launch.py`:
 - sim params file (`nav2_params_sim.yaml`)
 - keepout/speed zones disabled by default in sim
 - start pose inside map (`sim_start_x:=1.0`, `sim_start_y:=1.0`)
-- autonomy goal inside map (`autonomy_goal_x:=2.0`, `autonomy_goal_y:=1.0`)
+- autonomy manager defaults to continuous loop mode (`autonomy_goal_mode:=loop_waypoints`)
+- loop route defaults to compact rectangle:
+  `1.0,1.0,0.0;3.0,1.0,0.0;3.0,2.0,1.57;1.0,2.0,3.14`
 - `sim_inputs` follows `/cmd_vel_nav` so controller progress works
 
 Launch:
@@ -73,6 +75,10 @@ Useful overrides:
 - `use_speed_zones:=true|false`
 - `sim_start_x:=<m> sim_start_y:=<m> sim_start_yaw:=<rad>`
 - `autonomy_goal_x:=<m> autonomy_goal_y:=<m> autonomy_goal_yaw:=<rad>`
+- `autonomy_goal_mode:=single_goal|loop_waypoints`
+- `autonomy_waypoints:=x,y,yaw;x,y,yaw;...`
+- `autonomy_loop_on_success:=true|false`
+- `autonomy_skip_failed_waypoint:=true|false`
 - `launch_navigation:=false` (run `sim_inputs` only)
 
 ## Observe behavior
@@ -95,6 +101,28 @@ Force one autonomous transition:
 
 ```bash
 ros2 topic pub -1 /robot_mode std_msgs/msg/String "{data: autonomous}"
+```
+
+## Continuous autonomous loop
+
+`autonomy_mode_manager` supports two modes:
+- `single_goal`: sends one `NavigateToPose` goal (existing behavior)
+- `loop_waypoints`: continuously cycles waypoint goals while mode remains autonomous
+
+Waypoint format:
+- `x,y,yaw;x,y,yaw;...` in `goal_frame_id` (default `map`)
+- Example:
+  `1.0,1.0,0.0;3.0,1.0,0.0;3.0,2.0,1.57;1.0,2.0,3.14`
+
+Example (explicit loop config):
+
+```bash
+ros2 launch arena_bringup sim_harness.launch.py \
+  enable_autonomy_mode_manager:=true \
+  autonomy_goal_mode:=loop_waypoints \
+  autonomy_waypoints:="1.0,1.0,0.0;3.0,1.0,0.0;3.0,2.0,1.57;1.0,2.0,3.14" \
+  autonomy_loop_on_success:=true \
+  autonomy_skip_failed_waypoint:=true
 ```
 
 ## Custom BT XML

@@ -67,6 +67,10 @@ def generate_launch_description() -> LaunchDescription:
     autonomy_goal_x = LaunchConfiguration('autonomy_goal_x')
     autonomy_goal_y = LaunchConfiguration('autonomy_goal_y')
     autonomy_goal_yaw = LaunchConfiguration('autonomy_goal_yaw')
+    autonomy_goal_mode = LaunchConfiguration('autonomy_goal_mode')
+    autonomy_waypoints = LaunchConfiguration('autonomy_waypoints')
+    autonomy_loop_on_success = launch_config_as_bool('autonomy_loop_on_success')
+    autonomy_skip_failed_waypoint = launch_config_as_bool('autonomy_skip_failed_waypoint')
     autonomy_goal_behavior_tree = LaunchConfiguration('autonomy_goal_behavior_tree')
     enable_nt4_mode_bridge = launch_config_as_bool('enable_nt4_mode_bridge')
     nt4_mode_client_name = LaunchConfiguration('nt4_mode_client_name')
@@ -266,6 +270,22 @@ def generate_launch_description() -> LaunchDescription:
     declare_autonomy_goal_yaw_cmd = DeclareLaunchArgument(
         'autonomy_goal_yaw', default_value='0.0',
         description='Default autonomous goal yaw (radians)'
+    )
+    declare_autonomy_goal_mode_cmd = DeclareLaunchArgument(
+        'autonomy_goal_mode', default_value='single_goal',
+        description="Autonomy goal mode: 'single_goal' or 'loop_waypoints'"
+    )
+    declare_autonomy_waypoints_cmd = DeclareLaunchArgument(
+        'autonomy_waypoints', default_value='',
+        description="Semicolon-separated waypoints as x,y,yaw;x,y,yaw for loop_waypoints mode"
+    )
+    declare_autonomy_loop_on_success_cmd = DeclareLaunchArgument(
+        'autonomy_loop_on_success', default_value='True',
+        description='Continue looping to next waypoint after each successful goal'
+    )
+    declare_autonomy_skip_failed_waypoint_cmd = DeclareLaunchArgument(
+        'autonomy_skip_failed_waypoint', default_value='True',
+        description='Skip to next waypoint when a loop waypoint goal fails'
     )
     # Launch arg autonomy_goal_behavior_tree_cmd defined.
     #
@@ -563,6 +583,10 @@ def generate_launch_description() -> LaunchDescription:
             'goal_x': autonomy_goal_x,
             'goal_y': autonomy_goal_y,
             'goal_yaw': autonomy_goal_yaw,
+            'goal_mode': autonomy_goal_mode,
+            'waypoints': autonomy_waypoints,
+            'loop_on_success': autonomy_loop_on_success,
+            'skip_failed_waypoint': autonomy_skip_failed_waypoint,
             'goal_behavior_tree': autonomy_goal_behavior_tree,
         }],
     )
@@ -648,6 +672,10 @@ def generate_launch_description() -> LaunchDescription:
     ld.add_action(declare_autonomy_goal_x_cmd)
     ld.add_action(declare_autonomy_goal_y_cmd)
     ld.add_action(declare_autonomy_goal_yaw_cmd)
+    ld.add_action(declare_autonomy_goal_mode_cmd)
+    ld.add_action(declare_autonomy_waypoints_cmd)
+    ld.add_action(declare_autonomy_loop_on_success_cmd)
+    ld.add_action(declare_autonomy_skip_failed_waypoint_cmd)
     ld.add_action(declare_autonomy_goal_behavior_tree_cmd)
     ld.add_action(declare_enable_nt4_mode_bridge_cmd)
     ld.add_action(declare_nt4_mode_client_name_cmd)
