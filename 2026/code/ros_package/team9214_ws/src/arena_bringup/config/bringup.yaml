@@ -27,6 +27,12 @@ bringup:
     camera_info_url: "file:///home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/multi_cam_apriltag/config/camera_1_new.yaml"
 
     use_static_camera_tf: true
+    # Sensor availability toggles for EKF inputs.
+    # Set false when the robot is not providing those topics yet.
+    use_wheel_odom: false
+    use_imu: false
+    # When false, only ekf_map runs and is forced to world_frame=odom.
+    run_ekf_odom: false
     camera_tf_x: 0.20
     camera_tf_y: 0.00
     camera_tf_z: 0.30
