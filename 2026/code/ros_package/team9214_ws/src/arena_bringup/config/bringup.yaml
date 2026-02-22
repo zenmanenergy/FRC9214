@@ -23,7 +23,7 @@ bringup:
     pixel_format: "yuyv"
     io_method: "mmap"
     camera_frame: "camera_1_optical_frame"
-    camera_info_url: "file:///home/robots/source_code/github/sidenoteemail/frc_team9214/team9214_ws/src/multi_cam_apriltag/config/camera_1.yaml"
+    camera_info_url: "file:///home/robots/source_code/github/sidenoteemail/frc_team9214/team9214_ws/src/multi_cam_apriltag/config/camera_1_new.yaml"
 
     use_static_camera_tf: true
     camera_tf_x: 0.20
