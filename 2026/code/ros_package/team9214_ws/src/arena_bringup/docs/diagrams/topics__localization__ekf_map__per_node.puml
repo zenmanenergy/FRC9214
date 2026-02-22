@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+left to right direction
+
+title localization.launch.py per-node topic directions
+
+legend right
+Direction is from each node's perspective.
+IN = subscribes/listens, OUT = publishes, IN/OUT = both.
+endlegend
+
+component "ekf_map\n(robot_localization/ekf_node)" as ekf
+
+note right of ekf
+|= Topic |= Dir |
+| /wheel/odom | IN |
+| /imu/data | IN |
+| /tag_global_pose | IN |
+| /tf_static | IN |
+| /tf | IN/OUT |
+| /odometry/filtered | OUT |
+end note
+
+@enduml

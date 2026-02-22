@@ -1,0 +1,136 @@
+@startuml
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 70
+skinparam ranksep 70
+left to right direction
+
+title navigation.launch.py per-node topic directions
+
+legend right
+Direction is from each node's perspective.
+IN = subscribes/listens, OUT = publishes, IN/OUT = both.
+This diagram focuses on launch wiring + configured runtime topics.
+endlegend
+
+component "map_server\n(optional)" as map_server
+component "planner_server" as planner
+component "route_server" as route
+component "controller_server" as controller
+component "behavior_server" as behavior
+component "bt_navigator" as btnav
+component "waypoint_follower" as waypoint
+component "velocity_smoother" as vel_smoother
+component "collision_monitor" as collision
+component "cmd_vel_nt4_bridge\n(optional)" as cmd_nt4
+component "autonomy_mode_manager\n(optional)" as auto_mgr
+component "nt4_mode_bridge\n(optional)" as mode_bridge
+
+note right of map_server
+|= Topic |= Dir |
+| /map | OUT |
+| /map_metadata | OUT |
+end note
+
+note right of planner
+|= Topic |= Dir |
+| /map | IN |
+| /tf | IN |
+| /tf_static | IN |
+| /plan | OUT |
+end note
+
+note right of route
+|= Topic |= Dir |
+| /map | IN |
+| /tf | IN |
+| /tf_static | IN |
+| route/planning interfaces | OUT |
+end note
+
+note right of controller
+|= Topic |= Dir |
+| /plan | IN |
+| /odom | IN |
+| /tf | IN |
+| /tf_static | IN |
+| /cmd_vel_nav | OUT |
+end note
+
+note right of behavior
+|= Topic |= Dir |
+| /odom | IN |
+| /tf | IN |
+| /tf_static | IN |
+| /cmd_vel_nav | OUT |
+end note
+
+note right of btnav
+|= Topic |= Dir |
+| /navigate_to_pose action | IN/OUT |
+| /tf | IN |
+| /tf_static | IN |
+| planner/controller/behavior actions | IN/OUT |
+end note
+
+note right of waypoint
+|= Topic |= Dir |
+| waypoint follower actions/services | IN/OUT |
+| /navigate_to_pose action | OUT |
+end note
+
+note right of vel_smoother
+|= Topic |= Dir |
+| /cmd_vel_smoothed | IN |
+| /odom | IN |
+| /cmd_vel_nav | OUT |
+end note
+
+note right of collision
+|= Topic |= Dir |
+| /cmd_vel_smoothed | IN |
+| /scan | IN |
+| /local_costmap/published_footprint | IN |
+| /tf | IN |
+| /tf_static | IN |
+| /cmd_vel_nav | OUT |
+| /collision_monitor_state | OUT |
+end note
+
+note right of cmd_nt4
+|= Topic |= Dir |
+| /cmd_vel_nav | IN |
+| /tag_global_pose | IN |
+| /navigate_to_pose/_action/status | IN |
+| /odom | IN |
+| robot_mode (optional) | IN |
+| NT4 ROS/* keys | OUT |
+end note
+
+note right of auto_mgr
+|= Topic |= Dir |
+| robot_mode | IN |
+| /navigate_to_pose action | OUT |
+end note
+
+note right of mode_bridge
+|= Topic |= Dir |
+| NT4 ROS/robot_mode key | IN |
+| robot_mode | OUT |
+end note
+
+' Layout helpers only.
+map_server -[hidden]-> planner
+planner -[hidden]-> route
+route -[hidden]-> controller
+controller -[hidden]-> behavior
+behavior -[hidden]-> btnav
+btnav -[hidden]-> waypoint
+waypoint -[hidden]-> vel_smoother
+vel_smoother -[hidden]-> collision
+collision -[hidden]-> cmd_nt4
+cmd_nt4 -[hidden]-> auto_mgr
+auto_mgr -[hidden]-> mode_bridge
+
+@enduml

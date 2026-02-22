@@ -1,0 +1,86 @@
+@startuml
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 70
+skinparam ranksep 70
+left to right direction
+
+title bringup_multi_cam.launch.py per-node topic directions
+
+legend right
+Direction is from each node's perspective.
+IN = subscribes/listens, OUT = publishes, IN/OUT = both.
+endlegend
+
+component "robot_state_publisher" as rsp
+component "apriltag\n/camera_1/apriltag" as apriltag_1
+component "apriltag\n/camera_2/apriltag" as apriltag_2
+component "tag_pose_observer" as observer
+component "ekf_odom\n(robot_localization/ekf_node)" as ekf_odom
+component "ekf_map\n(robot_localization/ekf_node)" as ekf_map
+component "rviz2" as rviz
+
+note right of rsp
+|= Topic |= Dir |
+| /tf | OUT |
+| /tf_static | OUT |
+end note
+
+note right of apriltag_1
+|= Topic |= Dir |
+| /camera_1/image_raw | IN |
+| /camera_1/camera_info | IN |
+| /camera_1/tag_detections | OUT |
+end note
+
+note right of apriltag_2
+|= Topic |= Dir |
+| /camera_2/image_raw | IN |
+| /camera_2/camera_info | IN |
+| /camera_2/tag_detections | OUT |
+end note
+
+note right of observer
+|= Topic |= Dir |
+| /camera_1/tag_detections | IN |
+| /camera_2/tag_detections | IN |
+| /tf | IN |
+| /tf_static | IN |
+| /tag_global_pose | OUT |
+end note
+
+note right of ekf_odom
+|= Topic |= Dir |
+| /wheel/odom | IN |
+| /imu/data | IN |
+| /tf_static | IN |
+| /tf | IN/OUT |
+| /odometry/filtered | OUT |
+end note
+
+note right of ekf_map
+|= Topic |= Dir |
+| /wheel/odom | IN |
+| /imu/data | IN |
+| /tag_global_pose | IN |
+| /tf_static | IN |
+| /tf | IN/OUT |
+| /odometry/filtered | OUT |
+end note
+
+note right of rviz
+|= Topic |= Dir |
+| /tf | IN |
+| /tf_static | IN |
+end note
+
+' Layout helpers only.
+rsp -[hidden]-> apriltag_1
+apriltag_1 -[hidden]-> apriltag_2
+apriltag_2 -[hidden]-> observer
+observer -[hidden]-> ekf_odom
+ekf_odom -[hidden]-> ekf_map
+ekf_map -[hidden]-> rviz
+
+@enduml

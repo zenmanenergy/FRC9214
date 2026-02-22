@@ -1,0 +1,22 @@
+@startuml
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+left to right direction
+
+title sim_harness.launch.py flow
+
+legend right
+Solid arrows: topic/action flow.
+Dashed arrows: included launch composition.
+endlegend
+
+component "sim_inputs\n(arena_bringup/sim_inputs.py)" as sim_inputs
+component "navigation.launch.py stack\n(included when launch_navigation=true)" as nav_stack
+
+sim_inputs --> nav_stack : robot_mode\n/tag_global_pose\n/odom\n/wheel/odom\n/tf
+nav_stack --> sim_inputs : /cmd_vel_nav
+
+sim_inputs ..> nav_stack : IncludeLaunchDescription(navigation.launch.py)
+
+@enduml
