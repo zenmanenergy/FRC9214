@@ -53,37 +53,19 @@ pose:
   - 0.0
   - 0.0225
 
-robots@robots:~/ros_ws$ ros2 topic echo /camera_1/tag_detections --once
-header:
-  stamp:
-    sec: 1771791766
-    nanosec: 878658000
-  frame_id: camera_1_optical_frame
-detections:
-- family: tag36h11
-  id: 1
-  hamming: 0
-  goodness: 0.0
-  decision_margin: 66.37018585205078
-  centre:
-    x: 558.334154074765
-    y: 200.7976345963138
-  corners:
-  - x: 492.99008178710943
-    y: 249.272705078125
-  - x: 624.0763549804685
-    y: 261.77606201171875
-  - x: 634.0350952148438
-    y: 144.63938903808597
-  - x: 501.91052246093767
-    y: 148.46253967285156
-  homography:
-  - 23.64146382035665
-  - -5.50257913956636
-  - 558.334154074765
-  - -12.884191578842302
-  - 53.89485613861663
-  - 200.7976345963138
-  - -0.07485378035735447
-  - -0.0014242517215936926
-  - 1.0
+
+## Frames
+
+apriltag node provides the `/camera_1/tag_detections` in the camera_1_optical_frame
+
+tag_pose_observer node :
+  - defaults to "map" frame in observer.yaml, so provides the `/tag_global_pose` in the map frame
+  - verified: published message header is set to map_frame in code (observer_node.py)
+  - Interfaces
+    - Input detections/TF: camera optical frame (camera_1_optical_frame)
+    - Output /tag_global_pose: map-frame geometry_msgs/PoseWithCovarianceStamped
+
+ekf_map node:
+    - configured to consume /tag_global_pose as a global pose input (pose0) in the map/world context, 
+    so it should be in map frame.
+    - That matches tag_pose_observer publishing /tag_global_pose with header.frame_id = map.
