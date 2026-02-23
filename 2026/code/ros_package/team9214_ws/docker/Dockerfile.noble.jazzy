@@ -1,0 +1,68 @@
+FROM osrf/ros:jazzy-desktop-full-noble AS base
+
+SHELL ["/bin/bash", "-c"]
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG ROS_DISTRO=jazzy
+
+ENV ROS_DISTRO=${ROS_DISTRO}
+ENV ROS_WS=/opt/team9214_ws
+
+# System, ROS build tooling, and core ROS runtime dependencies used by this workspace.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    git \
+    locales \
+    python3-pip \
+    python3-colcon-common-extensions \
+    python3-rosdep \
+    python3-vcstool \
+    ros-${ROS_DISTRO}-ament-cmake \
+    ros-${ROS_DISTRO}-ament-package \
+    ros-${ROS_DISTRO}-apriltag-msgs \
+    ros-${ROS_DISTRO}-apriltag-ros \
+    ros-${ROS_DISTRO}-behaviortree-cpp-v3 \
+    ros-${ROS_DISTRO}-image-proc \
+    ros-${ROS_DISTRO}-nav2-bringup \
+    ros-${ROS_DISTRO}-robot-localization \
+    ros-${ROS_DISTRO}-robot-state-publisher \
+    ros-${ROS_DISTRO}-tf2-ros \
+    ros-${ROS_DISTRO}-usb-cam \
+    ros-${ROS_DISTRO}-xacro \
+    && locale-gen en_US en_US.UTF-8 \
+    && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+
+# Install Python runtime packages that are not reliably covered by apt.
+COPY team9214_ws/docker/requirements.txt /tmp/requirements.txt
+RUN awk -F'==' '/^(pyntcore|pynetconsole|robotpy|robotpy-.*|numpy|PyYAML|requests|netifaces|psutil|pyserial)$/ {print $1 "==" $2}' \
+    /tmp/requirements.txt > /tmp/requirements.filtered.txt \
+    && python3 -m pip install --no-cache-dir --break-system-packages -r /tmp/requirements.filtered.txt \
+    && rm -f /tmp/requirements.txt /tmp/requirements.filtered.txt
+
+WORKDIR ${ROS_WS}
+COPY team9214_ws/src ${ROS_WS}/src
+
+# Resolve remaining rosdep dependencies from package.xml files.
+RUN rosdep update \
+    && rosdep install --from-paths src --ignore-src --rosdistro ${ROS_DISTRO} -y -r
+
+# Build the workspace inside the image.
+RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
+    && colcon build --event-handlers console_direct+
+
+# Entrypoint that always sources ROS + workspace overlay.
+RUN printf '%s\n' \
+    '#!/bin/bash' \
+    'set -e' \
+    'source /opt/ros/${ROS_DISTRO}/setup.bash' \
+    'source ${ROS_WS}/install/setup.bash' \
+    'exec "$@"' > /ros_entrypoint.sh \
+    && chmod +x /ros_entrypoint.sh
+
+ENTRYPOINT ["/ros_entrypoint.sh"]
+CMD ["bash"]

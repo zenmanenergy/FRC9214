@@ -1,0 +1,9 @@
+services:
+  team9214:
+    image: ${IMAGE_URL}${IMAGE_NAME}:${IMAGE_TAG} 
+    build:
+      context: .
+      dockerfile: docker/ubuntu_based/
+      target: ${BUILD_TARGET}
+      args:
+        
