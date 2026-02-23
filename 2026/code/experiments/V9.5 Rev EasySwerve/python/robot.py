@@ -3,7 +3,7 @@
 # the WPILib BSD license file in the root directory of this project.
 
 import wpilib
-from wpilib import XboxController
+from wpilib import Joystick
 from constants import OIConstants
 from subsystems.drive_subsystem import DriveSubsystem
 
@@ -24,8 +24,11 @@ class Robot(wpilib.TimedRobot):
 		# Initialize subsystems
 		self.robot_drive = DriveSubsystem()
 		
-		# Initialize driver controller
-		self.driver_controller = XboxController(OIConstants.k_driver_controller_port)
+		# Initialize driver joystick (USB port 0) - has dual thumb sticks
+		self.driver_joystick = Joystick(OIConstants.k_driver_controller_port)
+		
+		# Initialize autonomous command to None
+		self.autonomous_command = None
 
 	def robotPeriodic(self):
 		"""
@@ -46,8 +49,6 @@ class Robot(wpilib.TimedRobot):
 
 	def autonomousInit(self):
 		"""This autonomous runs the autonomous command selected by your RobotContainer class."""
-		self.autonomous_command = self.robot_container.get_autonomous_command()
-
 		# schedule the autonomous command (example)
 		if self.autonomous_command is not None:
 			self.autonomous_command.schedule()
@@ -71,26 +72,39 @@ class Robot(wpilib.TimedRobot):
 
 	def teleopPeriodic(self):
 		"""This function is called periodically during operator control."""
-		from wpimath.util import MathUtil
 		
-		# Drive control - left stick for translation, right stick for rotation
-		x_speed = -MathUtil.apply_deadband(
-			self.driver_controller.get_left_y(), 
-			OIConstants.k_drive_deadband)
-		y_speed = -MathUtil.apply_deadband(
-			self.driver_controller.get_left_x(), 
-			OIConstants.k_drive_deadband)
-		rot = -MathUtil.apply_deadband(
-			self.driver_controller.get_right_x(), 
-			OIConstants.k_drive_deadband)
+		# Drive control - single joystick with dual thumb sticks
+		def apply_deadband(value, deadband):
+			return value if abs(value) > deadband else 0.0
+		
+		# Joystick axis mapping:
+		# Axis 1: forward/back (Y)
+		# Axis 3: left/right strafe
+		# Axis 4: rotation
+		raw_y = self.driver_joystick.getRawAxis(1)  # forward/back
+		raw_x = self.driver_joystick.getRawAxis(3)  # left/right strafe
+		raw_rot = self.driver_joystick.getRawAxis(4)  # rotation
+		
+		x_speed = -apply_deadband(raw_y, OIConstants.k_drive_deadband)
+		y_speed = apply_deadband(raw_x, OIConstants.k_drive_deadband)
+		rot = apply_deadband(raw_rot, OIConstants.k_drive_deadband)
 		
 		self.robot_drive.drive(x_speed, y_speed, rot, True)
 		
 		# Button bindings
-		if self.driver_controller.getRB():
+		if self.driver_joystick.getRawButton(1):  # A button
+			self.robot_drive.spin_turn_motors(0.5)
+		elif self.driver_joystick.getRawButton(2):  # B button
+			self.robot_drive.spin_turn_motors(-0.5)
+		elif self.driver_joystick.getRawButton(3):  # X button
+			self.robot_drive.spin_turn_motors(0)
+		elif self.driver_joystick.getRawButton(4):  # Y button - test without encoder
+			self.robot_drive.test_turn_motors_no_encoder(0.5)
+		
+		if self.driver_joystick.getRawButton(5):
 			self.robot_drive.set_x()
 		
-		if self.driver_controller.getStartButton():
+		if self.driver_joystick.getRawButton(6):
 			self.robot_drive.zero_heading()
 
 	def teleopExit(self):
