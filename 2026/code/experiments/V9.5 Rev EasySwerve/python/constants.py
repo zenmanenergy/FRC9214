@@ -160,3 +160,4 @@ class EasySwerveModuleConfig:
 
 # Global configuration instance (only created if rev is available)
 easy_swerve_module_config = EasySwerveModuleConfig() if HAS_REV else None
+
