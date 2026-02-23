@@ -4,9 +4,17 @@
 
 import math
 from wpimath.geometry import Translation2d
-from wpimath.kinematics import SwerveDriveKinematics
+from wpimath.kinematics import SwerveDrive4Kinematics
 from wpimath.trajectory import TrapezoidProfile
-from rev import SparkMaxConfig, SparkLowLevel, AbsoluteEncoderConfig
+
+try:
+	from rev import SparkMaxConfig, SparkLowLevel, AbsoluteEncoderConfig
+	HAS_REV = True
+except (ImportError, ModuleNotFoundError):
+	HAS_REV = False
+	SparkMaxConfig = None
+	SparkLowLevel = None
+	AbsoluteEncoderConfig = None
 
 
 class DriveConstants:
@@ -22,7 +30,7 @@ class DriveConstants:
 	# Distance between centers of right and left wheels on robot
 	k_wheel_base = 27.0 * 0.0254  # 27 inches in meters
 	# Distance between front and back wheels on robot
-	k_drive_kinematics = SwerveDriveKinematics(
+	k_drive_kinematics = SwerveDrive4Kinematics(
 		Translation2d(k_wheel_base / 2, k_track_width / 2),
 		Translation2d(k_wheel_base / 2, -k_track_width / 2),
 		Translation2d(-k_wheel_base / 2, k_track_width / 2),
@@ -49,17 +57,26 @@ class DriveConstants:
 	k_rear_right_turning_motor_on_bottom = True
 
 	# SPARK MAX CAN IDs
-	k_front_left_driving_can_id = 9
-	k_rear_left_driving_can_id = 15
-	k_front_right_driving_can_id = 11
-	k_rear_right_driving_can_id = 13
+	k_front_right_driving_can_id = 2
+	k_front_right_turning_can_id = 9
 
-	k_front_left_turning_can_id = 8
-	k_rear_left_turning_can_id = 14
-	k_front_right_turning_can_id = 10
-	k_rear_right_turning_can_id = 12
+	k_rear_right_turning_can_id = 3
+	k_rear_right_driving_can_id = 4
+
+	k_rear_left_turning_can_id = 5
+	k_rear_left_driving_can_id = 6
+
+	
+	k_front_left_driving_can_id = 8
+	k_front_left_turning_can_id = 7
 
 	k_gyro_reversed = False
+
+
+class NeoMotorConstants:
+	"""NEO motor constants."""
+	
+	k_free_speed_rpm = 5676
 
 
 class ModuleConstants:
@@ -106,17 +123,16 @@ class AutoConstants:
 		k_max_angular_speed_radians_per_second_squared)
 
 
-class NeoMotorConstants:
-	"""NEO motor constants."""
-	
-	k_free_speed_rpm = 5676
-
-
 class EasySwerveModuleConfig:
 	"""Configuration for EasySwerve modules."""
 	
 	def __init__(self):
 		"""Initialize driving and turning configurations."""
+		if not HAS_REV:
+			self.driving_config = None
+			self.turning_config = None
+			return
+		
 		# Use module constants to calculate conversion factors and feed forward gain.
 		driving_factor = ModuleConstants.k_wheel_diameter_meters * 3.141592653589793 / ModuleConstants.k_driving_motor_reduction
 		turning_factor = 2 * 3.141592653589793
@@ -126,34 +142,22 @@ class EasySwerveModuleConfig:
 
 		# Driving configuration
 		self.driving_config = SparkMaxConfig()
-		self.driving_config.set_idle_mode(SparkLowLevel.IdleMode.kBrake)
-		self.driving_config.smart_current_limit(50)  # 70 for SparkFlex
-		self.driving_config.encoder.position_conversion_factor(driving_factor)  # meters
-		self.driving_config.encoder.velocity_conversion_factor(driving_factor / 60.0)  # meters per second
-		self.driving_config.closed_loop.feedback_sensor(SparkMaxConfig.FeedbackSensor.kPrimaryEncoder)
-		self.driving_config.closed_loop.p(0.04).i(0).d(0)
-		self.driving_config.closed_loop.output_range(-1, 1)
-		self.driving_config.closed_loop.feed_forward.kV(driving_velocity_feed_forward)
+		self.driving_config.setIdleMode(SparkMaxConfig.IdleMode.kBrake)
+		self.driving_config.smartCurrentLimit(50)  # 70 for SparkFlex
+		self.driving_config.encoder.positionConversionFactor(driving_factor)  # meters
+		self.driving_config.encoder.velocityConversionFactor(driving_factor / 60.0)  # meters per second
+		self.driving_config.closedLoop.P(0.04).I(0).D(0)
+		self.driving_config.closedLoop.outputRange(-1, 1)
 
 		# Turning configuration
 		self.turning_config = SparkMaxConfig()
-		self.turning_config.set_idle_mode(SparkLowLevel.IdleMode.kBrake)
-		self.turning_config.smart_current_limit(20)  # 70 for SparkFlex
-		self.turning_config.absolute_encoder.inverted(False)
-		self.turning_config.absolute_encoder.position_conversion_factor(turning_factor)  # radians
-		self.turning_config.absolute_encoder.velocity_conversion_factor(turning_factor / 60.0)  # radians per second
-		self.turning_config.absolute_encoder.apply(AbsoluteEncoderConfig.Presets.REV_ThroughBoreEncoderV2)
-
-		self.turning_config.closed_loop.feedback_sensor(SparkMaxConfig.FeedbackSensor.kAbsoluteEncoder)
-		self.turning_config.closed_loop.p(1).i(0).d(0)
-		self.turning_config.closed_loop.output_range(-1, 1)
-		# Enable PID wrap around for the turning motor. This will allow the PID
-		# controller to go through 0 to get to the setpoint i.e. going from 350 degrees
-		# to 10 degrees will go through 0 rather than the other direction which is a
-		# longer route.
-		self.turning_config.closed_loop.position_wrapping_enabled(True)
-		self.turning_config.closed_loop.position_wrapping_input_range(0, turning_factor)
+		self.turning_config.setIdleMode(SparkMaxConfig.IdleMode.kCoast)
+		self.turning_config.smartCurrentLimit(60)  # Increased for testing
+		# DO NOT configure encoder - let it fail gracefully and fall back to open-loop
+		self.turning_config.closedLoop.P(0).I(0).D(0)
+		self.turning_config.closedLoop.outputRange(-1, 1)
 
 
-# Global configuration instance
-easy_swerve_module_config = EasySwerveModuleConfig()
+# Global configuration instance (only created if rev is available)
+easy_swerve_module_config = EasySwerveModuleConfig() if HAS_REV else None
+

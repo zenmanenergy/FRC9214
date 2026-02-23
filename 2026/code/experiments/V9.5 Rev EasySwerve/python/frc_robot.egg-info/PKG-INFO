@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: frc-robot
+Version: 2025.1.0
+Summary: FRC 9214 Robot Code - EasySwerve Drive
+Author: Team 9214
+Requires-Python: >=3.8
+Requires-Dist: robotpy>=2024.0.0
+Requires-Dist: robotpy-rev>=2024.0.0
+Requires-Dist: pynetworktables>=2021.0.0
