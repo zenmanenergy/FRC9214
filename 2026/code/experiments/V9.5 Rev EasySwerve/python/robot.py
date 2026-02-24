@@ -42,7 +42,8 @@ class Robot(wpilib.TimedRobot):
 		This runs after the mode specific periodic functions, but before LiveWindow and
 		SmartDashboard integrated updating.
 		"""
-		pass
+		# Call drive subsystem's periodic method to apply motor hold commands
+		self.robot_drive.periodic()
 
 	def disabledInit(self):
 		"""This function is called once each time the robot enters Disabled mode."""
@@ -71,75 +72,106 @@ class Robot(wpilib.TimedRobot):
 		continue until interrupted by another command, remove
 		this line or comment it out.
 		"""
-		print("[ROBOT] teleopInit() - entering teleop mode")
+		print("[ROBOT] === ENTERING TELEOP MODE ===")
 		if self.autonomous_command is not None:
 			self.autonomous_command.cancel()
 		
-		# Print motor diagnostics
-		print("\n[ROBOT] === MOTOR DIAGNOSTICS ===")
-		self.robot_drive.front_left.print_diagnostics()
-		self.robot_drive.front_right.print_diagnostics()
-		self.robot_drive.rear_left.print_diagnostics()
-		self.robot_drive.rear_right.print_diagnostics()
+		# Reset startup flag so diagnostic prints on first cycle
+		self.robot_drive.rear_left.startup_printed = False
 		
-		# CENTER ALL WHEELS - Command all turn motors to 0 radians
-		print("\n[ROBOT] Commanding all wheels to center (0 radians)...")
+		# Do NOT enable debug by default - it spams console
+		# self.robot_drive.set_debug_mode(True)
+		
+		# Center all wheels on enable
 		from wpimath.geometry import Rotation2d
 		from wpimath.kinematics import SwerveModuleState
 		center_state = SwerveModuleState(0, Rotation2d(0))
-		
 		self.robot_drive.front_left.set_desired_state(center_state)
 		self.robot_drive.front_right.set_desired_state(center_state)
 		self.robot_drive.rear_left.set_desired_state(center_state)
 		self.robot_drive.rear_right.set_desired_state(center_state)
 		
-		print("[ROBOT] teleopInit() complete")
+		print("[ROBOT] Press START + BACK to begin Rear Left turn motor autotune")
+		print("[ROBOT] Teleop init complete\n")
+		
+		self.autotune_triggered = False
 
 	def teleopPeriodic(self):
-		"""This function is called periodically during operator control."""
-		
+		"""
+		Check for START + BACK button to trigger autotune.
+		Once autotune completes, command Rear Left wheel to center (0 radians) to test the calculated gains.
+		"""
 		try:
-			# Drive control - single joystick with dual thumb sticks
-			def apply_deadband(value, deadband):
-				return value if abs(value) > deadband else 0.0
+			from wpimath.geometry import Rotation2d
+			from wpimath.kinematics import SwerveModuleState
 			
-			# Joystick axis mapping for Xbox controller:
-			# Axis 0: Left thumb left/right (X)
-			# Axis 1: Left thumb up/down (Y)
-			# Axis 3: Right thumb left/right (X)
-			# Axis 4: Right thumb up/down (Y)
-			raw_y = self.driver_joystick.getRawAxis(1)  # Left thumb up/down: forward/back
-			raw_x = self.driver_joystick.getRawAxis(0)  # Left thumb left/right: strafe
-			raw_rot = self.driver_joystick.getRawAxis(3)  # Right thumb left/right: rotation
+			# Check if START + BACK pressed (buttons 8 + 7 on Xbox controller)
+			button_start = self.driver_joystick.getRawButton(8)
+			button_back = self.driver_joystick.getRawButton(7)
 			
-			x_speed = -apply_deadband(raw_y, OIConstants.k_drive_deadband)
-			y_speed = -apply_deadband(raw_x, OIConstants.k_drive_deadband)
-			rot = -apply_deadband(raw_rot, OIConstants.k_drive_deadband)
+			if button_start and button_back and not self.autotune_triggered:
+				print("\n[ROBOT] ===== START + BACK PRESSED - TRIGGERING AUTOTUNE =====")
+				print("[ROBOT] STARTING ZIEGLER-NICHOLS AUTOTUNE FOR REAR LEFT TURN MOTOR")
+				print("[ROBOT] This will take 8 seconds - motor will oscillate during tuning\n")
+				self.robot_drive.rear_left.start_turn_autotune()
+				self.autotune_triggered = True
 			
-			self.robot_drive.drive(x_speed, y_speed, rot, True)
+			# If autotune just completed, print results once
+			if self.autotune_triggered and not self.robot_drive.rear_left.autotune_active:
+				kp = self.robot_drive.rear_left.turn_kp
+				ki = self.robot_drive.rear_left.turn_ki
+				kd = self.robot_drive.rear_left.turn_kd
+				
+				print("\n" + "="*60)
+				print("[ROBOT] ===== AUTOTUNE COMPLETE - RESULTS READY =====")
+				print("="*60)
+				print(f"[ROBOT] Add these values to constants.py:")
+				print(f"[ROBOT] turn_kp  = {kp:.10f}")
+				print(f"[ROBOT] turn_ki  = {ki:.10f}")
+				print(f"[ROBOT] turn_kd  = {kd:.10f}")
+				print("="*60 + "\n")
+				
+				# Save to file for reference
+				self._save_autotune_results(kp, ki, kd)
+				
+				# Reset trigger so we don't print again
+				self.autotune_triggered = False
 			
-			# Button bindings
-			if self.driver_joystick.getRawButton(1):  # A button
-				self.robot_drive.spin_turn_motors(0.5)
-			elif self.driver_joystick.getRawButton(2):  # B button
-				self.robot_drive.spin_turn_motors(-0.5)
-			elif self.driver_joystick.getRawButton(3):  # X button
-				self.robot_drive.spin_turn_motors(0)
-			elif self.driver_joystick.getRawButton(4):  # Y button - test without encoder
-				self.robot_drive.test_turn_motors_no_encoder(0.5)
+			# Command wheel to center after autotune (or always if not autotuning)
+			if not self.robot_drive.rear_left.autotune_active:
+				center_state = SwerveModuleState(0, Rotation2d(0))
+				self.robot_drive.rear_left.set_desired_state(center_state)
 			
-			if self.driver_joystick.getRawButton(5):
-				self.robot_drive.set_x()
-			
-			if self.driver_joystick.getRawButton(6):
-				self.robot_drive.zero_heading()
 		except Exception as e:
 			print(f"[ERROR] teleopPeriodic: {e}")
 			import traceback
 			traceback.print_exc()
+	
+	def _save_autotune_results(self, kp: float, ki: float, kd: float):
+		"""Save autotune results to a file for reference."""
+		try:
+			import json
+			filepath = "autotune_results.json"
+			
+			data = {
+				"motor": "Rear Left Turn (ID 5)",
+				"kp": kp,
+				"ki": ki,
+				"kd": kd,
+				"method": "Ziegler-Nichols Relay Tuning"
+			}
+			
+			with open(filepath, "w") as f:
+				json.dump(data, f, indent=2)
+			
+			print(f"[ROBOT] Results saved to {filepath}")
+		except Exception as e:
+			print(f"[ROBOT] Warning: Could not save results file: {e}")
 
 	def teleopExit(self):
-		pass
+		"""Disable debug output when exiting teleop."""
+		self.robot_drive.set_debug_mode(False)
+		print("[ROBOT] === EXITING TELEOP MODE ===\n")
 
 	def testInit(self):
 		"""This function is called once when the robot enters test mode."""

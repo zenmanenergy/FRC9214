@@ -105,6 +105,16 @@ class OIConstants:
 	k_drive_deadband = 0.1
 
 
+class TurnMotorGains:
+	"""PID gains for turn motors (calculated via Ziegler-Nichols autotune)."""
+	
+	# These values are populated by autotune
+	# To use them, run autotune with START+BACK, copy the printed values here:
+	kp = 0.1000000000   # REPLACE WITH AUTOTUNED VALUE
+	ki = 0.0000000000   # REPLACE WITH AUTOTUNED VALUE
+	kd = 0.0000000000   # REPLACE WITH AUTOTUNED VALUE
+
+
 class AutoConstants:
 	"""Autonomous command constants."""
 	
