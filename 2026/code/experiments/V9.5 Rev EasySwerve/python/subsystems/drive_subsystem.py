@@ -147,10 +147,10 @@ class DriveSubsystem:
 		gyro_angle = Rotation2d.fromDegrees(self.gyro.getAngle() if self.gyro is not None else 0)
 		swerve_module_states = DriveConstants.k_drive_kinematics.toSwerveModuleStates(
 			ChassisSpeeds.fromFieldRelativeSpeeds(
-				y_speed_delivered, x_speed_delivered, rot_delivered,
+				x_speed_delivered, y_speed_delivered, rot_delivered,
 				gyro_angle)
 			if field_relative
-			else ChassisSpeeds(y_speed_delivered, x_speed_delivered, rot_delivered))
+			else ChassisSpeeds(x_speed_delivered, y_speed_delivered, rot_delivered))
 		
 		SwerveDrive4Kinematics.desaturateWheelSpeeds(
 			swerve_module_states, DriveConstants.k_max_speed_meters_per_second)

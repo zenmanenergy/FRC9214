@@ -53,6 +53,8 @@ class EasySwerveModule:
 		self.turning_closed_loop_controller = None
 		self.chassis_angular_offset = chassis_angular_offset
 		self.desired_state = None
+		self.loop_counter = 0
+		self.last_pwm = 0  # Track last PWM for debugging
 		
 		if not HAS_REV:
 			print(f"[{module_name}] REV not available")
@@ -62,25 +64,16 @@ class EasySwerveModule:
 		self.turning_spark = SparkMax(turning_can_id, SparkLowLevel.MotorType.kBrushless)
 		print(f"[{module_name}] Motors initialized - Drive CAN {driving_can_id}, Turn CAN {turning_can_id}")
 
-		self.driving_encoder: RelativeEncoder = self.driving_spark.getEncoder()
-		self.turning_encoder: AbsoluteEncoder = self.turning_spark.getAbsoluteEncoder()
+		self.driving_encoder = self.driving_spark.getEncoder()
+		self.turning_encoder = self.turning_spark.getAbsoluteEncoder()
 		
 		if self.turning_encoder is None:
 			print(f"[{module_name}] WARNING: Turning encoder is None!")
 
-		self.driving_closed_loop_controller: SparkClosedLoopController = self.driving_spark.getClosedLoopController()
-		self.turning_closed_loop_controller: SparkClosedLoopController = self.turning_spark.getClosedLoopController()
+		self.driving_closed_loop_controller = self.driving_spark.getClosedLoopController()
+		self.turning_closed_loop_controller = self.turning_spark.getClosedLoopController()
 
-		# Apply the respective configurations to the SPARKs. Reset parameters before
-		# applying the configuration to bring the SPARK to a known good state. Persist
-		# the settings to the SPARK to avoid losing them on a power cycle.
-		driving_config = easy_swerve_module_config.driving_config
-		driving_config.inverted(driving_motor_on_bottom)
-		self.driving_spark.configure(driving_config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters)
-
-		turning_config = easy_swerve_module_config.turning_config
-		turning_config.inverted(not turning_motor_on_bottom)
-		self.turning_spark.configure(turning_config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters)
+		print(f"[{module_name}] Using hardware client configuration only - no code-level config applied")
 
 		self.desired_state = SwerveModuleState(0.0, Rotation2d(self.turning_encoder.getPosition()))
 		self.driving_encoder.setPosition(0)
@@ -122,10 +115,9 @@ class EasySwerveModule:
 		Args:
 			desired_state: Desired state with speed and angle.
 		"""
-		if not HAS_REV or self.turning_closed_loop_controller is None:
-			if self.turning_closed_loop_controller is None:
-				print(f"[{self.module_name}] ERROR: Turn motor not initialized")
+		if not HAS_REV or self.turning_spark is None:
 			return
+		
 		# Apply chassis angular offset to the desired state.
 		corrected_desired_state = SwerveModuleState()
 		corrected_desired_state.speed = desired_state.speed
@@ -135,11 +127,33 @@ class EasySwerveModule:
 		current_angle = self.turning_encoder.getPosition()
 		corrected_desired_state.optimize(Rotation2d(current_angle))
 
-		# Command driving and turning SPARKs towards their respective setpoints.
+		# Command driving SPARK towards its setpoint
 		self.driving_closed_loop_controller.setReference(
 			corrected_desired_state.speed, SparkLowLevel.ControlType.kVelocity)
-		self.turning_closed_loop_controller.setReference(
-			corrected_desired_state.angle.radians(), SparkLowLevel.ControlType.kPosition)
+		
+		# For turning: Use open-loop PWM with simple P control
+		# Closed-loop doesn't work well on all motors (likely CAN saturation)
+		target_angle = corrected_desired_state.angle.radians()
+		angle_error = target_angle - current_angle
+		
+		# Normalize to -pi to pi
+		while angle_error > 3.14159:
+			angle_error -= 6.28318
+		while angle_error < -3.14159:
+			angle_error += 6.28318
+		
+		# P controller with gain 1.0
+		pwm_output = max(-1.0, min(1.0, angle_error * 1.0))
+		self.turning_spark.set(pwm_output)
+		self.last_pwm = pwm_output
+
+		# DEBUG
+		applied_output = self.turning_spark.getAppliedOutput()
+		self.loop_counter += 1
+		if self.loop_counter % 250 == 0:
+			print(f"[{self.module_name}] pos={current_angle:.3f} tgt={target_angle:.3f} err={angle_error:.3f} cmd={pwm_output:.3f} out={applied_output:.3f}")
+			if abs(pwm_output) > 0.1:
+				print(f"  ^^ {self.module_name} IS COMMANDING MOVEMENT ^^")
 
 		self.desired_state = desired_state
 
@@ -148,3 +162,28 @@ class EasySwerveModule:
 		if not HAS_REV or self.driving_encoder is None:
 			return
 		self.driving_encoder.setPosition(0)
+
+	def print_diagnostics(self):
+		"""Print motor diagnostics and settings."""
+		if not HAS_REV or self.turning_spark is None:
+			return
+		
+		try:
+			print(f"\n[{self.module_name}] === DIAGNOSTICS ===")
+			print(f"  Turning Motor CAN ID: {self.turning_spark.getDeviceId()}")
+			print(f"  Temp: {self.turning_spark.getMotorTemperature():.1f}C")
+			print(f"  Bus Voltage: {self.turning_spark.getBusVoltage():.1f}V")
+			print(f"  Applied Output: {self.turning_spark.getAppliedOutput():.3f}")
+			print(f"  Output Current: {self.turning_spark.getOutputCurrent():.2f}A")
+			print(f"  Encoder Position: {self.turning_encoder.getPosition():.3f} rad")
+			print(f"  Encoder Velocity: {self.turning_encoder.getVelocity():.3f} rad/s")
+			
+			# Try to read status
+			try:
+				status = self.turning_spark.getLastError()
+				print(f"  Last Error: {status}")
+			except:
+				pass
+			
+		except Exception as e:
+			print(f"[{self.module_name}] Diagnostic error: {e}")

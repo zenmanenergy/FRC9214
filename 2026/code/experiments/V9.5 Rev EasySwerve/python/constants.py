@@ -143,18 +143,21 @@ class EasySwerveModuleConfig:
 		# Driving configuration
 		self.driving_config = SparkMaxConfig()
 		self.driving_config.setIdleMode(SparkMaxConfig.IdleMode.kBrake)
-		self.driving_config.smartCurrentLimit(50)  # 70 for SparkFlex
+		self.driving_config.smartCurrentLimit(60)  # 70 for SparkFlex
 		self.driving_config.encoder.positionConversionFactor(driving_factor)  # meters
 		self.driving_config.encoder.velocityConversionFactor(driving_factor / 60.0)  # meters per second
 		self.driving_config.closedLoop.P(0.04).I(0).D(0)
 		self.driving_config.closedLoop.outputRange(-1, 1)
 
-		# Turning configuration
+		# Turning configuration - Using ABSOLUTE encoder (Through Bore Encoder V2)
 		self.turning_config = SparkMaxConfig()
-		self.turning_config.setIdleMode(SparkMaxConfig.IdleMode.kCoast)
-		self.turning_config.smartCurrentLimit(60)  # Increased for testing
-		# DO NOT configure encoder - let it fail gracefully and fall back to open-loop
-		self.turning_config.closedLoop.P(0).I(0).D(0)
+		self.turning_config.setIdleMode(SparkMaxConfig.IdleMode.kBrake)
+		self.turning_config.smartCurrentLimit(40)  # 70 for SparkFlex
+		self.turning_config.absoluteEncoder.inverted(False)
+		self.turning_config.absoluteEncoder.positionConversionFactor(turning_factor)  # radians
+		self.turning_config.absoluteEncoder.velocityConversionFactor(turning_factor / 60.0)  # radians per second
+		self.turning_config.absoluteEncoder.apply(AbsoluteEncoderConfig.Presets.REV_ThroughBoreEncoderV2())
+		self.turning_config.closedLoop.P(1).I(0).D(0)
 		self.turning_config.closedLoop.outputRange(-1, 1)
 
 
