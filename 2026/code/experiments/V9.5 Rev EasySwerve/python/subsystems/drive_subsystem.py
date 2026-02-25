@@ -89,6 +89,22 @@ class DriveSubsystem:
 				self.rear_right.get_position()
 			],
 			Pose2d())
+		
+		# CAN staggering counter - spreads motor commands across multiple cycles
+		# This reduces CAN bus saturation and encoder feedback delays
+		self.can_stagger_cycle = 0
+		self.last_module_states = [
+			SwerveModuleState(0, Rotation2d()),
+			SwerveModuleState(0, Rotation2d()),
+			SwerveModuleState(0, Rotation2d()),
+			SwerveModuleState(0, Rotation2d())
+		]
+		self.cached_module_states = [
+			SwerveModuleState(0, Rotation2d()),
+			SwerveModuleState(0, Rotation2d()),
+			SwerveModuleState(0, Rotation2d()),
+			SwerveModuleState(0, Rotation2d())
+		]
 
 	def periodic(self):
 		"""Update the odometry in the periodic block."""
@@ -101,6 +117,12 @@ class DriveSubsystem:
 				self.rear_left.get_position(),
 				self.rear_right.get_position()
 			])
+		
+		# Apply turn commands to all wheels
+		self.front_left.periodic_turn_command()
+		self.front_right.periodic_turn_command()
+		self.rear_left.periodic_turn_command()
+		self.rear_right.periodic_turn_command()
 
 	def get_pose(self) -> Pose2d:
 		"""
@@ -132,6 +154,7 @@ class DriveSubsystem:
 	def drive(self, x_speed: float, y_speed: float, rot: float, field_relative: bool):
 		"""
 		Method to drive the robot using joystick info.
+		Uses staggered updates: Only recalculates kinematics once per 4 cycles (Front Left's turn).
 
 		Args:
 			x_speed: Speed of the robot in the x direction (forward).
@@ -139,33 +162,53 @@ class DriveSubsystem:
 			rot: Angular rate of the robot.
 			field_relative: Whether the provided x and y speeds are relative to the field.
 		"""
-		# Convert the commanded speeds into the correct units for the drivetrain
-		x_speed_delivered = x_speed * DriveConstants.k_max_speed_meters_per_second
-		y_speed_delivered = y_speed * DriveConstants.k_max_speed_meters_per_second
-		rot_delivered = rot * DriveConstants.k_max_angular_speed
+		current_motor = self.can_stagger_cycle % 4
+		
+		# Only recalculate kinematics every 4 cycles (when Front Left is due for update)
+		# This prevents all 4 motors from getting new targets every cycle
+		if current_motor == 0:
+			# Recalculate for all motors (Front Left's turn)
+			x_speed_delivered = x_speed * DriveConstants.k_max_speed_meters_per_second
+			y_speed_delivered = y_speed * DriveConstants.k_max_speed_meters_per_second
+			rot_delivered = rot * DriveConstants.k_max_angular_speed
 
-		gyro_angle = Rotation2d.fromDegrees(self.gyro.getAngle() if self.gyro is not None else 0)
-		swerve_module_states = DriveConstants.k_drive_kinematics.toSwerveModuleStates(
-			ChassisSpeeds.fromFieldRelativeSpeeds(
-				y_speed_delivered, x_speed_delivered, rot_delivered,
-				gyro_angle)
-			if field_relative
-			else ChassisSpeeds(y_speed_delivered, x_speed_delivered, rot_delivered))
+			gyro_angle = Rotation2d.fromDegrees(self.gyro.getAngle() if self.gyro is not None else 0)
+			swerve_module_states = DriveConstants.k_drive_kinematics.toSwerveModuleStates(
+				ChassisSpeeds.fromFieldRelativeSpeeds(
+					x_speed_delivered, y_speed_delivered, rot_delivered,
+					gyro_angle)
+				if field_relative
+				else ChassisSpeeds(x_speed_delivered, y_speed_delivered, rot_delivered))
+			
+			SwerveDrive4Kinematics.desaturateWheelSpeeds(
+				swerve_module_states, DriveConstants.k_max_speed_meters_per_second)
+			
+			# Cache the newly calculated states
+			self.cached_module_states = swerve_module_states
+			self.last_module_states = swerve_module_states
 		
-		SwerveDrive4Kinematics.desaturateWheelSpeeds(
-			swerve_module_states, DriveConstants.k_max_speed_meters_per_second)
+		# Update only THIS motor's target from cached states
+		motor_modules = [self.front_left, self.front_right, self.rear_left, self.rear_right]
+		motor_modules[current_motor].set_desired_state(self.cached_module_states[current_motor])
 		
-		self.front_left.set_desired_state(swerve_module_states[0])
-		self.front_right.set_desired_state(swerve_module_states[1])
-		self.rear_left.set_desired_state(swerve_module_states[2])
-		self.rear_right.set_desired_state(swerve_module_states[3])
+		self.can_stagger_cycle += 1
 
 	def set_x(self):
 		"""Sets the wheels into an X formation to prevent movement."""
-		self.front_left.set_desired_state(SwerveModuleState(0, Rotation2d.from_degrees(45)))
-		self.front_right.set_desired_state(SwerveModuleState(0, Rotation2d.from_degrees(-45)))
-		self.rear_left.set_desired_state(SwerveModuleState(0, Rotation2d.from_degrees(-45)))
-		self.rear_right.set_desired_state(SwerveModuleState(0, Rotation2d.from_degrees(45)))
+		x_states = [
+			SwerveModuleState(0, Rotation2d.from_degrees(45)),
+			SwerveModuleState(0, Rotation2d.from_degrees(-45)),
+			SwerveModuleState(0, Rotation2d.from_degrees(-45)),
+			SwerveModuleState(0, Rotation2d.from_degrees(45))
+		]
+		self.last_module_states = x_states
+		self.cached_module_states = x_states
+		
+		# Stagger the X formation update - only update THIS motor's target
+		current_motor = self.can_stagger_cycle % 4
+		motor_modules = [self.front_left, self.front_right, self.rear_left, self.rear_right]
+		motor_modules[current_motor].set_desired_state(x_states[current_motor])
+		self.can_stagger_cycle += 1
 
 	def set_module_states(self, desired_states: list):
 		"""
@@ -176,10 +219,15 @@ class DriveSubsystem:
 		"""
 		SwerveDrive4Kinematics.desaturateWheelSpeeds(
 			desired_states, DriveConstants.k_max_speed_meters_per_second)
-		self.front_left.set_desired_state(desired_states[0])
-		self.front_right.set_desired_state(desired_states[1])
-		self.rear_left.set_desired_state(desired_states[2])
-		self.rear_right.set_desired_state(desired_states[3])
+		
+		self.last_module_states = desired_states
+		self.cached_module_states = desired_states
+		
+		# Stagger the module state updates - only update THIS motor's target
+		current_motor = self.can_stagger_cycle % 4
+		motor_modules = [self.front_left, self.front_right, self.rear_left, self.rear_right]
+		motor_modules[current_motor].set_desired_state(desired_states[current_motor])
+		self.can_stagger_cycle += 1
 
 	def reset_encoders(self):
 		"""Resets the drive encoders to currently read a position of 0."""
@@ -187,6 +235,13 @@ class DriveSubsystem:
 		self.rear_left.reset_encoders()
 		self.front_right.reset_encoders()
 		self.rear_right.reset_encoders()
+
+	def set_debug_mode(self, enabled: bool):
+		"""Enable/disable debug output for all modules."""
+		self.front_left.debug_enabled = enabled
+		self.front_right.debug_enabled = enabled
+		self.rear_left.debug_enabled = enabled
+		self.rear_right.debug_enabled = enabled
 
 	def zero_heading(self):
 		"""Zeroes the heading of the robot."""

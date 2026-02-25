@@ -105,6 +105,16 @@ class OIConstants:
 	k_drive_deadband = 0.1
 
 
+class TurnMotorGains:
+	"""PID gains for turn motors (calculated via Ziegler-Nichols autotune)."""
+	
+	# These values are populated by autotune
+	# To use them, run autotune with START+BACK, copy the printed values here:
+	kp = 0.1000000000   # REPLACE WITH AUTOTUNED VALUE
+	ki = 0.0000000000   # REPLACE WITH AUTOTUNED VALUE
+	kd = 0.0000000000   # REPLACE WITH AUTOTUNED VALUE
+
+
 class AutoConstants:
 	"""Autonomous command constants."""
 	
@@ -143,20 +153,24 @@ class EasySwerveModuleConfig:
 		# Driving configuration
 		self.driving_config = SparkMaxConfig()
 		self.driving_config.setIdleMode(SparkMaxConfig.IdleMode.kBrake)
-		self.driving_config.smartCurrentLimit(50)  # 70 for SparkFlex
+		self.driving_config.smartCurrentLimit(60)  # 70 for SparkFlex
 		self.driving_config.encoder.positionConversionFactor(driving_factor)  # meters
 		self.driving_config.encoder.velocityConversionFactor(driving_factor / 60.0)  # meters per second
 		self.driving_config.closedLoop.P(0.04).I(0).D(0)
 		self.driving_config.closedLoop.outputRange(-1, 1)
 
-		# Turning configuration
+		# Turning configuration - Using ABSOLUTE encoder (Through Bore Encoder V2)
 		self.turning_config = SparkMaxConfig()
-		self.turning_config.setIdleMode(SparkMaxConfig.IdleMode.kCoast)
-		self.turning_config.smartCurrentLimit(60)  # Increased for testing
-		# DO NOT configure encoder - let it fail gracefully and fall back to open-loop
-		self.turning_config.closedLoop.P(0).I(0).D(0)
+		self.turning_config.setIdleMode(SparkMaxConfig.IdleMode.kBrake)
+		self.turning_config.smartCurrentLimit(40)  # 70 for SparkFlex
+		self.turning_config.absoluteEncoder.inverted(False)
+		self.turning_config.absoluteEncoder.positionConversionFactor(turning_factor)  # radians
+		self.turning_config.absoluteEncoder.velocityConversionFactor(turning_factor / 60.0)  # radians per second
+		self.turning_config.absoluteEncoder.apply(AbsoluteEncoderConfig.Presets.REV_ThroughBoreEncoderV2())
+		self.turning_config.closedLoop.P(1).I(0).D(0)
 		self.turning_config.closedLoop.outputRange(-1, 1)
 
 
 # Global configuration instance (only created if rev is available)
 easy_swerve_module_config = EasySwerveModuleConfig() if HAS_REV else None
+
