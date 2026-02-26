@@ -1,0 +1,39 @@
+@startuml
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 90
+skinparam ranksep 90
+left to right direction
+
+title bringup_single_cam.launch.py node/topic flow
+
+legend right
+Solid arrows: topic flow between launched nodes
+Dashed arrows: TF flow between launched nodes
+endlegend
+
+component "robot_state_publisher" as rsp
+component "base_to_camera_static_tf\n(tf2_ros/static_transform_publisher)" as static_tf
+component "usb_cam\n/camera_1/usb_cam" as usb_cam
+component "rectify_node\n/camera_1/rectify_node" as rectify
+component "apriltag\n/camera_1/apriltag" as apriltag
+component "tag_pose_observer" as observer
+component "ekf_map\n(robot_localization/ekf_node)" as ekf
+component "rviz2" as rviz
+
+usb_cam -down-> rectify : /camera_1/image_raw\n/camera_1/camera_info
+rectify -up-> apriltag : /camera_1/image_rect
+usb_cam -up-> apriltag : /camera_1/camera_info
+
+apriltag --> observer : /camera_1/tag_detections
+observer --> ekf : /tag_global_pose
+
+rsp ..> observer : /tf, /tf_static
+static_tf ..> observer : /tf_static (base_link->camera_1_optical_frame)
+
+rsp ..> rviz : /tf, /tf_static
+static_tf ..> rviz : /tf_static
+ekf ..> rviz : /tf
+
+@enduml

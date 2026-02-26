@@ -1,0 +1,3 @@
+robotpy>=2024.0.0
+robotpy-rev>=2024.0.0
+pynetworktables>=2021.0.0

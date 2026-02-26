@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <Sequence name="CheckBatteryThenSucceed">
+      <IsBatteryOk min_voltage="11.0" battery_voltage="{battery_voltage}"/>
+      <AlwaysSuccess/>
+    </Sequence>
+  </BehaviorTree>
+</root>

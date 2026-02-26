@@ -1,0 +1,27 @@
+@startuml
+skinparam shadowing false
+skinparam packageStyle rectangle
+left to right direction
+
+title sim_inputs.py generated topics and TF
+
+legend right
+Solid arrows: ROS topic publishers
+Dashed arrows: TF frames on /tf
+endlegend
+
+component "sim_inputs\n(arena_bringup/sim_inputs.py)" as sim_inputs
+
+component "topic: robot_mode\nstd_msgs/String" as t_mode
+component "topic: /tag_global_pose\ngeometry_msgs/PoseWithCovarianceStamped" as t_tag
+component "topic: /odom\nnav_msgs/Odometry" as t_odom
+component "topic: /wheel/odom\nnav_msgs/Odometry" as t_wheel
+component "topic: /tf\n(TransformStamped stream)" as t_tf
+
+sim_inputs --> t_mode : if publish_mode=true
+sim_inputs --> t_tag : if publish_tag_pose=true
+sim_inputs --> t_odom : if publish_odom=true
+sim_inputs --> t_wheel : if publish_odom=true and\nwheel_odom_topic != odom_topic
+sim_inputs ..> t_tf : if publish_tf=true\nodom -> base_link\nmap -> odom
+
+@enduml

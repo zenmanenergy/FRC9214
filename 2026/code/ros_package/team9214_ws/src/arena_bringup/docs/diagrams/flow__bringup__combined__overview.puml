@@ -1,0 +1,58 @@
+@startuml
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 90
+skinparam ranksep 90
+left to right direction
+
+title arena_bringup node/topic flow
+
+legend right
+Solid arrows: topic flow between launched nodes
+Dashed arrows: TF flow between launched nodes
+endlegend
+
+package "bringup_single_cam.launch.py (defaults from config/bringup.yaml)" {
+  component "robot_state_publisher" as sc_rsp
+  component "base_to_camera_static_tf\n(tf2_ros/static_transform_publisher)" as sc_static_tf
+  component "usb_cam\n/camera_1/usb_cam" as sc_usb_cam
+  component "rectify_node\n/camera_1/rectify_node" as sc_rectify
+  component "apriltag\n/camera_1/apriltag" as sc_apriltag
+  component "tag_pose_observer" as sc_observer
+  component "ekf_map\n(robot_localization/ekf_node)" as sc_ekf
+  component "rviz2" as sc_rviz
+
+  sc_usb_cam -down-> sc_rectify : /camera_1/image_raw\n/camera_1/camera_info
+  sc_rectify -up-> sc_apriltag : /camera_1/image_rect
+  sc_usb_cam -up-> sc_apriltag : /camera_1/camera_info
+
+  sc_apriltag --> sc_observer : /camera_1/tag_detections
+  sc_observer --> sc_ekf : /tag_global_pose
+
+  sc_rsp ..> sc_observer : /tf, /tf_static
+  sc_static_tf ..> sc_observer : /tf_static (base_link->camera_1_optical_frame)
+
+  sc_rsp ..> sc_rviz : /tf, /tf_static
+  sc_static_tf ..> sc_rviz : /tf_static
+  sc_ekf ..> sc_rviz : /tf
+}
+
+package "bringup_multi_cam.launch.py" {
+  component "robot_state_publisher" as mc_rsp
+  component "apriltag\n/camera_1/apriltag" as mc_apriltag_1
+  component "apriltag\n/camera_2/apriltag" as mc_apriltag_2
+  component "tag_pose_observer" as mc_observer
+  component "ekf_map\n(robot_localization/ekf_node)" as mc_ekf
+  component "rviz2" as mc_rviz
+
+  mc_apriltag_1 -down-> mc_observer : /camera_1/tag_detections
+  mc_apriltag_2 -up-> mc_observer : /camera_2/tag_detections
+  mc_observer --> mc_ekf : /tag_global_pose
+
+  mc_rsp ..> mc_observer : /tf, /tf_static
+  mc_rsp ..> mc_rviz : /tf, /tf_static
+  mc_ekf ..> mc_rviz : /tf
+}
+
+@enduml

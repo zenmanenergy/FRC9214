@@ -1,0 +1,39 @@
+@startuml
+title ROS topics -> RoboRIO NT4 message map (cmd_vel_nt4_bridge defaults)
+
+skinparam shadowing false
+
+legend right
+NT4 table default: ROS
+Rows reflect default parameter keys in cmd_vel_nt4_bridge.py
+endlegend
+
+salt
+{
+{+
+ROS input source | ROS field / meaning | NT4 key written | NT4 type
+/cmd_vel_nav (geometry_msgs/Twist) | linear.x | cmd_vel_x | Double
+/cmd_vel_nav (geometry_msgs/Twist) | linear.y | cmd_vel_y | Double
+/cmd_vel_nav (geometry_msgs/Twist) | angular.z | cmd_vel_theta | Double
+/cmd_vel_nav (geometry_msgs/Twist) | [x, y, theta] array | cmd_vel | DoubleArray
+/cmd_vel_nav (geometry_msgs/Twist) | command receive timestamp | cmd_vel_stamp | Double
+/tag_global_pose (PoseWithCovarianceStamped) | localization freshness boolean | status_localization_ok | Boolean
+/tag_global_pose (PoseWithCovarianceStamped) | localization age (sec) | status_localization_age_sec | Double
+/navigate_to_pose/_action/status (GoalStatusArray) | nav state string | status_nav_state | String
+/navigate_to_pose/_action/status (GoalStatusArray) | goal active boolean | status_nav_goal_active | Boolean
+/navigate_to_pose/_action/status (GoalStatusArray) | latest status code | status_nav_status_code | Integer
+/odom (nav_msgs/Odometry) | twist.linear.x | status_odom_vx | Double
+/odom (nav_msgs/Odometry) | twist.linear.y | status_odom_vy | Double
+/odom (nav_msgs/Odometry) | twist.angular.z | status_odom_wz | Double
+mode_topic (optional std_msgs/String) | data | status_mode | String
+safety_stop_topic (optional std_msgs/Bool) | data | status_safety_stop | Boolean
+safety_state_topic (optional std_msgs/String) | data | status_safety_state | String
+internal bridge timer | heartbeat counter | status_heartbeat | Double
+internal bridge timer | publish timestamp (epoch sec) | status_stamp | Double
+internal bridge parameter | command source label | status_cmd_source | String
+internal bridge computed | command valid boolean | status_cmd_valid | Boolean
+internal bridge computed | command age (sec) | status_cmd_age_sec | Double
+}
+}
+
+@enduml

@@ -1,0 +1,91 @@
+robots@robots:~$ ros2 topic echo /tag_global_pose --once
+header:
+  stamp:
+    sec: 1771789671
+    nanosec: 727587080
+  frame_id: map
+pose:
+  pose:
+    position:
+      x: 1.7358321694341605
+      y: 3.543254767941884
+      z: 10.288383133341776er
+    orientation:
+      x: 0.4341042359342492
+      y: 0.4741921882972587
+      z: -0.5318994312622499f
+      w: 0.551160843969067
+  covariance:
+  - 0.010000000000000002
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.010000000000000002
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0225
+
+
+## Frames
+
+apriltag node provides the `/camera_1/tag_detections` in the camera_1_optical_frame
+
+tag_pose_observer node :
+  - defaults to "map" frame in observer.yaml, so provides the `/tag_global_pose` in the map frame
+  - verified: published message header is set to map_frame in code (observer_node.py)
+  - Interfaces
+    - Input detections/TF: camera optical frame (camera_1_optical_frame)
+    - Output /tag_global_pose: map-frame geometry_msgs/PoseWithCovarianceStamped
+
+ekf_map node:
+    - configured to consume /tag_global_pose as a global pose input (pose0) in the map/world context, 
+    so it should be in map frame.
+    - That matches tag_pose_observer publishing /tag_global_pose with header.frame_id = map.
+
+In your current setup, base_link in map comes from this chain:
+- apriltag_ros 
+  - gives camera→tag (from detections + calibration)
+- tag_pose_observer 
+  - combines the following to compute map→base_link
+    - known map→tag (from tag map YAML)
+    - camera→tag
+    - base_link→camera (static TF)
+- It publishes that as /tag_global_pose (map frame pose of base_link)
+
+ekf_map 
+- fuses it and publishes /odometry/filtered (also map→base_link in your current config)
+So practically, your map→base_link transform is whatever you see on:
+  /tag_global_pose pose, and/or
+  /odometry/filtered pose (smoothed)
+
+  And on TF:
+
+    `ros2 run tf2_ros tf2_echo map base_link`

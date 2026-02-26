@@ -1,0 +1,39 @@
+@startuml
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+left to right direction
+
+title sim_harness.launch.py per-node topic directions
+
+legend right
+Direction is from each node's perspective.
+IN = subscribes/listens, OUT = publishes, IN/OUT = both.
+endlegend
+
+component "sim_inputs\n(arena_bringup/sim_inputs.py)" as sim_inputs
+component "navigation.launch.py stack\n(included)" as nav_stack
+
+note right of sim_inputs
+|= Topic |= Dir |
+| /cmd_vel_nav | IN |
+| robot_mode | OUT |
+| /tag_global_pose | OUT |
+| /odom | OUT |
+| /wheel/odom | OUT |
+| /tf | OUT |
+end note
+
+note right of nav_stack
+|= Topic |= Dir |
+| robot_mode | IN |
+| /tag_global_pose | IN |
+| /odom | IN |
+| /wheel/odom | IN |
+| /tf | IN |
+| /cmd_vel_nav | OUT |
+end note
+
+sim_inputs -[hidden]-> nav_stack
+
+@enduml

@@ -1,0 +1,61 @@
+@startuml
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 80
+left to right direction
+
+title navigation.launch.py node/topic flow (default non-composed mode)
+
+legend right
+Solid arrows: data/action flow.
+Dashed arrows: lifecycle management/control.
+Items marked "(optional)" launch only when corresponding flag is true.
+endlegend
+
+component "map_server\n(optional)" as map_server
+component "planner_server" as planner
+component "route_server" as route
+component "controller_server" as controller
+component "behavior_server" as behavior
+component "bt_navigator" as btnav
+component "waypoint_follower" as waypoint
+component "velocity_smoother" as vel_smoother
+component "collision_monitor" as collision
+component "lifecycle_manager_navigation" as lm_nav
+component "lifecycle_manager_map_server\n(optional)" as lm_map
+component "cmd_vel_nt4_bridge\n(optional)" as cmd_nt4
+component "autonomy_mode_manager\n(optional)" as auto_mgr
+component "nt4_mode_bridge\n(optional)" as mode_bridge
+database "NetworkTables 4\n(optional)" as nt4
+
+map_server --> planner : /map
+route --> planner : route guidance
+planner --> controller : /plan
+btnav --> planner : planning actions/requests
+btnav --> controller : follow path actions
+btnav --> behavior : recovery actions
+waypoint --> btnav : nav goal actions
+
+controller --> vel_smoother : cmd_vel input stream
+vel_smoother --> collision : cmd_vel_smoothed
+collision --> cmd_nt4 : /cmd_vel_nav
+
+mode_bridge --> auto_mgr : robot_mode
+auto_mgr --> btnav : /navigate_to_pose action goal/cancel
+
+cmd_nt4 --> nt4 : velocity + status keys
+nt4 --> mode_bridge : robot_mode key
+
+lm_nav ..> planner : lifecycle
+lm_nav ..> controller : lifecycle
+lm_nav ..> behavior : lifecycle
+lm_nav ..> btnav : lifecycle
+lm_nav ..> waypoint : lifecycle
+lm_nav ..> vel_smoother : lifecycle
+lm_nav ..> collision : lifecycle
+lm_nav ..> route : lifecycle
+lm_map ..> map_server : lifecycle
+
+@enduml

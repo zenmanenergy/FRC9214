@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<robot name="arena_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <link name="base_link"/>
+  <!-- 
+    Test setup
+      Camera: 90cm from floor
+      AprilTag: 110cm from floor
+      AprilTag: 150cm in front of camera
+  -->
+
+  <!-- Camera 1 (forward) -->
+  <link name="camera_1_link"/>
+  <joint name="base_to_camera_1" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_1_link"/>
+    <!-- Replace with your measured/calibrated extrinsics -->
+    <!-- +x forward, +y left, +z up -->
+    <origin xyz="0.00 0.00 0.90" rpy="0 0 0"/>
+  </joint>
+
+  <link name="camera_1_optical_frame"/>
+  <joint name="camera_1_to_optical" type="fixed">
+    <parent link="camera_1_link"/>
+    <child link="camera_1_optical_frame"/>
+    <!-- REP-103 optical: +Z forward, +X right, +Y down -->
+    <origin xyz="0 0 0" rpy="-1.57079632679 0 -1.57079632679"/>
+  </joint>
+</robot>

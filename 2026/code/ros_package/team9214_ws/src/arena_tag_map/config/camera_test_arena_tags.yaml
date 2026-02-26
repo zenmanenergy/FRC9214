@@ -1,0 +1,27 @@
+arena:
+  name: "camera_test_single_tag"
+  frame_id: "map"
+  convention:
+    units: "meters"
+    axes: "ROS REP-103"
+    description: "+x forward, +y left, +z up"
+    origin: "floor_under_camera"
+
+# Measurements of tag position from the map origin (often the floor under the camera) should be consistent with the assumptions in the tag pose below.
+apriltags:
+  family: "tag36h11"
+  # default_size_m: 0.1651
+  default_size_m: 0.1720
+  tags:
+    - id: 1
+      # size_m: 0.1651
+      size_m: 0.1720
+      pose:
+        # Assumptions:
+        # - map origin is on the floor directly below the camera
+        # - camera optical center is at z = 0.90 m
+        # - tag center is 1.50 m in front of camera and at z = 1.10 m
+        position: { x: 1.80, y: 0.000, z: 1.200 }
+        # yaw = pi so tag front faces back toward camera at the origin
+        orientation_rpy: { roll: 0.0, pitch: 0.0, yaw: 3.14159265359 }
+      notes: "Single test tag: 1.50 m ahead of camera, 0.20 m above camera center"

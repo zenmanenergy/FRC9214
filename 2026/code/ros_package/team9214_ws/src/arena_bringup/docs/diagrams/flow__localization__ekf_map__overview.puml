@@ -1,0 +1,27 @@
+@startuml
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+left to right direction
+
+title localization.launch.py node/topic flow
+
+legend right
+Solid arrows: topic flow.
+Dashed arrows: TF published on /tf.
+endlegend
+
+component "topic: /wheel/odom\nnav_msgs/Odometry" as t_wheel
+component "topic: /imu/data\nsensor_msgs/Imu" as t_imu
+component "topic: /tag_global_pose\ngeometry_msgs/PoseWithCovarianceStamped" as t_tag
+component "ekf_map\n(robot_localization/ekf_node)" as ekf
+component "topic: /odometry/filtered\nnav_msgs/Odometry" as t_filtered
+component "topic: /tf\n(map/odom/base_link transforms)" as t_tf
+
+t_wheel --> ekf : odom0
+t_imu --> ekf : imu0
+t_tag --> ekf : pose0
+ekf --> t_filtered : filtered odometry
+ekf ..> t_tf : publish_tf=true
+
+@enduml
