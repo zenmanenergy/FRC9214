@@ -9,3 +9,4 @@ log/
 *.egg-info/
 dist/
 *.egg
+rosbags/

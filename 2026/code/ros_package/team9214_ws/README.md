@@ -132,6 +132,7 @@ Install prerequisites (if needed):
 ```bash
 sudo apt update
 sudo apt install ros-jazzy-ament-cmake ros-jazzy-ament-package
+sudo apt install ros-jazzy-rosbag2-storage-mcap
 ```
 
 Optional: auto-source ROS in new shells by adding this to `~/.bashrc`:
@@ -139,3 +140,13 @@ Optional: auto-source ROS in new shells by adding this to `~/.bashrc`:
 ```bash
 source /opt/ros/jazzy/setup.bash
 ```
+
+## Logging ROS2 Data
+
+# good: explicit topics
+ros2 bag record /camera_1/image_raw /camera_1/camera_info /camera_1/image_rect /camera_1/tag_detections
+
+# or if recording all, exclude depth transport topics
+ros2 bag record -a --exclude ".*compressedDepth.*"
+
+ros2 topic info /camera_1/image_raw/compressedDepth -v

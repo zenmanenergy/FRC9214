@@ -21,12 +21,12 @@ def generate_launch_description():
             output='screen',
             parameters=[
                 {'video_device': '/dev/video0'}, # Check your device path
-                # {'image_width': 640},
-                # {'image_height': 480},
-                {'image_width': 1280},
-                {'image_height': 720},
-                {'framerate': 15.0}, # Start with a lower framerate for calibration
-                # {'framerate': 30.0}, # Note: framerate is a double in ROS2
+                {'image_width': 640},
+                {'image_height': 480},
+                # {'image_width': 1280},
+                # {'image_height': 720},
+                # {'framerate': 15.0}, # Start with a lower framerate for calibration
+                {'framerate': 30.0}, # Note: framerate is a double in ROS2
                 # {'camera_info_url': 'file:///home/robots/source_code/first_robotics_comp/frc/camera_ws/src/honking_narwhal/calib/camera2.yaml'} # Add this after calibratio
             ],
             # The calibration tool looks for topic names that differ 
