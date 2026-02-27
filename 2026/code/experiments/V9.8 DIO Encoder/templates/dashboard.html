@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Honking Narwhals Team 9214</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		
+		body {
+			font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+			background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			min-height: 100vh;
+			padding: 20px;
+		}
+		
+		.container {
+			background: white;
+			border-radius: 15px;
+			box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+			padding: 40px;
+			max-width: 900px;
+			width: 100%;
+		}
+		
+		h1 {
+			text-align: center;
+			color: #333;
+			margin-bottom: 10px;
+			font-size: 28px;
+		}
+		
+		.subtitle {
+			text-align: center;
+			color: #666;
+			margin-bottom: 30px;
+			font-size: 14px;
+		}
+		
+		.dashboard {
+			display: flex;
+			gap: 30px;
+			flex-wrap: wrap;
+			justify-content: center;
+		}
+		
+		.swerve-container {
+			background: #f5f5f5;
+			border-radius: 10px;
+			padding: 20px;
+			border: 2px solid #ddd;
+		}
+		
+		canvas {
+			display: block;
+			background: white;
+			border-radius: 8px;
+			border: 1px solid #ccc;
+		}
+		
+		.angles-panel {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 15px;
+			min-width: 300px;
+		}
+		
+		.angle-box {
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			color: white;
+			padding: 20px;
+			border-radius: 10px;
+			text-align: center;
+			box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+			transition: transform 0.2s ease;
+		}
+		
+		.angle-box:hover {
+			transform: translateY(-3px);
+		}
+		
+		.angle-label {
+			font-size: 12px;
+			opacity: 0.9;
+			text-transform: uppercase;
+			letter-spacing: 1px;
+			margin-bottom: 8px;
+		}
+		
+		.angle-value {
+			font-size: 36px;
+			font-weight: bold;
+			font-family: 'Courier New', monospace;
+		}
+		
+		.angle-units {
+			font-size: 14px;
+			margin-top: 5px;
+			opacity: 0.8;
+		}
+		
+		.status-bar {
+			margin-top: 30px;
+			padding: 15px;
+			background: #f9f9f9;
+			border-radius: 8px;
+			border-left: 4px solid #667eea;
+			font-size: 13px;
+			color: #555;
+		}
+		
+		.status-item {
+			display: inline-block;
+			margin-right: 20px;
+		}
+		
+		.status-value {
+			font-weight: bold;
+			color: #333;
+		}
+		
+		@media (max-width: 768px) {
+			.dashboard {
+				flex-direction: column;
+				align-items: center;
+			}
+			
+			.angles-panel {
+				min-width: 250px;
+			}
+		}
+		
+		.controls-section {
+			margin-top: 30px;
+			padding: 20px;
+			background: #f0f0f0;
+			border-radius: 10px;
+			border: 1px solid #ddd;
+		}
+		
+		.controls-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 15px;
+			margin-bottom: 20px;
+		}
+		
+		.focus-btn {
+			padding: 12px;
+			border: none;
+			border-radius: 6px;
+			font-size: 14px;
+			font-weight: bold;
+			cursor: pointer;
+			transition: all 0.2s ease;
+			background: #667eea;
+			color: white;
+		}
+		
+		.focus-btn:hover {
+			background: #5568d3;
+			transform: translateY(-2px);
+		}
+		
+		.focus-btn.active {
+			background: #2ecc71;
+			box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+		}
+		
+		.action-buttons {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 15px;
+			margin-top: 20px;
+		}
+		
+		.action-btn {
+			padding: 15px;
+			border: none;
+			border-radius: 6px;
+			font-size: 16px;
+			font-weight: bold;
+			cursor: pointer;
+			transition: all 0.2s ease;
+		}
+		
+		.align-btn {
+			background: #e74c3c;
+			color: white;
+		}
+		
+		.align-btn:hover {
+			background: #c0392b;
+		}
+		
+		.save-btn {
+			background: #2ecc71;
+			color: white;
+		}
+		
+		.save-btn:hover {
+			background: #27ae60;
+		}
+		
+		.power-control {
+			margin-top: 20px;
+		}
+		
+		.power-label {
+			display: block;
+			margin-bottom: 10px;
+			font-weight: bold;
+			color: #333;
+		}
+		
+		.power-slider {
+			width: 100%;
+			height: 8px;
+			border-radius: 5px;
+			background: #ddd;
+			outline: none;
+			-webkit-appearance: none;
+		}
+		
+		.power-slider::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			appearance: none;
+			width: 20px;
+			height: 20px;
+			border-radius: 50%;
+			background: #667eea;
+			cursor: pointer;
+		}
+		
+		.power-slider::-moz-range-thumb {
+			width: 20px;
+			height: 20px;
+			border-radius: 50%;
+			background: #667eea;
+			cursor: pointer;
+			border: none;
+		}
+		
+		.power-value {
+			text-align: center;
+			margin-top: 8px;
+			font-weight: bold;
+			color: #667eea;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>🐳 Honking Narwhals Team 9214</h1>
+		<p class="subtitle">Wheel Calibration Dashboard</p>
+		
+		<div class="dashboard">
+			<div class="swerve-container">
+				<canvas id="swerveCanvas" width="400" height="400"></canvas>
+			</div>
+			
+			<div class="angles-panel">
+				<div class="angle-box">
+					<div class="angle-label">Front Right</div>
+					<div class="angle-value" id="fr-angle">0°</div>
+					<div class="angle-units">Degrees</div>
+				</div>
+				<div class="angle-box">
+					<div class="angle-label">Rear Right</div>
+					<div class="angle-value" id="rr-angle">0°</div>
+					<div class="angle-units">Degrees</div>
+				</div>
+				<div class="angle-box">
+					<div class="angle-label">Rear Left</div>
+					<div class="angle-value" id="rl-angle">0°</div>
+					<div class="angle-units">Degrees</div>
+				</div>
+				<div class="angle-box">
+					<div class="angle-label">Front Left</div>
+					<div class="angle-value" id="fl-angle">0°</div>
+					<div class="angle-units">Degrees</div>
+				</div>
+			</div>
+		</div>
+		
+		<div class="controls-section">
+			<h2 style="text-align: center; margin-top: 0; color: #333;">Controls</h2>
+			
+			
+			<div class="action-buttons">
+				<button class="action-btn save-btn" onclick="saveZero()" id="save-btn" disabled>Save Zero</button>
+				<button class="action-btn align-btn" onclick="alignAll()">Align All to 0°</button>
+			</div>
+		</div>
+		
+		<div class="status-bar">
+			<div class="status-item">
+				Status: <span class="status-value" id="status">Connecting...</span>
+			</div>
+			<div class="status-item">
+				Updates: <span class="status-value" id="counter">0</span>
+			</div>
+			<div class="status-item">
+				Focused: <span class="status-value" id="focused">None</span>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		const canvas = document.getElementById("swerveCanvas");
+		const ctx = canvas.getContext("2d");
+		let wheelAngles = { front_right: 0, rear_right: 0, rear_left: 0, front_left: 0 };
+		let isConnected = false;
+		let focusedWheel = null;
+		let currentPower = 0;
+
+		// Bot dimensions (canvas-relative)
+		const BOT_WIDTH = 200;
+		const BOT_HEIGHT = 200;
+		const WHEEL_SIZE = 15;
+		const CENTER_X = canvas.width / 2;
+		const CENTER_Y = canvas.height / 2;
+
+		// Wheel positions relative to center
+		const WHEEL_POSITIONS = {
+			front_right: { x: BOT_WIDTH / 2, y: -BOT_HEIGHT / 2 },
+			rear_right: { x: BOT_WIDTH / 2, y: BOT_HEIGHT / 2 },
+			rear_left: { x: -BOT_WIDTH / 2, y: BOT_HEIGHT / 2 },
+			front_left: { x: -BOT_WIDTH / 2, y: -BOT_HEIGHT / 2 }
+		};
+
+		function drawSwerve() {
+			// Clear canvas
+			ctx.fillStyle = "white";
+			ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+			// Draw grid
+			ctx.strokeStyle = "#e0e0e0";
+			ctx.lineWidth = 1;
+			for (let i = 0; i <= canvas.width; i += 50) {
+				ctx.beginPath();
+				ctx.moveTo(i, 0);
+				ctx.lineTo(i, canvas.height);
+				ctx.stroke();
+			}
+			for (let i = 0; i <= canvas.height; i += 50) {
+				ctx.beginPath();
+				ctx.moveTo(0, i);
+				ctx.lineTo(canvas.width, i);
+				ctx.stroke();
+			}
+
+			// Draw robot frame
+			ctx.strokeStyle = "#333";
+			ctx.lineWidth = 2;
+			ctx.strokeRect(
+				CENTER_X - BOT_WIDTH / 2,
+				CENTER_Y - BOT_HEIGHT / 2,
+				BOT_WIDTH,
+				BOT_HEIGHT
+			);
+
+			// Draw center point
+			ctx.fillStyle = "#666";
+			ctx.beginPath();
+			ctx.arc(CENTER_X, CENTER_Y, 4, 0, 2 * Math.PI);
+			ctx.fill();
+
+			// Draw each wheel
+			Object.entries(WHEEL_POSITIONS).forEach(([name, pos]) => {
+				const angle = (wheelAngles[name] || 0) * (Math.PI / 180);
+				const wheelX = CENTER_X + pos.x;
+				const wheelY = CENTER_Y + pos.y;
+
+				// Draw wheel circle - highlight if focused
+				if (name === focusedWheel) {
+					ctx.fillStyle = "#2ecc71";
+					ctx.shadowColor = "rgba(46, 204, 113, 0.5)";
+					ctx.shadowBlur = 15;
+				} else {
+					ctx.fillStyle = "#667eea";
+					ctx.shadowColor = "transparent";
+					ctx.shadowBlur = 0;
+				}
+				ctx.beginPath();
+				ctx.arc(wheelX, wheelY, WHEEL_SIZE, 0, 2 * Math.PI);
+				ctx.fill();
+
+				// Draw wheel orientation indicator (arrow)
+				ctx.strokeStyle = "white";
+				ctx.lineWidth = 2;
+				const arrowLength = WHEEL_SIZE * 1.5;
+				const arrowEndX = wheelX + arrowLength * Math.cos(angle);
+				const arrowEndY = wheelY + arrowLength * Math.sin(angle);
+				ctx.beginPath();
+				ctx.moveTo(wheelX, wheelY);
+				ctx.lineTo(arrowEndX, arrowEndY);
+				ctx.stroke();
+
+				// Draw label
+				ctx.fillStyle = "#333";
+				ctx.font = "12px Arial";
+				ctx.textAlign = "center";
+				const labelY = wheelY + WHEEL_SIZE + 20;
+				ctx.fillText(name.toUpperCase(), wheelX, labelY);
+			});
+
+			// Draw forward direction indicator
+			ctx.fillStyle = "#ff6b6b";
+			ctx.font = "14px Arial";
+			ctx.textAlign = "center";
+			ctx.fillText("↑ FORWARD", CENTER_X, 25);
+		}
+
+		function updateAngles(data) {
+			wheelAngles = data.angles;
+
+			// Update text displays
+			document.getElementById("fr-angle").textContent = Math.round(data.angles.front_right) + "°";
+			document.getElementById("rr-angle").textContent = Math.round(data.angles.rear_right) + "°";
+			document.getElementById("rl-angle").textContent = Math.round(data.angles.rear_left) + "°";
+			document.getElementById("fl-angle").textContent = Math.round(data.angles.front_left) + "°";
+			document.getElementById("counter").textContent = Math.round(data.counter);
+
+			// Redraw canvas
+			drawSwerve();
+		}
+
+		function fetchAngles() {
+			fetch("/api/angles")
+				.then(response => response.json())
+				.then(data => {
+					updateAngles(data);
+					if (!isConnected) {
+						isConnected = true;
+						document.getElementById("status").textContent = "Connected";
+						document.getElementById("status").style.color = "#2ecc71";
+					}
+				})
+				.catch(error => {
+					if (isConnected) {
+						isConnected = false;
+						document.getElementById("status").textContent = "Disconnected";
+						document.getElementById("status").style.color = "#e74c3c";
+					}
+					console.log("Connection lost, retrying...");
+				});
+		}
+
+		// Initial draw
+		drawSwerve();
+
+		// Control functions
+		function focusWheel(wheelName) {
+			focusedWheel = wheelName;
+			document.getElementById("focused").textContent = wheelName;
+			document.getElementById("save-btn").disabled = false;
+			
+			// Send focus command to robot
+			fetch("/api/command", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ cmd: "focus", value: wheelName })
+			}).catch(e => console.log("Focus command failed"));
+			
+			// Redraw to highlight the focused wheel
+			drawSwerve();
+		}
+		
+		// Canvas click handler to focus wheels
+		canvas.addEventListener("click", (event) => {
+			const rect = canvas.getBoundingClientRect();
+			const x = (event.clientX - rect.left) * (canvas.width / rect.width);
+			const y = (event.clientY - rect.top) * (canvas.height / rect.height);
+			
+			// Check which wheel was clicked
+			for (const [name, pos] of Object.entries(WHEEL_POSITIONS)) {
+				const wheelX = CENTER_X + pos.x;
+				const wheelY = CENTER_Y + pos.y;
+				const distance = Math.sqrt((x - wheelX) ** 2 + (y - wheelY) ** 2);
+				
+				// If click is within wheel radius + padding
+				if (distance <= WHEEL_SIZE + 10) {
+					focusWheel(name);
+					return;
+				}
+			}
+		});
+		
+		canvas.style.cursor = "pointer";
+
+		function setPower(value) {
+			currentPower = parseFloat(value) / 100;
+			document.getElementById("power-display").textContent = value + "%";
+			document.getElementById("power-value").textContent = currentPower.toFixed(2);
+			
+			// Send power command to robot
+			fetch("/api/command", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ cmd: "power", value: currentPower })
+			}).catch(e => console.log("Power command failed"));
+		}
+
+		function saveZero() {
+			if (focusedWheel) {
+				fetch("/api/command", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ cmd: "save_zero", value: focusedWheel })
+				}).then(r => r.json())
+				.then(d => {
+					alert("Zero offset saved for " + focusedWheel);
+					focusedWheel = null;
+					document.getElementById("focused").textContent = "None";
+					document.getElementById("save-btn").disabled = true;
+					drawSwerve();
+				})
+				.catch(e => console.log("Save zero failed"));
+			}
+		}
+
+		function alignAll() {
+			fetch("/api/command", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ cmd: "align", value: "true" })
+			}).then(r => r.json())
+			.then(d => alert("Alignment sequence started!"))
+			.catch(e => console.log("Align command failed"));
+		}
+
+		// Fetch angles every 50ms (20 Hz)
+		setInterval(fetchAngles, 50);
+
+		// Responsive canvas resizing
+		window.addEventListener("resize", () => {
+			const container = document.querySelector(".swerve-container");
+			if (window.innerWidth <= 600) {
+				canvas.width = 300;
+				canvas.height = 300;
+			} else {
+				canvas.width = 400;
+				canvas.height = 400;
+			}
+			drawSwerve();
+		});
+	</script>
+</body>
+</html>

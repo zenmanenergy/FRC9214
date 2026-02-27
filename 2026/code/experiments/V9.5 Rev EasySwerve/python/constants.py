@@ -43,6 +43,14 @@ class DriveConstants:
 	k_rear_left_chassis_angular_offset = math.pi + _k_easy_swerve_angular_offset_compensation
 	k_rear_right_chassis_angular_offset = (math.pi / 2) + _k_easy_swerve_angular_offset_compensation
 
+	# Encoder mechanical offsets (calibration hole position) - one per wheel
+	# These values are the raw encoder readings when the wheel is at zero position
+	# Measure by checking the raw encoder value when the wrench calibration hole is at 0°
+	k_front_left_encoder_offset = 0.0   # Calibrated from latest output
+	k_front_right_encoder_offset = 0.0    # Right side reference (0 radians)
+	k_rear_left_encoder_offset = 0.0    # Calibrated from latest output
+	k_rear_right_encoder_offset = 0.0     # Right side reference (0 radians)
+
 	# The EasySwerve module allows installation of the motors either on top or bottom of the module.
 	# These constants configure the location of the motors. The default configuration is with both
 	# motors on the bottom of the module.
