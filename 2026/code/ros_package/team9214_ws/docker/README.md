@@ -21,7 +21,7 @@
 
 ## Docker dev image x86_64
 
-### Build
+### Building
 
 #### ROS Image Base with ROS2 Jazzy
 
@@ -44,6 +44,6 @@
 `docker build -f team9214_ws/docker/ubuntu_based/Dockerfile.bionic.dashing -t team9214-bionic:ros-dashing .`
 
 
-### Run
+### Running
 
 `docker run --rm -it --net=host team9214-ros:jazzy bash`

@@ -16,7 +16,8 @@ bringup:
 
     use_camera_driver: true
     use_rectify: true
-    video_device: "/dev/video0"
+    # video_device: "/dev/video0"
+    video_device: "/dev/video2"
     # framerate: 15.0
     # image_width: 1280
     # image_height: 720
@@ -27,7 +28,8 @@ bringup:
     io_method: "mmap"
     camera_frame: "camera_1_optical_frame"
     # camera_info_url: "file:///home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/multi_cam_apriltag/config/camera_1_new.yaml"
-    camera_info_url: "file:///home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/multi_cam_apriltag/config/camera_1_new.yaml"
+    # camera_info_url: "file:///home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/multi_cam_apriltag/config/camera_1_new.yaml"
+    camera_info_url: "file:///home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/multi_cam_apriltag/config/AlphaCam_calibration.yaml"
 
     use_static_camera_tf: true
     # Sensor availability toggles for EKF inputs.

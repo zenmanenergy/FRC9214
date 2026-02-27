@@ -1,0 +1,372 @@
+#!/usr/bin/env python3
+"""
+Generate a Nav2 occupancy map and AprilTag map from a single YAML spec.
+
+Usage:
+
+python3 team9214_ws/src/arena_tag_map/scripts/generate_world_and_tag_maps.py \
+  --input team9214_ws/src/arena_tag_map/config/generate_map_request_example.yaml \
+  --output-dir /tmp/generated_maps \
+  --basename practice_field
+
+"""
+
+from __future__ import annotations
+
+import argparse
+import copy
+import math
+from pathlib import Path
+from typing import Any, Dict, List, Tuple
+
+import yaml
+
+
+FREE = 254
+OCCUPIED = 0
+
+
+def _require(value: Any, path: str) -> Any:
+    if value is None:
+        raise ValueError(f"Missing required field: {path}")
+    return value
+
+
+def _as_float(value: Any, path: str) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Invalid numeric value for {path}: {value}") from exc
+
+
+def _as_int(value: Any, path: str) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Invalid integer value for {path}: {value}") from exc
+
+
+def _arena_bounds(length_m: float, width_m: float, origin_semantics: str) -> Tuple[float, float, float, float]:
+    if origin_semantics == "center":
+        half_l = length_m / 2.0
+        half_w = width_m / 2.0
+        return (-half_l, half_l, -half_w, half_w)
+    if origin_semantics == "south_west_corner":
+        return (0.0, length_m, 0.0, width_m)
+    raise ValueError("arena.origin_semantics must be 'center' or 'south_west_corner'")
+
+
+def _parse_box(box: Dict[str, Any], index: int) -> Dict[str, float]:
+    length_m = _as_float(_require(box.get("length_m"), f"objects[{index}].length_m"), f"objects[{index}].length_m")
+    width_m = _as_float(_require(box.get("width_m"), f"objects[{index}].width_m"), f"objects[{index}].width_m")
+
+    if "south_west" in box:
+        south_west = box.get("south_west")
+        if not isinstance(south_west, dict):
+            raise ValueError(f"objects[{index}].south_west must be a map with x/y")
+        x_min = _as_float(
+            _require(south_west.get("x"), f"objects[{index}].south_west.x"),
+            f"objects[{index}].south_west.x",
+        )
+        y_min = _as_float(
+            _require(south_west.get("y"), f"objects[{index}].south_west.y"),
+            f"objects[{index}].south_west.y",
+        )
+        y_max = y_min + width_m
+    elif "top_left" in box:
+        # Backward-compatibility path for older specs.
+        top_left = box.get("top_left")
+        if not isinstance(top_left, dict):
+            raise ValueError(f"objects[{index}].top_left must be a map with x/y")
+        x_min = _as_float(_require(top_left.get("x"), f"objects[{index}].top_left.x"), f"objects[{index}].top_left.x")
+        y_max = _as_float(_require(top_left.get("y"), f"objects[{index}].top_left.y"), f"objects[{index}].top_left.y")
+        y_min = y_max - width_m
+    else:
+        raise ValueError(f"Missing required field: objects[{index}].south_west")
+
+    return {
+        "length_m": length_m,
+        "width_m": width_m,
+        "x_min": x_min,
+        "x_max": x_min + length_m,
+        "y_max": y_max,
+        "y_min": y_min,
+    }
+
+
+def _validate_box_in_bounds(box: Dict[str, float], bounds: Tuple[float, float, float, float], label: str) -> None:
+    x_min, x_max, y_min, y_max = bounds
+    eps = 1e-9
+    if box["x_min"] < x_min - eps or box["x_max"] > x_max + eps or box["y_min"] < y_min - eps or box["y_max"] > y_max + eps:
+        raise ValueError(
+            f"{label} is outside arena bounds. "
+            f"box=[{box['x_min']}, {box['x_max']}]x[{box['y_min']}, {box['y_max']}], "
+            f"arena=[{x_min}, {x_max}]x[{y_min}, {y_max}]"
+        )
+
+
+def _rect_to_pixel_range(
+    rect: Dict[str, float],
+    x_min: float,
+    y_max: float,
+    resolution: float,
+    width_px: int,
+    height_px: int,
+) -> Tuple[int, int, int, int]:
+    col0 = int(math.floor((rect["x_min"] - x_min) / resolution))
+    col1 = int(math.ceil((rect["x_max"] - x_min) / resolution)) - 1
+
+    row0 = int(math.floor((y_max - rect["y_max"]) / resolution))
+    row1 = int(math.ceil((y_max - rect["y_min"]) / resolution)) - 1
+
+    col0 = max(0, min(width_px - 1, col0))
+    col1 = max(0, min(width_px - 1, col1))
+    row0 = max(0, min(height_px - 1, row0))
+    row1 = max(0, min(height_px - 1, row1))
+
+    return row0, row1, col0, col1
+
+
+def _fill_rect(
+    grid: List[List[int]],
+    rect: Dict[str, float],
+    x_min: float,
+    y_max: float,
+    resolution: float,
+) -> None:
+    height_px = len(grid)
+    width_px = len(grid[0])
+    row0, row1, col0, col1 = _rect_to_pixel_range(rect, x_min, y_max, resolution, width_px, height_px)
+    for row in range(row0, row1 + 1):
+        for col in range(col0, col1 + 1):
+            grid[row][col] = OCCUPIED
+
+
+def _write_pgm(path: Path, grid: List[List[int]]) -> None:
+    height_px = len(grid)
+    width_px = len(grid[0])
+    with path.open("w", encoding="ascii") as f:
+        f.write("P2\n")
+        f.write("# generated by generate_world_and_tag_maps.py\n")
+        f.write(f"{width_px} {height_px}\n")
+        f.write("255\n")
+        for row in grid:
+            f.write(" ".join(str(v) for v in row))
+            f.write("\n")
+
+
+def _tag_pose(tag: Dict[str, Any], index: int) -> Dict[str, Any]:
+    tag_id = _as_int(_require(tag.get("id"), f"apriltags.tags[{index}].id"), f"apriltags.tags[{index}].id")
+
+    if "position" in tag:
+        pos = tag["position"]
+        if not isinstance(pos, dict):
+            raise ValueError(f"apriltags.tags[{index}].position must be a map")
+        x = _as_float(_require(pos.get("x"), f"apriltags.tags[{index}].position.x"), f"apriltags.tags[{index}].position.x")
+        y = _as_float(_require(pos.get("y"), f"apriltags.tags[{index}].position.y"), f"apriltags.tags[{index}].position.y")
+    else:
+        x = _as_float(_require(tag.get("x"), f"apriltags.tags[{index}].x"), f"apriltags.tags[{index}].x")
+        y = _as_float(_require(tag.get("y"), f"apriltags.tags[{index}].y"), f"apriltags.tags[{index}].y")
+
+    z = _as_float(tag.get("height_m", tag.get("z", 0.0)), f"apriltags.tags[{index}].height_m")
+
+    orientation = tag.get("orientation_rpy")
+    if isinstance(orientation, dict):
+        roll = _as_float(orientation.get("roll", 0.0), f"apriltags.tags[{index}].orientation_rpy.roll")
+        pitch = _as_float(orientation.get("pitch", 0.0), f"apriltags.tags[{index}].orientation_rpy.pitch")
+        yaw = _as_float(orientation.get("yaw", 0.0), f"apriltags.tags[{index}].orientation_rpy.yaw")
+    else:
+        roll = _as_float(tag.get("roll_rad", 0.0), f"apriltags.tags[{index}].roll_rad")
+        pitch = _as_float(tag.get("pitch_rad", 0.0), f"apriltags.tags[{index}].pitch_rad")
+        if "yaw_deg" in tag:
+            yaw = math.radians(_as_float(tag["yaw_deg"], f"apriltags.tags[{index}].yaw_deg"))
+        else:
+            yaw = _as_float(tag.get("yaw_rad", 0.0), f"apriltags.tags[{index}].yaw_rad")
+
+    out = {
+        "id": tag_id,
+        "pose": {
+            "position": {"x": x, "y": y, "z": z},
+            "orientation_rpy": {"roll": roll, "pitch": pitch, "yaw": yaw},
+        },
+    }
+
+    if "size_m" in tag:
+        out["size_m"] = _as_float(tag["size_m"], f"apriltags.tags[{index}].size_m")
+    if "notes" in tag:
+        out["notes"] = str(tag["notes"])
+
+    return out
+
+
+def generate(spec: Dict[str, Any], output_dir: Path, basename: str) -> Tuple[Path, Path, Path]:
+    arena = _require(spec.get("arena"), "arena")
+    if not isinstance(arena, dict):
+        raise ValueError("arena must be a map")
+
+    length_m = _as_float(_require(arena.get("length_m"), "arena.length_m"), "arena.length_m")
+    width_m = _as_float(_require(arena.get("width_m"), "arena.width_m"), "arena.width_m")
+    height_m = _as_float(_require(arena.get("height_m"), "arena.height_m"), "arena.height_m")
+    origin_semantics = str(arena.get("origin_semantics", "center"))
+    frame_id = str(arena.get("frame_id", "map"))
+    arena_name = str(arena.get("name", "generated_arena"))
+
+    map_cfg = spec.get("map", {})
+    if not isinstance(map_cfg, dict):
+        raise ValueError("map must be a map")
+    resolution = _as_float(map_cfg.get("resolution_m", 0.05), "map.resolution_m")
+    wall_thickness = _as_float(map_cfg.get("wall_thickness_m", 0.05), "map.wall_thickness_m")
+    include_walls = bool(map_cfg.get("include_walls", True))
+
+    x_min, x_max, y_min, y_max = _arena_bounds(length_m, width_m, origin_semantics)
+
+    width_px = max(1, int(math.ceil((x_max - x_min) / resolution)))
+    height_px = max(1, int(math.ceil((y_max - y_min) / resolution)))
+    grid = [[FREE for _ in range(width_px)] for _ in range(height_px)]
+
+    if include_walls and wall_thickness > 0.0:
+        walls = [
+            {"x_min": x_min, "x_max": x_max, "y_min": y_min, "y_max": min(y_max, y_min + wall_thickness)},
+            {"x_min": x_min, "x_max": x_max, "y_min": max(y_min, y_max - wall_thickness), "y_max": y_max},
+            {"x_min": x_min, "x_max": min(x_max, x_min + wall_thickness), "y_min": y_min, "y_max": y_max},
+            {"x_min": max(x_min, x_max - wall_thickness), "x_max": x_max, "y_min": y_min, "y_max": y_max},
+        ]
+        for wall in walls:
+            _fill_rect(grid, wall, x_min, y_max, resolution)
+
+    objects_raw = spec.get("objects", [])
+    if not isinstance(objects_raw, list):
+        raise ValueError("objects must be a list")
+
+    parsed_objects: List[Dict[str, float]] = []
+    for i, raw_obj in enumerate(objects_raw):
+        if not isinstance(raw_obj, dict):
+            raise ValueError(f"objects[{i}] must be a map")
+        box = _parse_box(raw_obj, i)
+        _validate_box_in_bounds(box, (x_min, x_max, y_min, y_max), f"objects[{i}]")
+        parsed_objects.append(box)
+        _fill_rect(grid, box, x_min, y_max, resolution)
+
+    apriltags = _require(spec.get("apriltags"), "apriltags")
+    if not isinstance(apriltags, dict):
+        raise ValueError("apriltags must be a map")
+
+    tag_family = str(apriltags.get("family", "tag36h11"))
+    default_size = _as_float(apriltags.get("default_size_m", 0.1651), "apriltags.default_size_m")
+
+    tags_raw = apriltags.get("tags", [])
+    if not isinstance(tags_raw, list):
+        raise ValueError("apriltags.tags must be a list")
+
+    tags = [_tag_pose(tag, i) for i, tag in enumerate(tags_raw)]
+
+    for i, tag in enumerate(tags):
+        tpos = tag["pose"]["position"]
+        point_box = {
+            "x_min": tpos["x"],
+            "x_max": tpos["x"],
+            "y_min": tpos["y"],
+            "y_max": tpos["y"],
+        }
+        _validate_box_in_bounds(point_box, (x_min, x_max, y_min, y_max), f"apriltags.tags[{i}]")
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    pgm_path = output_dir / f"{basename}.pgm"
+    map_yaml_path = output_dir / f"{basename}.yaml"
+    tag_yaml_path = output_dir / f"{basename}_arena_tags.yaml"
+
+    _write_pgm(pgm_path, grid)
+
+    map_yaml = {
+        "image": pgm_path.name,
+        "resolution": resolution,
+        "origin": [x_min, y_min, 0.0],
+        "negate": int(map_cfg.get("negate", 0)),
+        "occupied_thresh": _as_float(map_cfg.get("occupied_thresh", 0.65), "map.occupied_thresh"),
+        "free_thresh": _as_float(map_cfg.get("free_thresh", 0.196), "map.free_thresh"),
+    }
+    with map_yaml_path.open("w", encoding="utf-8") as f:
+        yaml.safe_dump(map_yaml, f, sort_keys=False)
+
+    arena_yaml = {
+        "arena": {
+            "name": arena_name,
+            "frame_id": frame_id,
+            "convention": {
+                "units": "meters",
+                "axes": "ROS REP-103",
+                "description": "+x forward, +y left, +z up",
+                "origin": origin_semantics,
+            },
+            "dimensions": {
+                "length_x_m": length_m,
+                "width_y_m": width_m,
+                "height_z_m": height_m,
+            },
+            "bounds": {
+                "x_min": x_min,
+                "x_max": x_max,
+                "y_min": y_min,
+                "y_max": y_max,
+            },
+            "objects": [
+                {
+                    "name": str(obj.get("name", f"box_{i+1}")),
+                    "length_m": parsed_objects[i]["length_m"],
+                    "width_m": parsed_objects[i]["width_m"],
+                    "south_west": {
+                        "x": parsed_objects[i]["x_min"],
+                        "y": parsed_objects[i]["y_min"],
+                    },
+                    "height_m": _as_float(obj.get("height_m", 0.0), f"objects[{i}].height_m"),
+                }
+                for i, obj in enumerate(objects_raw)
+            ],
+        },
+        "apriltags": {
+            "family": tag_family,
+            "default_size_m": default_size,
+            "tags": tags,
+        },
+        "tags": copy.deepcopy(tags),
+    }
+    with tag_yaml_path.open("w", encoding="utf-8") as f:
+        yaml.safe_dump(arena_yaml, f, sort_keys=False)
+
+    return pgm_path, map_yaml_path, tag_yaml_path
+
+
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Generate Nav2 map and AprilTag map from a YAML spec. "
+            "Boxes are axis-aligned and use south_west as southwest corner in map XY."
+        )
+    )
+    parser.add_argument("--input", required=True, help="Path to input spec YAML")
+    parser.add_argument("--output-dir", required=True, help="Directory for generated files")
+    parser.add_argument("--basename", default="generated_field", help="Base name for output files")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = _parse_args()
+
+    input_path = Path(args.input)
+    with input_path.open("r", encoding="utf-8") as f:
+        spec = yaml.safe_load(f)
+
+    if not isinstance(spec, dict):
+        raise ValueError("Input YAML must contain a top-level map")
+
+    pgm_path, map_yaml_path, tag_yaml_path = generate(spec, Path(args.output_dir), args.basename)
+
+    print(f"Generated map image: {pgm_path}")
+    print(f"Generated map yaml:  {map_yaml_path}")
+    print(f"Generated tag yaml:  {tag_yaml_path}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

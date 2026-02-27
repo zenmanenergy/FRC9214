@@ -1,0 +1,102 @@
+###########################################  
+#             Y
+#         ^   |  
+# (North) |   |
+#         |   |
+#         Y   | 
+#         +   | 
+#         |   |
+# (South) |   |___________________ X
+#           (0,0)
+#             ----- +x (W-to-E) --> 
+#       (West)                (East)
+#
+# Objects: 
+#  objects[].length_m = x = west->east
+#  objects[].width_m = y = south->north
+# --------------------------------------------
+# Tags:
+#   Orientation: 
+#     0   - Image on West wall facing East 
+#     180 - Image on East wall facing West
+#     90  - Image on South wall facing North
+#     -90 - Image on North wall facing South
+#
+#   Height (z) : to the center of the AprilTag
+#----------------------------------------------
+# Converstions:
+#   inches to meters: inches / 39.37
+##############################################
+arena:
+  name: "dinning_room"
+  frame_id: "map"
+  length_m: 4.04  # x axis (West to East)   159"
+  width_m: 3.6576 # y axis (South to North) 144"
+  height_m: 2.7178   # z axis (Up) 107"
+  origin_semantics: "south_west_corner"   # center or south_west_corner
+
+map:
+  resolution_m: 0.05
+  include_walls: true
+  wall_thickness_m: 0.05
+  occupied_thresh: 0.65
+  free_thresh: 0.196
+
+# Boxes are axis-aligned. top_left is the northwest corner in map XY.
+objects:
+  - name: "cabinet"
+    length_m: 0.695 # x-axis
+    width_m: 0.36   # y-axis
+    height_m: 1.143   # z-axis
+    top_left: 
+      x: 3.0988
+      y: 3.2976
+
+apriltags:
+  family: "tag36h11"
+  default_size_m: 0.1651
+  tags:
+    - id: 0
+      size_m: 0.1651
+      x: 1.143
+      y: 3.6576
+      height_m: 0.9144
+      yaw_rad: -1.57079632679
+      notes: "North-East wall under mirror facing south"
+
+    - id: 1
+      size_m: 0.1651
+      x: 0
+      y: 2.6626
+      height_m: 0.9144
+      yaw_rad: 0.0
+      notes: "West wall center"
+
+    - id: 2
+      x: 3.0988
+      y: 3.1198
+      height_m: 0.9144
+      yaw_deg: 180.0
+      notes: "West side of Cabinet facing east"
+
+    # - id: 3
+    #   position:
+    #     x: 0.0
+    #     y: 2.02
+    #   height_m: 1.2
+    #   orientation_rpy:
+    #     roll: 0.0
+    #     pitch: 0.0
+    #     yaw: 1.57079632679
+    #   notes: "South wall center"
+
+    # - id: 4
+    #   position:
+    #     x: 0.0
+    #     y: 1.8288
+    #   height_m: 1.1176 # 44 inches from floor to center of tag
+    #   orientation_rpy:
+    #     roll: 0.0
+    #     pitch: 0.0
+    #     yaw: -1.57079632679
+    #   notes: "North wall center"

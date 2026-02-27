@@ -205,3 +205,26 @@ ros2 node list
 
 - `Failed to make progress`
   - Ensure robot pose actually changes when controller publishes commands (sim harness now uses `follow_cmd_vel` by default).
+
+## Test scripts
+
+1. `team9214_ws/src/arena_bringup/arena_bringup/tag_test_monitor.py`
+
+- Prints distance/bearing/depth for every currently detected AprilTag
+- Prints estimated arena pose `(x,y,yaw)` from TF `map -> base_link`
+- Falls bck to `/tag_global_pose` if TF pose is unavailable
+
+Running:
+
+`ros2 run arena_bringup tag_test_monitor`
+
+Running with flags:
+
+```bash
+ros2 run arena_bringup tag_test_monitor --ros-args \
+  -p detections_topic:=/camera_1/tag_detections \
+  -p camera_frame:=camera_1_optical_frame \
+  -p map_frame:=map \
+  -p base_frame:=base_link \
+  -p global_pose_topic:=/tag_global_pose
+```

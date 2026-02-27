@@ -4,7 +4,9 @@
   <link name="base_link"/>
   <!-- 
     Test setup
-      Camera: 36inches from the floor, so 0.8636 m
+      Camera: 90cm from floor
+      AprilTag: 110cm from floor
+      AprilTag: 150cm in front of camera
   -->
 
   <!-- Camera 1 (forward) -->
@@ -14,7 +16,7 @@
     <child link="camera_1_link"/>
     <!-- Replace with your measured/calibrated extrinsics -->
     <!-- +x forward, +y left, +z up -->
-    <origin xyz="0.00 0.00 0.8636" rpy="0 0 0"/>
+    <origin xyz="0.00 0.00 0.90" rpy="0 0 0"/>
   </joint>
 
   <link name="camera_1_optical_frame"/>
