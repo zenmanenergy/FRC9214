@@ -61,7 +61,18 @@ class SwerveDrive:
 			wheel.set_zero_offset(wheel.get_raw_angle())
 			self.calibration.set_offset(wheel_name, wheel.offset)
 			self.calibration.save_offsets()
-			print(f"[ZEROING] Saved offset for {wheel_name}: {wheel.offset:.1f}")
+			print(f"[ZEROING] Saved offset for {wheel_name}: {wheel.offset:.1f} (0 degrees)")
+	
+	def set_wheel_angle(self, wheel_name, target_angle):
+		"""Save current position as a specific angle (0, 90, 180, 270)"""
+		if wheel_name in self.wheels:
+			wheel = self.wheels[wheel_name]
+			raw = wheel.get_raw_angle()
+			# Calculate offset so that: (raw - offset) % 360 = target_angle
+			wheel.offset = (raw - target_angle) % 360
+			self.calibration.set_offset(wheel_name, wheel.offset)
+			self.calibration.save_offsets()
+			print(f"[ZEROING] Saved offset for {wheel_name}: raw={raw:.1f} -> {target_angle} degrees")
 	
 	def start_alignment(self):
 		"""Start aligning all wheels to 0 degrees"""

@@ -96,6 +96,16 @@ def send_command():
 		elif cmd == "save_zero":
 			dashboard.table.putBoolean("save_zero_command", True)
 			print(f"[COMMAND] Save zero for {value}")
+		elif cmd == "calibrate":
+			wheel = value.get("wheel")
+			angle = value.get("angle", 0)
+			dashboard.table.putString("calibrate_wheel", wheel)
+			dashboard.table.putNumber("calibrate_angle", angle)
+			print(f"[COMMAND] Calibrate {wheel} as {angle}°")
+		elif cmd == "set_wheels_direction":
+			# value is a dict of wheel: angle pairs
+			dashboard.table.putString("set_wheels_direction", str(value))
+			print(f"[COMMAND] Set wheels direction: {value}")
 		
 		return jsonify({"status": "ok", "command": cmd})
 	except Exception as e:

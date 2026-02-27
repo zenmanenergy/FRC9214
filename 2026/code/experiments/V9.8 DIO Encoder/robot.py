@@ -21,12 +21,21 @@ class Robot(wpilib.TimedRobot):
 	
 	def testInit(self):
 		print("[TEST] === ENTERING TEST MODE ===")
-		print("[TEST] Controls available via web dashboard at http://localhost:9000")
-		print("[TEST] Or use joystick:")
-		print("[TEST] A = Focus rear left | B = Focus rear right | X = Focus front left | Y = Focus front right")
-		print("[TEST] Right thumb left/right = Rotate wheel")
-		print("[TEST] RB = Set this position as zero offset")
-		print("[TEST] START = Align all wheels to 0\n")
+		print("[TEST] Controls:")
+		print("[TEST] A/B/X/Y = Focus on rear_left/rear_right/front_left/front_right")
+		print("[TEST] Left thumb up/down = Drive motor (forward/back)")
+		print("[TEST] Right thumb left/right = Turn motor (rotation)")
+		print("[TEST] RB = Save current position as 0°")
+		print("[TEST] LB = Save current position as 90°")
+		print("[TEST] BACK = Save current position as 180°")
+		print("[TEST] START = Align all wheels to 0°")
+		print("[TEST]")
+		print("[TEST] LEVEL-BASED CALIBRATION PROCESS:")
+		print("[TEST] 1. Put level on FL & RL wheels (parallel), press RB twice to save as 0°")
+		print("[TEST] 2. Put level on FR & RR wheels (parallel), press RB twice to save as 0°")
+		print("[TEST] 3. Rotate wheels 90°, put level on FL & FR (parallel), press LB twice to save as 90°")
+		print("[TEST] 4. Put level on RL & RR (parallel), press LB twice to save as 90°")
+		print("[TEST] This gives 4 calibration points per wheel for better alignment!\n")
 	
 	def robotPeriodic(self):
 		# Update all dashboard values
@@ -37,6 +46,9 @@ class Robot(wpilib.TimedRobot):
 		focused_wheel = SmartDashboard.getString("focused_wheel", "")
 		align_command = SmartDashboard.getBoolean("align_command", False)
 		save_zero_command = SmartDashboard.getBoolean("save_zero_command", False)
+		calibrate_wheel = SmartDashboard.getString("calibrate_wheel", "")
+		calibrate_angle = SmartDashboard.getNumber("calibrate_angle", -999)
+		set_wheels_direction_str = SmartDashboard.getString("set_wheels_direction", "")
 		
 		# Print commands received from browser
 		if focused_wheel != self.last_focused_wheel:
@@ -45,6 +57,22 @@ class Robot(wpilib.TimedRobot):
 			print(f"[BROWSER CMD] align_command: True")
 		if save_zero_command:
 			print(f"[BROWSER CMD] save_zero_command: True")
+		if calibrate_wheel:
+			print(f"[BROWSER CMD] calibrate_wheel: {calibrate_wheel} at {calibrate_angle}°")
+		if set_wheels_direction_str:
+			print(f"[BROWSER CMD] set_wheels_direction: {set_wheels_direction_str}")
+		
+		# Handle set_wheels_direction command
+		if set_wheels_direction_str:
+			try:
+				import ast
+				angles_dict = ast.literal_eval(set_wheels_direction_str)
+				for wheel, angle in angles_dict.items():
+					self.drive.set_wheel_angle(wheel, int(angle))
+				SmartDashboard.putString("set_wheels_direction", "")
+				print(f"[DIRECTION] All wheels set\n")
+			except Exception as e:
+				print(f"[ERROR] Failed to parse set_wheels_direction: {e}")
 		
 		# Detect if focus changed from web dashboard and stop previous wheel
 		if focused_wheel != self.last_focused_wheel:
@@ -58,6 +86,13 @@ class Robot(wpilib.TimedRobot):
 		
 		# Update alignment if active
 		self.drive.update_alignment()
+		
+		# Handle calibration command
+		if calibrate_wheel and calibrate_angle >= 0:
+			self.drive.set_wheel_angle(calibrate_wheel, int(calibrate_angle))
+			SmartDashboard.putString("calibrate_wheel", "")
+			SmartDashboard.putNumber("calibrate_angle", -999)
+			print(f"[ZEROING] Calibration saved\n")
 		
 		# Handle save zero command
 		if save_zero_command and focused_wheel:
@@ -114,14 +149,27 @@ class Robot(wpilib.TimedRobot):
 					print(f"{angle}")
 					self.last_printed_angle = angle
 		
-		# RB button - save zero offset
+		# RB button - save as 0 degrees
 		if self.joystick.getRawButtonPressed(6):
 			if self.focused:
 				self.drive.set_wheel_zero(self.focused)
-				self.drive.stop_all()
-				self.focused = None
-				SmartDashboard.putString("focused_wheel", "")
-				print("[ZEROING] Focused off. Motor stopped.\n")
+				print(f"[ZEROING] {self.focused} saved as 0°\n")
+			else:
+				print("[ZEROING] Must be focused first (press A/B/X/Y to focus)")
+		
+		# LB button - save as 90 degrees
+		if self.joystick.getRawButtonPressed(5):
+			if self.focused:
+				self.drive.set_wheel_angle(self.focused, 90)
+				print(f"[ZEROING] {self.focused} saved as 90°\n")
+			else:
+				print("[ZEROING] Must be focused first (press A/B/X/Y to focus)")
+		
+		# BACK button - save as 180 degrees
+		if self.joystick.getRawButtonPressed(7):
+			if self.focused:
+				self.drive.set_wheel_angle(self.focused, 180)
+				print(f"[ZEROING] {self.focused} saved as 180°\n")
 			else:
 				print("[ZEROING] Must be focused first (press A/B/X/Y to focus)")
 	

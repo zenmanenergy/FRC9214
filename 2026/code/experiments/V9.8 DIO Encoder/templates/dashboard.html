@@ -18,16 +18,23 @@
 			justify-content: center;
 			align-items: center;
 			min-height: 100vh;
-			padding: 20px;
+			padding: 10px;
 		}
 		
 		.container {
 			background: white;
 			border-radius: 15px;
 			box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-			padding: 40px;
-			max-width: 900px;
+			padding: 25px;
 			width: 100%;
+			height: 100vh;
+			display: flex;
+			flex-direction: column;
+			max-width: 1200px;
+		}
+		
+		.container.wizard-mode {
+			padding: 20px;
 		}
 		
 		h1 {
@@ -37,25 +44,44 @@
 			font-size: 28px;
 		}
 		
+		h1.wizard-title {
+			font-size: 24px;
+			margin-bottom: 5px;
+		}
+		
 		.subtitle {
 			text-align: center;
 			color: #666;
-			margin-bottom: 30px;
+			margin-bottom: 20px;
 			font-size: 14px;
 		}
 		
 		.dashboard {
 			display: flex;
-			gap: 30px;
-			flex-wrap: wrap;
+			gap: 20px;
+			flex-wrap: nowrap;
 			justify-content: center;
+			align-items: center;
+			flex: 1;
+			overflow: hidden;
+		}
+		
+		.dashboard.hidden {
+			display: none;
 		}
 		
 		.swerve-container {
 			background: #f5f5f5;
 			border-radius: 10px;
-			padding: 20px;
+			padding: 15px;
 			border: 2px solid #ddd;
+			position: relative;
+		}
+		
+		.swerve-container.wizard-sized {
+			flex: 1;
+			min-width: 400px;
+			max-width: 500px;
 		}
 		
 		canvas {
@@ -66,38 +92,80 @@
 		}
 		
 		.angles-panel {
-			display: grid;
-			grid-template-columns: 1fr 1fr;
-			gap: 15px;
-			min-width: 300px;
+			display: none;
+		}
+		
+		.left-controls {
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+			padding-right: 20px;
+			min-width: 140px;
+		}
+		
+		.wheel-preset-btn {
+			padding: 10px 12px;
+			background: #3498db;
+			color: white;
+			border: none;
+			border-radius: 6px;
+			cursor: pointer;
+			font-size: 12px;
+			font-weight: 600;
+			transition: all 0.2s ease;
+		}
+		
+		.wheel-preset-btn:hover {
+			background: #2980b9;
+			transform: translateY(-2px);
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 		}
 		
 		.angle-box {
+			position: absolute;
 			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 			color: white;
-			padding: 20px;
-			border-radius: 10px;
+			border-radius: 8px;
+			padding: 6px 10px;
 			text-align: center;
-			box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-			transition: transform 0.2s ease;
-		}
-		
-		.angle-box:hover {
-			transform: translateY(-3px);
-		}
-		
-		.angle-label {
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+			min-width: 45px;
 			font-size: 12px;
-			opacity: 0.9;
-			text-transform: uppercase;
-			letter-spacing: 1px;
-			margin-bottom: 8px;
+			font-weight: bold;
 		}
 		
 		.angle-value {
-			font-size: 36px;
+			font-size: 16px;
 			font-weight: bold;
-			font-family: 'Courier New', monospace;
+			margin: 0;
+		}
+		
+		#fr-box {
+			top: 55px;
+			right: 40px;
+		}
+		
+		#rr-box {
+			bottom: 45px;
+			right: 42px;
+		}
+		
+		#rl-box {
+			bottom: 45px;
+			left: 40px;
+		}
+		
+		#fl-box {
+			top: 55px;
+			left: 40px;
+		}
+		
+		.angle-label {
+			display: none;
+		}
+		
+		.angle-units {
+			display: none;
 		}
 		
 		.angle-units {
@@ -107,13 +175,17 @@
 		}
 		
 		.status-bar {
-			margin-top: 30px;
+			margin-top: 15px;
 			padding: 15px;
 			background: #f9f9f9;
 			border-radius: 8px;
 			border-left: 4px solid #667eea;
 			font-size: 13px;
 			color: #555;
+		}
+		
+		.status-bar.hidden {
+			display: none;
 		}
 		
 		.status-item {
@@ -138,11 +210,15 @@
 		}
 		
 		.controls-section {
-			margin-top: 30px;
+			margin-top: 20px;
 			padding: 20px;
 			background: #f0f0f0;
 			border-radius: 10px;
 			border: 1px solid #ddd;
+		}
+		
+		.controls-section.hidden {
+			display: none;
 		}
 		
 		.controls-grid {
@@ -254,53 +330,309 @@
 			font-weight: bold;
 			color: #667eea;
 		}
+		
+		.calibration-section {
+			margin-top: 30px;
+			padding: 20px;
+			background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+			border-radius: 10px;
+			border: 2px solid #ff9800;
+		}
+		
+		.calibration-section h2 {
+			text-align: center;
+			color: #333;
+			margin-top: 0;
+		}
+		
+		.calibration-steps {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 15px;
+			margin-bottom: 20px;
+		}
+		
+		.calibration-step {
+			background: white;
+			padding: 15px;
+			border-radius: 8px;
+			border-left: 4px solid #ff9800;
+			text-align: center;
+		}
+		
+		.step-title {
+			font-weight: bold;
+			color: #333;
+			margin-bottom: 8px;
+			font-size: 14px;
+		}
+		
+		.robot-diagram {
+			width: 100%;
+			height: 80px;
+			position: relative;
+			margin: 10px 0;
+			background: #f9f9f9;
+			border-radius: 4px;
+			border: 1px solid #ddd;
+		}
+		
+		.wheel-indicator {
+			position: absolute;
+			width: 20px;
+			height: 20px;
+			border-radius: 50%;
+			background: #ccc;
+			border: 2px solid #666;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 10px;
+			font-weight: bold;
+			color: white;
+		}
+		
+		.wheel-indicator.level {
+			background: #2ecc71;
+			border-color: #27ae60;
+			box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+		}
+		
+		.step-buttons {
+			display: flex;
+			gap: 8px;
+			justify-content: center;
+			margin-top: 10px;
+		}
+		
+		.cal-btn {
+			padding: 8px 12px;
+			border: none;
+			border-radius: 4px;
+			font-size: 12px;
+			font-weight: bold;
+			cursor: pointer;
+			transition: all 0.2s ease;
+		}
+		
+		.cal-btn-0 {
+			background: #3498db;
+			color: white;
+		}
+		
+		.cal-btn-0:hover {
+			background: #2980b9;
+		}
+		
+		.cal-btn-90 {
+			background: #e67e22;
+			color: white;
+		}
+		
+		.cal-btn-90:hover {
+			background: #d35400;
+		}
+		
+		.cal-btn-180 {
+			background: #9b59b6;
+			color: white;
+		}
+		
+		.cal-btn-180:hover {
+			background: #8e44ad;
+		}
+		
+		.calibration-guide {
+			background: white;
+			padding: 15px;
+			border-radius: 8px;
+			margin-top: 15px;
+			border-left: 4px solid #2196f3;
+			font-size: 13px;
+			line-height: 1.6;
+		}
+		
+		.calibration-guide h3 {
+			margin-top: 0;
+			color: #2196f3;
+		}
+		
+		.wizard-panel {
+			margin: 20px 0;
+			padding: 25px;
+			background: linear-gradient(135deg, #ecf0f1 0%, #f5f7fa 100%);
+			border-radius: 10px;
+			border-left: 6px solid #3498db;
+			display: none;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+		}
+		
+		.wizard-panel.active {
+			display: flex;
+			flex-direction: column;
+			gap: 20px;
+			flex: 1;
+			overflow: hidden;
+		}
+		
+		.wizard-content {
+			display: flex;
+			gap: 20px;
+			flex: 1;
+			overflow: hidden;
+		}
+		
+		.wizard-canvas-wrapper {
+			flex: 0 0 auto;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+		
+		#wizardTitle {
+			font-size: 20px;
+			font-weight: bold;
+			color: #2c3e50;
+			margin-bottom: 15px;
+		}
+		
+		#wizardInstructions {
+			font-size: 15px;
+			line-height: 1.8;
+			color: #34495e;
+		}
+		
+		#wizardInstructions p {
+			margin: 10px 0;
+		}
+		
+		.wizard-buttons {
+			display: flex;
+			gap: 10px;
+			margin-top: 20px;
+			justify-content: center;
+			flex-wrap: wrap;
+		}
+		
+		.wizard-btn {
+			padding: 12px 24px;
+			border: none;
+			border-radius: 6px;
+			font-size: 14px;
+			font-weight: bold;
+			cursor: pointer;
+			transition: all 0.3s ease;
+		}
+		
+		.wizard-btn-save {
+			background: #27ae60;
+			color: white;
+		}
+		
+		.wizard-btn-save:hover {
+			background: #229954;
+			transform: translateY(-2px);
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+		}
+		
+		.wizard-btn-skip {
+			background: #95a5a6;
+			color: white;
+		}
+		
+		.wizard-btn-skip:hover {
+			background: #7f8c8d;
+			transform: translateY(-2px);
+		}
+		
+		.wizard-btn-back {
+			background: #3498db;
+			color: white;
+		}
+		
+		.wizard-btn-back:hover {
+			background: #2980b9;
+			transform: translateY(-2px);
+		}
+		
+		.wizard-btn-exit {
+			background: #e74c3c;
+			color: white;
+		}
+		
+		.wizard-btn-exit:hover {
+			background: #c0392b;
+			transform: translateY(-2px);
+		}
+		
+		.action-btn-group {
+			display: flex;
+			gap: 15px;
+			justify-content: center;
+			flex-wrap: wrap;
+			margin-bottom: 20px;
+		}
+		
+		.action-btn-primary {
+			padding: 14px 32px;
+			border: none;
+			border-radius: 8px;
+			font-size: 16px;
+			font-weight: bold;
+			cursor: pointer;
+			transition: all 0.3s ease;
+			background: #3498db;
+			color: white;
+		}
+		
+		.action-btn-primary:hover {
+			background: #2980b9;
+			transform: translateY(-3px);
+			box-shadow: 0 6px 16px rgba(52, 152, 219, 0.3);
+		}
 	</style>
 </head>
 <body>
 	<div class="container">
-		<h1>🐳 Honking Narwhals Team 9214</h1>
-		<p class="subtitle">Wheel Calibration Dashboard</p>
+		<h1 id="mainTitle">🐳 Honking Narwhals Team 9214</h1>
+		<p class="subtitle" id="mainSubtitle">Wheel Calibration Dashboard</p>
 		
-		<div class="dashboard">
-			<div class="swerve-container">
+		<div class="dashboard" id="mainDashboard">
+			<div class="left-controls" id="leftControls">
+				<button class="action-btn-primary" onclick="startWizard()" id="startWizardBtn" style="background: #27ae60; width: 100%; margin-bottom: 15px;">🔧 Calibrate</button>
+				<button class="wheel-preset-btn" onclick="setWheelsDirection('forward')" title="Point all wheels forward">↑ wheels forward</button>
+				<button class="wheel-preset-btn" onclick="setWheelsDirection('left')" title="Point all wheels left">← wheels left</button>
+				<button class="wheel-preset-btn" onclick="setWheelsDirection('right')" title="Point all wheels right">→ wheels right</button>
+				<button class="wheel-preset-btn" onclick="setWheelsDirection('back')" title="Point all wheels back">↓ wheels back</button>
+			</div>
+			
+			<div class="swerve-container" id="mainSwerveContainer">
 				<canvas id="swerveCanvas" width="400" height="400"></canvas>
-			</div>
-			
-			<div class="angles-panel">
-				<div class="angle-box">
-					<div class="angle-label">Front Right</div>
-					<div class="angle-value" id="fr-angle">0°</div>
-					<div class="angle-units">Degrees</div>
-				</div>
-				<div class="angle-box">
-					<div class="angle-label">Rear Right</div>
-					<div class="angle-value" id="rr-angle">0°</div>
-					<div class="angle-units">Degrees</div>
-				</div>
-				<div class="angle-box">
-					<div class="angle-label">Rear Left</div>
-					<div class="angle-value" id="rl-angle">0°</div>
-					<div class="angle-units">Degrees</div>
-				</div>
-				<div class="angle-box">
-					<div class="angle-label">Front Left</div>
-					<div class="angle-value" id="fl-angle">0°</div>
-					<div class="angle-units">Degrees</div>
-				</div>
+				<div class="angle-box" id="fr-box"><div class="angle-value" id="fr-angle">0°</div></div>
+				<div class="angle-box" id="rr-box"><div class="angle-value" id="rr-angle">0°</div></div>
+				<div class="angle-box" id="rl-box"><div class="angle-value" id="rl-angle">0°</div></div>
+				<div class="angle-box" id="fl-box"><div class="angle-value" id="fl-angle">0°</div></div>
 			</div>
 		</div>
 		
-		<div class="controls-section">
-			<h2 style="text-align: center; margin-top: 0; color: #333;">Controls</h2>
-			
-			
-			<div class="action-buttons">
-				<button class="action-btn save-btn" onclick="saveZero()" id="save-btn" disabled>Save Zero</button>
-				<button class="action-btn align-btn" onclick="alignAll()">Align All to 0°</button>
+		<div class="wizard-panel" id="wizardPanel">
+			<div style="display: flex; gap: 20px; flex: 1; overflow: hidden; align-items: flex-start;">
+				<div class="swerve-container wizard-sized" id="wizardSwerveContainer">
+					<!-- Canvas will be moved here by JavaScript -->
+				</div>
+				<div style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 20px;">
+					<div id="wizardTitle">Calibration Step 1 of 4</div>
+					<div id="wizardInstructions"></div>
+				</div>
+			</div>
+			<div class="wizard-buttons">
+				<button class="wizard-btn wizard-btn-save" onclick="confirmWheelsAligned()" style="background: #27ae60; font-size: 16px; padding: 14px 28px;">✓ These wheels are aligned</button>
+				<button class="wizard-btn wizard-btn-skip" onclick="nextWizardStep()" style="background: #3498db; font-size: 16px; padding: 14px 28px;">Next →</button>
+				<button class="wizard-btn wizard-btn-exit" onclick="finishWizard()" style="margin-left: auto;">✕ Exit Wizard</button>
 			</div>
 		</div>
 		
-		<div class="status-bar">
+		<div class="status-bar" id="statusBar">
 			<div class="status-item">
 				Status: <span class="status-value" id="status">Connecting...</span>
 			</div>
@@ -320,6 +652,18 @@
 		let isConnected = false;
 		let focusedWheel = null;
 		let currentPower = 0;
+		
+		// Wizard mode state
+		let wizardActive = false;
+		let wizardStep = 0;  // 0=left(0°), 1=right(0°), 2=top(90°), 3=bottom(90°)
+		
+		// Track which straight edges are active (green)
+		let activeEdges = {
+			left: false,
+			right: false,
+			top: false,
+			bottom: false
+		};
 
 		// Bot dimensions (canvas-relative)
 		const BOT_WIDTH = 200;
@@ -327,6 +671,7 @@
 		const WHEEL_SIZE = 15;
 		const CENTER_X = canvas.width / 2;
 		const CENTER_Y = canvas.height / 2;
+		const EDGE_WIDTH = 20;  // Width of straight edge rectangles
 
 		// Wheel positions relative to center
 		const WHEEL_POSITIONS = {
@@ -334,6 +679,70 @@
 			rear_right: { x: BOT_WIDTH / 2, y: BOT_HEIGHT / 2 },
 			rear_left: { x: -BOT_WIDTH / 2, y: BOT_HEIGHT / 2 },
 			front_left: { x: -BOT_WIDTH / 2, y: -BOT_HEIGHT / 2 }
+		};
+		
+		// Wizard steps: 4-step alignment with wheel pairs
+		const WIZARD_STEPS = [
+			{
+				stepName: "LEFT",
+				edge: "left",
+				targetAngle: 0,
+				wheels: ["front_left", "rear_left"],
+				instructions: "Place the level on the LEFT side of the robot, aligned with both wheels. Rotate each wheel individually to align with the level. When both wheels are parallel to the level, click 'These wheels are aligned'."
+			},
+			{
+				stepName: "FRONT",
+				edge: "top",
+				targetAngle: 90,
+				wheels: ["front_left", "front_right"],
+				instructions: "Rotate the wheels 90° to point right. Place the level on the FRONT of the robot. Align each wheel individually. When both front wheels are parallel to the level, click 'These wheels are aligned'."
+			},
+			{
+				stepName: "RIGHT",
+				edge: "right",
+				targetAngle: 0,
+				wheels: ["front_right", "rear_right"],
+				instructions: "Rotate the wheels back to point straight. Place the level on the RIGHT side of the robot. Align each wheel individually. When both right wheels are parallel to the level, click 'These wheels are aligned'."
+			},
+			{
+				stepName: "BACK",
+				edge: "bottom",
+				targetAngle: 90,
+				wheels: ["rear_left", "rear_right"],
+				instructions: "Rotate the wheels 90° to point right. Place the level on the BACK of the robot. Align each wheel individually. When both rear wheels are parallel to the level, click 'These wheels are aligned'."
+			}
+		];
+		
+		// Define edge click regions
+		const EDGE_REGIONS = {
+			left: {
+				x: CENTER_X - BOT_WIDTH / 2 - EDGE_WIDTH - 10,
+				y: CENTER_Y - BOT_HEIGHT / 2,
+				width: EDGE_WIDTH,
+				height: BOT_HEIGHT,
+				wheels: ["front_left", "rear_left"]
+			},
+			right: {
+				x: CENTER_X + BOT_WIDTH / 2 + 10,
+				y: CENTER_Y - BOT_HEIGHT / 2,
+				width: EDGE_WIDTH,
+				height: BOT_HEIGHT,
+				wheels: ["front_right", "rear_right"]
+			},
+			top: {
+				x: CENTER_X - BOT_WIDTH / 2,
+				y: CENTER_Y - BOT_HEIGHT / 2 - EDGE_WIDTH - 10,
+				width: BOT_WIDTH,
+				height: EDGE_WIDTH,
+				wheels: ["front_left", "front_right"]
+			},
+			bottom: {
+				x: CENTER_X - BOT_WIDTH / 2,
+				y: CENTER_Y + BOT_HEIGHT / 2 + 10,
+				width: BOT_WIDTH,
+				height: EDGE_WIDTH,
+				wheels: ["rear_left", "rear_right"]
+			}
 		};
 
 		function drawSwerve() {
@@ -357,6 +766,47 @@
 				ctx.stroke();
 			}
 
+			// In wizard mode, only show the current edge. In normal mode, don't show any edges
+			let activeEdgesForDraw = {};
+			if (wizardActive) {
+				const step = WIZARD_STEPS[wizardStep];
+				activeEdgesForDraw[step.edge] = true;
+			}
+			// In normal mode, activeEdgesForDraw remains empty - no edges drawn
+
+			// Draw straight edge guides (left, right, top, bottom) - ONLY in wizard mode
+			if (wizardActive) {
+				Object.entries(EDGE_REGIONS).forEach(([edge, region]) => {
+					// In wizard mode, only draw the current step's edge
+					if (wizardActive && !activeEdgesForDraw[edge]) {
+						return; // Skip drawing this edge
+					}
+					
+					const isActive = activeEdgesForDraw[edge];
+					ctx.fillStyle = isActive ? "#2ecc71" : "#ddd";
+					ctx.strokeStyle = isActive ? "#27ae60" : "#999";
+					ctx.lineWidth = 2;
+					ctx.fillRect(region.x, region.y, region.width, region.height);
+				ctx.strokeRect(region.x, region.y, region.width, region.height);
+				
+				// Draw edge label
+				ctx.fillStyle = isActive ? "white" : "#666";
+				ctx.font = "11px Arial";
+				ctx.textAlign = "center";
+				ctx.textBaseline = "middle";
+				
+				if (edge === "left" || edge === "right") {
+					ctx.save();
+					ctx.translate(region.x + region.width / 2, region.y + region.height / 2);
+					ctx.rotate(-Math.PI / 2);
+					ctx.fillText(edge.toUpperCase(), 0, 0);
+					ctx.restore();
+				} else {
+					ctx.fillText(edge.toUpperCase(), region.x + region.width / 2, region.y + region.height / 2);
+				}
+			});
+			}  // End of wizardActive edge drawing block
+
 			// Draw robot frame
 			ctx.strokeStyle = "#333";
 			ctx.lineWidth = 2;
@@ -378,12 +828,28 @@
 				const angle = (wheelAngles[name] || 0) * (Math.PI / 180);
 				const wheelX = CENTER_X + pos.x;
 				const wheelY = CENTER_Y + pos.y;
+				const isFocused = name === focusedWheel;
+				
+				// Check if wheel is part of current wizard step
+				let isCurrentStepWheel = false;
+				if (wizardActive) {
+					const step = WIZARD_STEPS[wizardStep];
+					isCurrentStepWheel = step.wheels.includes(name);
+				}
 
-				// Draw wheel circle - highlight if focused
-				if (name === focusedWheel) {
+				// Draw wheel circle
+				if (isFocused) {
 					ctx.fillStyle = "#2ecc71";
 					ctx.shadowColor = "rgba(46, 204, 113, 0.5)";
 					ctx.shadowBlur = 15;
+				} else if (wizardActive && isCurrentStepWheel) {
+					ctx.fillStyle = "#f39c12";
+					ctx.shadowColor = "rgba(243, 156, 18, 0.5)";
+					ctx.shadowBlur = 10;
+				} else if (wizardActive && !isCurrentStepWheel) {
+					ctx.fillStyle = "#bdc3c7";
+					ctx.shadowColor = "transparent";
+					ctx.shadowBlur = 0;
 				} else {
 					ctx.fillStyle = "#667eea";
 					ctx.shadowColor = "transparent";
@@ -429,7 +895,7 @@
 			document.getElementById("fl-angle").textContent = Math.round(data.angles.front_left) + "°";
 			document.getElementById("counter").textContent = Math.round(data.counter);
 
-			// Redraw canvas
+			// Redraw canvas with current calibration mode
 			drawSwerve();
 		}
 
@@ -474,13 +940,27 @@
 			drawSwerve();
 		}
 		
-		// Canvas click handler to focus wheels
-		canvas.addEventListener("click", (event) => {
+		// Canvas click handler to focus wheels and toggle straight edges
+		canvas.addEventListener("click", async (event) => {
 			const rect = canvas.getBoundingClientRect();
 			const x = (event.clientX - rect.left) * (canvas.width / rect.width);
 			const y = (event.clientY - rect.top) * (canvas.height / rect.height);
 			
-			// Check which wheel was clicked
+			// In manual (non-wizard) mode, allow edge toggle
+			if (!wizardActive) {
+				// Check if clicking on a straight edge
+				for (const [edge, region] of Object.entries(EDGE_REGIONS)) {
+					if (x >= region.x && x <= region.x + region.width &&
+						y >= region.y && y <= region.y + region.height) {
+						// Toggle straight edge
+						activeEdges[edge] = !activeEdges[edge];
+						drawSwerve();
+						return;
+					}
+				}
+			}
+			
+			// Check which wheel was clicked (allow only current step wheels in wizard mode)
 			for (const [name, pos] of Object.entries(WHEEL_POSITIONS)) {
 				const wheelX = CENTER_X + pos.x;
 				const wheelY = CENTER_Y + pos.y;
@@ -488,7 +968,16 @@
 				
 				// If click is within wheel radius + padding
 				if (distance <= WHEEL_SIZE + 10) {
-					focusWheel(name);
+					if (wizardActive) {
+						const step = WIZARD_STEPS[wizardStep];
+						// Only allow selecting wheels from current step
+						if (step.wheels.includes(name)) {
+							focusedWheel = name;
+							updateWizardDisplay();
+						}
+					} else {
+						focusWheel(name);
+					}
 					return;
 				}
 			}
@@ -521,6 +1010,7 @@
 					focusedWheel = null;
 					document.getElementById("focused").textContent = "None";
 					document.getElementById("save-btn").disabled = true;
+					calibrationMode = null;
 					drawSwerve();
 				})
 				.catch(e => console.log("Save zero failed"));
@@ -535,6 +1025,141 @@
 			}).then(r => r.json())
 			.then(d => alert("Alignment sequence started!"))
 			.catch(e => console.log("Align command failed"));
+		}
+
+		function calibrateWheel(angle) {
+			if (!focusedWheel) {
+				alert("Please focus a wheel first by clicking it on the diagram!");
+				return;
+			}
+			
+			fetch("/api/command", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ cmd: "calibrate", value: { wheel: focusedWheel, angle: angle } })
+			}).then(r => r.json())
+			.then(d => {
+				alert(`📍 ${focusedWheel} saved as ${angle}°`);
+			})
+			.catch(e => console.log("Calibration command failed"));
+		}
+		
+		function setWheelsDirection(direction) {
+			let angles = {};
+			const angleMap = {
+				forward: 0,
+				left: 90,
+				right: 270,
+				back: 180
+			};
+			
+			const targetAngle = angleMap[direction];
+			const wheels = ["front_left", "front_right", "rear_left", "rear_right"];
+			
+			// Create command with all wheels set to target angle
+			wheels.forEach(wheel => {
+				angles[wheel] = targetAngle;
+			});
+			
+			fetch("/api/command", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ cmd: "set_wheels_direction", value: angles })
+			}).then(r => r.json())
+			.then(d => {
+				console.log(`All wheels set to ${direction} (${targetAngle}°)`);
+			})
+			.catch(e => console.log("Set wheels direction command failed:", e));
+		}
+		async function startWizard() {
+			wizardActive = true;
+			wizardStep = 0;
+			focusedWheel = null;
+		
+			// Move canvas to wizard container
+			const canvas = document.getElementById("swerveCanvas");
+			const wizardContainer = document.getElementById("wizardSwerveContainer");
+			wizardContainer.appendChild(canvas);
+			
+			// Hide main UI sections
+			document.getElementById("mainDashboard").classList.add("hidden");
+			document.getElementById("statusBar").classList.add("hidden");
+			document.getElementById("mainTitle").style.display = "none";
+			document.getElementById("mainSubtitle").style.display = "none";
+			
+			// Show wizard panel
+			document.getElementById("wizardPanel").classList.add("active");
+			
+			updateWizardDisplay();
+		}
+	
+	async function confirmWheelsAligned() {
+		const step = WIZARD_STEPS[wizardStep];
+		
+		// Calibrate both wheels in the current step
+		for (const wheelName of step.wheels) {
+			try {
+				const response = await fetch("/api/command", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						cmd: "calibrate",
+						value: { wheel: wheelName, angle: step.targetAngle }
+					})
+				});
+				
+				if (!response.ok) {
+					alert("Failed to calibrate " + wheelName);
+					return;
+				}
+			} catch (error) {
+				alert("Error calibrating " + wheelName + ": " + error.message);
+				return;
+			}
+		}
+		
+		alert(`✓ ${step.stepName} wheels calibrated to ${step.targetAngle}°`);
+		nextWizardStep();
+	}
+	
+	function nextWizardStep() {
+		if (wizardStep < WIZARD_STEPS.length - 1) {
+			wizardStep++;
+			focusedWheel = null;
+			updateWizardDisplay();
+		} else {
+			finishWizard();
+		}
+	}
+
+		
+		function finishWizard() {
+			wizardActive = false;
+			focusedWheel = null;
+			activeEdges = { left: false, right: false, top: false, bottom: false };
+
+			// Move canvas back to main container
+			const canvas = document.getElementById("swerveCanvas");
+			const mainContainer = document.querySelector(".swerve-container:not(.wizard-sized)");
+			mainContainer.appendChild(canvas);
+			
+			// Show main UI sections
+			document.getElementById("mainDashboard").classList.remove("hidden");
+			document.getElementById("statusBar").classList.remove("hidden");
+			document.getElementById("mainTitle").style.display = "block";
+			document.getElementById("mainSubtitle").style.display = "block";
+			
+			// Hide wizard panel
+			document.getElementById("wizardPanel").classList.remove("active");
+			
+			document.getElementById("wizardInstructions").innerHTML = "";
+			alert("✓ Calibration wizard complete! All 4 sides have been calibrated.");
+			drawSwerve();
+		}
+		
+		function setCalibrationMode(mode) {
+			calibrationMode = mode;
+			drawSwerve();
 		}
 
 		// Fetch angles every 50ms (20 Hz)
