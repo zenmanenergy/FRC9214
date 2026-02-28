@@ -1,6 +1,6 @@
 """Single swerve wheel abstraction"""
 import wpilib
-from rev import SparkMax, SparkLowLevel
+from rev import SparkMax, SparkLowLevel, SparkMaxConfig, ResetMode, PersistMode
 
 
 class SwerveWheel:
@@ -10,6 +10,12 @@ class SwerveWheel:
 		self.name = name
 		self.drive_motor = SparkMax(drive_canid, SparkLowLevel.MotorType.kBrushless)
 		self.turn_motor = SparkMax(turn_canid, SparkLowLevel.MotorType.kBrushless)
+		
+		# Configure turn motor inversion via SparkMaxConfig (best practice for REV)
+		turn_config = SparkMaxConfig()
+		turn_config.inverted(True)
+		self.turn_motor.configure(turn_config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters)
+		
 		self.encoder = wpilib.DutyCycleEncoder(encoder_dio)
 		self.manual_offset = manual_offset
 		self.offset = 0.0
@@ -38,8 +44,8 @@ class SwerveWheel:
 		return int(round(angle)) % 360
 	
 	def set_zero_offset(self, raw_angle):
-		"""Save this raw angle as zero point (with manual offset applied)"""
-		self.offset = raw_angle + self.manual_offset
+		"""Save this raw angle as zero point"""
+		self.offset = raw_angle
 	
 	def get_zero_offset(self):
 		"""Get the saved zero offset"""

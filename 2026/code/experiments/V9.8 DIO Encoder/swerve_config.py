@@ -1,11 +1,12 @@
 """Swerve drive configuration constants"""
 
 # Manual offsets per wheel (added to zero calibration)
+# 90° added to left wheels because encoder reads 0° when wheel points right, should point forward
 MANUAL_OFFSETS = {
 	"front_right": 0.0,
 	"rear_right": 0.0,
-	"rear_left": 0.0,
-	"front_left": 0.0
+	"rear_left": 90.0,
+	"front_left": 90.0
 }
 
 # Motor and encoder pin assignments

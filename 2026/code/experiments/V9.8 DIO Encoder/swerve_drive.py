@@ -32,11 +32,17 @@ class SwerveDrive:
 		# Alignment state
 		self.aligning = False
 		self.align_start_time = None
+		self.target_align_angle = 0  # Target angle for alignment
 	
 	def stop_all(self):
 		"""Stop all motors"""
 		for wheel in self.wheels.values():
 			wheel.stop()
+	
+	def rotate_to_angle(self, angle):
+		"""Rotate all wheels to a specific angle (0-360)"""
+		if not self.aligning:
+			self.start_alignment(angle)
 	
 	def set_wheel_drive_power(self, wheel_name, power):
 		"""Set drive power for specific wheel"""
@@ -68,19 +74,38 @@ class SwerveDrive:
 		if wheel_name in self.wheels:
 			wheel = self.wheels[wheel_name]
 			raw = wheel.get_raw_angle()
-			# Calculate offset so that: (raw - offset) % 360 = target_angle
-			wheel.offset = (raw - target_angle) % 360
-			self.calibration.set_offset(wheel_name, wheel.offset)
+			# Calculate offset: offset = raw - target
+			calculated_offset = (raw - target_angle) % 360
+			
+			print(f"\n[SETANGLE] === Calibrating {wheel_name} to {target_angle}° ===")
+			print(f"[SETANGLE] Step 1: Read encoder")
+			print(f"           raw = {raw:.1f}°")
+			print(f"[SETANGLE] Step 2: Calculate offset")
+			print(f"           offset = ({raw:.1f} - {target_angle}) % 360 = {calculated_offset:.1f}°")
+			
+			wheel.offset = calculated_offset
+			self.calibration.set_offset(wheel_name, calculated_offset)
+			print(f"[SETANGLE] Step 3: Save to file")
 			self.calibration.save_offsets()
-			print(f"[ZEROING] Saved offset for {wheel_name}: raw={raw:.1f} -> {target_angle} degrees")
+			
+			print(f"[SETANGLE] Step 4: Reload all offsets from file")
+			for name, offset in self.calibration.offsets.items():
+				self.wheels[name].offset = offset
+				print(f"           {name}: offset={offset:.1f}°")
+			
+			print(f"[SETANGLE] Step 5: Verify calculation")
+			verify_angle = (raw - wheel.offset) % 360
+			print(f"           ({raw:.1f} - {wheel.offset:.1f}) % 360 = {verify_angle:.1f}°")
+			print(f"[SETANGLE] === Complete ===\n")
 	
-	def start_alignment(self):
-		"""Start aligning all wheels to 0 degrees"""
+	def start_alignment(self, target_angle=0):
+		"""Start aligning all wheels to target angle"""
 		self.aligning = True
 		self.align_start_time = wpilib.Timer.getFPGATimestamp()
-		print("[ALIGN] Starting alignment to 0 degrees for all wheels...")
+		self.target_align_angle = target_angle
+		print(f"[ALIGN] Starting alignment to {target_angle}° for all wheels...")
 		for wheel_name in self.wheels.keys():
-			print(f"  {wheel_name}: moving to 0")
+			print(f"  {wheel_name}: moving to {target_angle}°")
 	
 	def update_alignment(self):
 		"""Update alignment routine (call every loop)"""
@@ -94,18 +119,25 @@ class SwerveDrive:
 			for wheel_name, wheel in self.wheels.items():
 				current_angle = wheel.get_angle()
 				
+				# Calculate shortest path to target
+				error = self.target_align_angle - current_angle
 				# Normalize to -180 to 180
-				if current_angle > 180:
-					current_angle -= 360
+				if error > 180:
+					error -= 360
+				elif error < -180:
+					error += 360
 				
 				# P controller
-				error = -current_angle  # Error to reach 0
 				if abs(error) > config.ALIGN_TOLERANCE:
 					all_aligned = False
 					speed = max(-config.MOTOR_SCALE_ALIGN, 
 							   min(config.MOTOR_SCALE_ALIGN, error * config.ALIGN_KP))
-				wheel.set_turn_power(speed)
-				print("[ALIGN] All wheels aligned to 0!")
+					wheel.set_turn_power(speed)
+				else:
+					wheel.set_turn_power(0)
+			
+			if all_aligned:
+				print(f"[ALIGN] All wheels aligned to {self.target_align_angle}°!")
 				self.aligning = False
 		else:
 			print("[ALIGN] Alignment timeout!")

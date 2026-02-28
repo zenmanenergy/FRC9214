@@ -1,6 +1,6 @@
 """FRC Swerve Drive Test Robot - Encoder Calibration"""
 import wpilib
-from wpilib import Joystick, SmartDashboard
+from wpilib import Joystick, SmartDashboard, DriverStation
 from swerve_drive import SwerveDrive
 from dashboard_updater import DashboardUpdater
 import swerve_config as config
@@ -16,6 +16,12 @@ class Robot(wpilib.TimedRobot):
 		self.focused = None
 		self.last_focused_wheel = None  # Track last focused from web dashboard
 		self.last_printed_angle = -999
+		self.last_calibrate_wheel = None  # Track last calibrated wheel to detect new commands
+		
+		# Initialize NetworkTables values with valid defaults for synchronization
+		SmartDashboard.putString("calibrate_wheel", "")
+		SmartDashboard.putNumber("calibrate_angle", 0)
+		SmartDashboard.putString("focused_wheel", "")
 		
 		print("[ROBOT] Ready. Press A/B/X/Y to focus on wheels.\n")
 	
@@ -40,6 +46,9 @@ class Robot(wpilib.TimedRobot):
 	def robotPeriodic(self):
 		# Update all dashboard values
 		self.dashboard.update()
+		
+		# Publish robot enabled state
+		SmartDashboard.putBoolean("Robot Enabled", DriverStation.isEnabled())
 	
 	def testPeriodic(self):
 		# Read control commands from NetworkTables (from web dashboard)
@@ -67,10 +76,11 @@ class Robot(wpilib.TimedRobot):
 			try:
 				import ast
 				angles_dict = ast.literal_eval(set_wheels_direction_str)
-				for wheel, angle in angles_dict.items():
-					self.drive.set_wheel_angle(wheel, int(angle))
+				# Get the target angle (all wheels get the same angle)
+				target_angle = list(angles_dict.values())[0] if angles_dict else 0
+				self.drive.rotate_to_angle(target_angle)
 				SmartDashboard.putString("set_wheels_direction", "")
-				print(f"[DIRECTION] All wheels set\n")
+				print(f"[DIRECTION] Rotating wheels to {target_angle}°\n")
 			except Exception as e:
 				print(f"[ERROR] Failed to parse set_wheels_direction: {e}")
 		
@@ -78,6 +88,10 @@ class Robot(wpilib.TimedRobot):
 		if focused_wheel != self.last_focused_wheel:
 			self.drive.stop_all()
 			self.last_focused_wheel = focused_wheel
+			# If browser clears focus (empty string), clear self.focused too
+			if not focused_wheel:
+				self.focused = None
+				print("[FOCUS] Cleared focus from browser")
 		
 		# Handle align command
 		if align_command:
@@ -87,12 +101,22 @@ class Robot(wpilib.TimedRobot):
 		# Update alignment if active
 		self.drive.update_alignment()
 		
-		# Handle calibration command
-		if calibrate_wheel and calibrate_angle >= 0:
-			self.drive.set_wheel_angle(calibrate_wheel, int(calibrate_angle))
+		# Handle calibration command - only on change of calibrate_wheel
+		if calibrate_wheel and calibrate_wheel != self.last_calibrate_wheel:
+			print(f"\n[ROBOT-CHG] Detected calibrate_wheel change to: '{calibrate_wheel}'")
+			self.last_calibrate_wheel = calibrate_wheel
+			# Re-read the angle to ensure NetworkTables has synced
+			calibrate_angle = SmartDashboard.getNumber("calibrate_angle", -999)
+			print(f"[ROBOT-READ] Read calibrate_angle from NetworkTables: {calibrate_angle}")
+			if calibrate_angle >= 0:
+				print(f"[ROBOT-CAL] Calling set_wheel_angle('{calibrate_wheel}', {int(calibrate_angle)})")
+				self.drive.set_wheel_angle(calibrate_wheel, int(calibrate_angle))
+				print(f"[ROBOT-DONE] Calibration saved for {calibrate_wheel}\n")
+			else:
+				print(f"[ROBOT-ERR] Invalid angle {calibrate_angle}, skipping\n")
 			SmartDashboard.putString("calibrate_wheel", "")
-			SmartDashboard.putNumber("calibrate_angle", -999)
-			print(f"[ZEROING] Calibration saved\n")
+		elif not calibrate_wheel:
+			self.last_calibrate_wheel = None
 		
 		# Handle save zero command
 		if save_zero_command and focused_wheel:

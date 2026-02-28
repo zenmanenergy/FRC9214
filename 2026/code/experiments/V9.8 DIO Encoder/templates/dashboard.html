@@ -23,25 +23,25 @@
 		
 		.container {
 			background: white;
-			border-radius: 15px;
-			box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-			padding: 25px;
+			border-radius: 10px;
+			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+			padding: 8px;
 			width: 100%;
 			height: 100vh;
 			display: flex;
 			flex-direction: column;
-			max-width: 1200px;
+			max-width: none;
 		}
 		
 		.container.wizard-mode {
-			padding: 20px;
+			padding: 8px;
 		}
 		
 		h1 {
 			text-align: center;
 			color: #333;
-			margin-bottom: 10px;
-			font-size: 28px;
+			margin-bottom: 4px;
+			font-size: 18px;
 		}
 		
 		h1.wizard-title {
@@ -52,13 +52,13 @@
 		.subtitle {
 			text-align: center;
 			color: #666;
-			margin-bottom: 20px;
-			font-size: 14px;
+			margin-bottom: 8px;
+			font-size: 11px;
 		}
 		
 		.dashboard {
 			display: flex;
-			gap: 20px;
+			gap: 8px;
 			flex-wrap: nowrap;
 			justify-content: center;
 			align-items: center;
@@ -72,16 +72,16 @@
 		
 		.swerve-container {
 			background: #f5f5f5;
-			border-radius: 10px;
-			padding: 15px;
-			border: 2px solid #ddd;
+			border-radius: 8px;
+			padding: 8px;
+			border: 1px solid #ddd;
 			position: relative;
 		}
 		
 		.swerve-container.wizard-sized {
 			flex: 1;
-			min-width: 400px;
-			max-width: 500px;
+			min-width: 300px;
+			max-width: 380px;
 		}
 		
 		canvas {
@@ -98,19 +98,19 @@
 		.left-controls {
 			display: flex;
 			flex-direction: column;
-			gap: 10px;
-			padding-right: 20px;
-			min-width: 140px;
+			gap: 6px;
+			padding-right: 10px;
+			min-width: 100px;
 		}
 		
 		.wheel-preset-btn {
-			padding: 10px 12px;
+			padding: 7px 10px;
 			background: #3498db;
 			color: white;
 			border: none;
-			border-radius: 6px;
+			border-radius: 4px;
 			cursor: pointer;
-			font-size: 12px;
+			font-size: 11px;
 			font-weight: 600;
 			transition: all 0.2s ease;
 		}
@@ -141,23 +141,23 @@
 		}
 		
 		#fr-box {
-			top: 55px;
-			right: 40px;
+			top: 0px;
+			right: 0px;
 		}
 		
 		#rr-box {
-			bottom: 45px;
-			right: 42px;
+			bottom: 0px;
+			right: 0px;
 		}
 		
 		#rl-box {
-			bottom: 45px;
-			left: 40px;
+			bottom: 0px;
+			left: 0px;
 		}
 		
 		#fl-box {
-			top: 55px;
-			left: 40px;
+			top: 0px;
+			left: 0px;
 		}
 		
 		.angle-label {
@@ -175,12 +175,12 @@
 		}
 		
 		.status-bar {
-			margin-top: 15px;
-			padding: 15px;
+			margin-top: 6px;
+			padding: 8px 10px;
 			background: #f9f9f9;
-			border-radius: 8px;
-			border-left: 4px solid #667eea;
-			font-size: 13px;
+			border-radius: 6px;
+			border-left: 3px solid #667eea;
+			font-size: 11px;
 			color: #555;
 		}
 		
@@ -190,7 +190,7 @@
 		
 		.status-item {
 			display: inline-block;
-			margin-right: 20px;
+			margin-right: 15px;
 		}
 		
 		.status-value {
@@ -210,10 +210,10 @@
 		}
 		
 		.controls-section {
-			margin-top: 20px;
-			padding: 20px;
+			margin-top: 10px;
+			padding: 12px;
 			background: #f0f0f0;
-			border-radius: 10px;
+			border-radius: 8px;
 			border: 1px solid #ddd;
 		}
 		
@@ -224,15 +224,15 @@
 		.controls-grid {
 			display: grid;
 			grid-template-columns: 1fr 1fr;
-			gap: 15px;
-			margin-bottom: 20px;
+			gap: 8px;
+			margin-bottom: 10px;
 		}
 		
 		.focus-btn {
-			padding: 12px;
+			padding: 8px;
 			border: none;
-			border-radius: 6px;
-			font-size: 14px;
+			border-radius: 4px;
+			font-size: 12px;
 			font-weight: bold;
 			cursor: pointer;
 			transition: all 0.2s ease;
@@ -253,15 +253,15 @@
 		.action-buttons {
 			display: grid;
 			grid-template-columns: 1fr 1fr;
-			gap: 15px;
-			margin-top: 20px;
+			gap: 8px;
+			margin-top: 10px;
 		}
 		
 		.action-btn {
-			padding: 15px;
+			padding: 10px;
 			border: none;
-			border-radius: 6px;
-			font-size: 16px;
+			border-radius: 4px;
+			font-size: 13px;
 			font-weight: bold;
 			cursor: pointer;
 			transition: all 0.2s ease;
@@ -332,11 +332,11 @@
 		}
 		
 		.calibration-section {
-			margin-top: 30px;
-			padding: 20px;
+			margin-top: 10px;
+			padding: 12px;
 			background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
-			border-radius: 10px;
-			border: 2px solid #ff9800;
+			border-radius: 8px;
+			border: 1px solid #ff9800;
 		}
 		
 		.calibration-section h2 {
@@ -348,8 +348,8 @@
 		.calibration-steps {
 			display: grid;
 			grid-template-columns: 1fr 1fr;
-			gap: 15px;
-			margin-bottom: 20px;
+			gap: 8px;
+			margin-bottom: 10px;
 		}
 		
 		.calibration-step {
@@ -363,17 +363,17 @@
 		.step-title {
 			font-weight: bold;
 			color: #333;
-			margin-bottom: 8px;
-			font-size: 14px;
+			margin-bottom: 6px;
+			font-size: 12px;
 		}
 		
 		.robot-diagram {
 			width: 100%;
-			height: 80px;
+			height: 50px;
 			position: relative;
-			margin: 10px 0;
+			margin: 6px 0;
 			background: #f9f9f9;
-			border-radius: 4px;
+			border-radius: 3px;
 			border: 1px solid #ddd;
 		}
 		
@@ -406,7 +406,7 @@
 		}
 		
 		.cal-btn {
-			padding: 8px 12px;
+			padding: 6px 10px;
 			border: none;
 			border-radius: 4px;
 			font-size: 12px;
@@ -444,12 +444,12 @@
 		
 		.calibration-guide {
 			background: white;
-			padding: 15px;
-			border-radius: 8px;
-			margin-top: 15px;
-			border-left: 4px solid #2196f3;
-			font-size: 13px;
-			line-height: 1.6;
+			padding: 10px;
+			border-radius: 6px;
+			margin-top: 8px;
+			border-left: 3px solid #2196f3;
+			font-size: 11px;
+			line-height: 1.4;
 		}
 		
 		.calibration-guide h3 {
@@ -458,26 +458,26 @@
 		}
 		
 		.wizard-panel {
-			margin: 20px 0;
-			padding: 25px;
+			margin: 8px 0;
+			padding: 12px;
 			background: linear-gradient(135deg, #ecf0f1 0%, #f5f7fa 100%);
-			border-radius: 10px;
-			border-left: 6px solid #3498db;
+			border-radius: 8px;
+			border-left: 4px solid #3498db;
 			display: none;
-			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 		}
 		
 		.wizard-panel.active {
 			display: flex;
 			flex-direction: column;
-			gap: 20px;
+			gap: 10px;
 			flex: 1;
 			overflow: hidden;
 		}
 		
 		.wizard-content {
 			display: flex;
-			gap: 20px;
+			gap: 10px;
 			flex: 1;
 			overflow: hidden;
 		}
@@ -490,35 +490,35 @@
 		}
 		
 		#wizardTitle {
-			font-size: 20px;
+			font-size: 16px;
 			font-weight: bold;
 			color: #2c3e50;
-			margin-bottom: 15px;
+			margin-bottom: 8px;
 		}
 		
 		#wizardInstructions {
-			font-size: 15px;
-			line-height: 1.8;
+			font-size: 12px;
+			line-height: 1.4;
 			color: #34495e;
 		}
 		
 		#wizardInstructions p {
-			margin: 10px 0;
+			margin: 6px 0;
 		}
 		
 		.wizard-buttons {
 			display: flex;
-			gap: 10px;
-			margin-top: 20px;
+			gap: 6px;
+			margin-top: 10px;
 			justify-content: center;
 			flex-wrap: wrap;
 		}
 		
 		.wizard-btn {
-			padding: 12px 24px;
+			padding: 8px 16px;
 			border: none;
-			border-radius: 6px;
-			font-size: 14px;
+			border-radius: 4px;
+			font-size: 12px;
 			font-weight: bold;
 			cursor: pointer;
 			transition: all 0.3s ease;
@@ -567,17 +567,17 @@
 		
 		.action-btn-group {
 			display: flex;
-			gap: 15px;
+			gap: 8px;
 			justify-content: center;
 			flex-wrap: wrap;
-			margin-bottom: 20px;
+			margin-bottom: 10px;
 		}
 		
 		.action-btn-primary {
-			padding: 14px 32px;
+			padding: 9px 18px;
 			border: none;
-			border-radius: 8px;
-			font-size: 16px;
+			border-radius: 6px;
+			font-size: 13px;
 			font-weight: bold;
 			cursor: pointer;
 			transition: all 0.3s ease;
@@ -590,16 +590,45 @@
 			transform: translateY(-3px);
 			box-shadow: 0 6px 16px rgba(52, 152, 219, 0.3);
 		}
+		
+		.error-display {
+			background: #ffe6e6;
+			border: 2px solid #e74c3c;
+			color: #c0392b;
+			padding: 8px 10px;
+			border-radius: 4px;
+			margin-bottom: 8px;
+			font-family: 'Courier New', monospace;
+			font-size: 10px;
+			max-height: 120px;
+			overflow-y: auto;
+			display: none;
+		}
+		
+		.error-display.show {
+			display: block;
+		}
+		
+		.error-message {
+			margin: 4px 0;
+			padding: 4px 0;
+			border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+		}
+		
+		.error-message:last-child {
+			border-bottom: none;
+		}
 	</style>
 </head>
 <body>
 	<div class="container">
+		<div id="errorDisplay" class="error-display"></div>
 		<h1 id="mainTitle">🐳 Honking Narwhals Team 9214</h1>
 		<p class="subtitle" id="mainSubtitle">Wheel Calibration Dashboard</p>
 		
 		<div class="dashboard" id="mainDashboard">
 			<div class="left-controls" id="leftControls">
-				<button class="action-btn-primary" onclick="startWizard()" id="startWizardBtn" style="background: #27ae60; width: 100%; margin-bottom: 15px;">🔧 Calibrate</button>
+				<button class="action-btn-primary" onclick="startWizard()" id="startWizardBtn" style="background: #27ae60; width: 100%; margin-bottom: 6px;">🔧 Calibrate</button>
 				<button class="wheel-preset-btn" onclick="setWheelsDirection('forward')" title="Point all wheels forward">↑ wheels forward</button>
 				<button class="wheel-preset-btn" onclick="setWheelsDirection('left')" title="Point all wheels left">← wheels left</button>
 				<button class="wheel-preset-btn" onclick="setWheelsDirection('right')" title="Point all wheels right">→ wheels right</button>
@@ -607,7 +636,7 @@
 			</div>
 			
 			<div class="swerve-container" id="mainSwerveContainer">
-				<canvas id="swerveCanvas" width="400" height="400"></canvas>
+				<canvas id="swerveCanvas" width="320" height="320"></canvas>
 				<div class="angle-box" id="fr-box"><div class="angle-value" id="fr-angle">0°</div></div>
 				<div class="angle-box" id="rr-box"><div class="angle-value" id="rr-angle">0°</div></div>
 				<div class="angle-box" id="rl-box"><div class="angle-value" id="rl-angle">0°</div></div>
@@ -637,6 +666,9 @@
 				Status: <span class="status-value" id="status">Connecting...</span>
 			</div>
 			<div class="status-item">
+				Robot: <span class="status-value" id="robotEnabled" style="color: #e74c3c;">Disabled</span>
+			</div>
+			<div class="status-item">
 				Updates: <span class="status-value" id="counter">0</span>
 			</div>
 			<div class="status-item">
@@ -646,6 +678,35 @@
 	</div>
 
 	<script>
+		// Error display utility
+		const errorDisplay = document.getElementById("errorDisplay");
+		let errorCount = 0;
+		const MAX_ERRORS = 20;
+		
+		function showError(message) {
+			console.error("[ERROR]", message);
+			if (errorCount >= MAX_ERRORS) {
+				errorDisplay.innerHTML = '<div class="error-message">⚠️ Too many errors - clearing log</div>';
+				errorCount = 0;
+			}
+			const errorMsg = document.createElement("div");
+			errorMsg.className = "error-message";
+			errorMsg.textContent = new Date().toLocaleTimeString() + " - " + message;
+			errorDisplay.appendChild(errorMsg);
+			errorDisplay.classList.add("show");
+			errorCount++;
+		}
+		
+		// Global error handler for uncaught errors
+		window.addEventListener("error", (event) => {
+			showError(`${event.error.name}: ${event.error.message}`);
+		});
+		
+		// Global handler for unhandled promise rejections
+		window.addEventListener("unhandledrejection", (event) => {
+			showError(`Promise: ${event.reason}`);
+		});
+		
 		const canvas = document.getElementById("swerveCanvas");
 		const ctx = canvas.getContext("2d");
 		let wheelAngles = { front_right: 0, rear_right: 0, rear_left: 0, front_left: 0 };
@@ -825,7 +886,15 @@
 
 			// Draw each wheel
 			Object.entries(WHEEL_POSITIONS).forEach(([name, pos]) => {
-				const angle = (wheelAngles[name] || 0) * (Math.PI / 180);
+				let angle = (wheelAngles[name] || 0) * (Math.PI / 180);
+				// Fix display for left wheels: subtract 90° rotation since their encoders read 0° when pointing right
+				if (name === "front_left" || name === "rear_left") {
+					angle -= Math.PI / 2;
+				}
+				// Fix display for right wheels: subtract 90° rotation since their encoders read 0° when pointing right
+				if (name === "front_right" || name === "rear_right") {
+					angle -= Math.PI / 2;
+				}
 				const wheelX = CENTER_X + pos.x;
 				const wheelY = CENTER_Y + pos.y;
 				const isFocused = name === focusedWheel;
@@ -894,6 +963,16 @@
 			document.getElementById("rl-angle").textContent = Math.round(data.angles.rear_left) + "°";
 			document.getElementById("fl-angle").textContent = Math.round(data.angles.front_left) + "°";
 			document.getElementById("counter").textContent = Math.round(data.counter);
+			
+			// Update robot enabled status
+			const enabledSpan = document.getElementById("robotEnabled");
+			if (data.robot_enabled) {
+				enabledSpan.textContent = "🟢 Enabled";
+				enabledSpan.style.color = "#2ecc71";
+			} else {
+				enabledSpan.textContent = "🔴 Disabled";
+				enabledSpan.style.color = "#e74c3c";
+			}
 
 			// Redraw canvas with current calibration mode
 			drawSwerve();
@@ -927,14 +1006,13 @@
 		function focusWheel(wheelName) {
 			focusedWheel = wheelName;
 			document.getElementById("focused").textContent = wheelName;
-			document.getElementById("save-btn").disabled = false;
 			
 			// Send focus command to robot
 			fetch("/api/command", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ cmd: "focus", value: wheelName })
-			}).catch(e => console.log("Focus command failed"));
+			}).catch(e => showError("Focus command failed: " + e.message));
 			
 			// Redraw to highlight the focused wheel
 			drawSwerve();
@@ -973,6 +1051,12 @@
 						// Only allow selecting wheels from current step
 						if (step.wheels.includes(name)) {
 							focusedWheel = name;
+							// Send focus command to robot
+							fetch("/api/command", {
+								method: "POST",
+								headers: { "Content-Type": "application/json" },
+								body: JSON.stringify({ cmd: "focus", value: name })
+							}).catch(e => showError("Focus command failed: " + e.message));
 							updateWizardDisplay();
 						}
 					} else {
@@ -995,7 +1079,7 @@
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ cmd: "power", value: currentPower })
-			}).catch(e => console.log("Power command failed"));
+			}).catch(e => showError("Power command failed: " + e.message));
 		}
 
 		function saveZero() {
@@ -1013,7 +1097,7 @@
 					calibrationMode = null;
 					drawSwerve();
 				})
-				.catch(e => console.log("Save zero failed"));
+				.catch(e => showError("Save zero failed: " + e.message));
 			}
 		}
 
@@ -1024,7 +1108,7 @@
 				body: JSON.stringify({ cmd: "align", value: "true" })
 			}).then(r => r.json())
 			.then(d => alert("Alignment sequence started!"))
-			.catch(e => console.log("Align command failed"));
+			.catch(e => showError("Align command failed: " + e.message));
 		}
 
 		function calibrateWheel(angle) {
@@ -1041,16 +1125,16 @@
 			.then(d => {
 				alert(`📍 ${focusedWheel} saved as ${angle}°`);
 			})
-			.catch(e => console.log("Calibration command failed"));
+			.catch(e => showError("Calibration command failed: " + e.message));
 		}
 		
 		function setWheelsDirection(direction) {
 			let angles = {};
 			const angleMap = {
 				forward: 0,
-				left: 90,
-				right: 270,
-				back: 180
+				right: 90,
+				back: 180,
+				left: 270
 			};
 			
 			const targetAngle = angleMap[direction];
@@ -1069,13 +1153,33 @@
 			.then(d => {
 				console.log(`All wheels set to ${direction} (${targetAngle}°)`);
 			})
-			.catch(e => console.log("Set wheels direction command failed:", e));
+			.catch(e => showError("Set wheels direction command failed: " + e.message));
 		}
+		
+		function updateWizardDisplay() {
+			const step = WIZARD_STEPS[wizardStep];
+			document.getElementById("wizardTitle").textContent = `Step ${wizardStep + 1} of ${WIZARD_STEPS.length}: ${step.stepName}`;
+			document.getElementById("wizardInstructions").innerHTML = `
+				<p><strong>${step.instructions}</strong></p>
+				<p style="color: #666; font-size: 14px;">Wheels to align: <strong>${step.wheels.join(", ").toUpperCase()}</strong></p>
+				<p style="color: #ff6b6b; font-size: 14px;">Target angle: <strong>${step.targetAngle}°</strong></p>
+				<p style="color: #999; font-size: 13px;">Currently focused: ${focusedWheel ? focusedWheel.toUpperCase() + " (" + wheelAngles[focusedWheel].toFixed(0) + "°)" : "Click a wheel to select"}</p>
+			`;
+			drawSwerve();
+		}
+		
 		async function startWizard() {
 			wizardActive = true;
 			wizardStep = 0;
 			focusedWheel = null;
 		
+			// Send command to robot to clear any focused wheel
+			fetch("/api/command", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ cmd: "focus", value: "" })
+			}).catch(e => showError("Clear focus command failed: " + e.message));
+			
 			// Move canvas to wizard container
 			const canvas = document.getElementById("swerveCanvas");
 			const wizardContainer = document.getElementById("wizardSwerveContainer");
@@ -1095,29 +1199,42 @@
 	
 	async function confirmWheelsAligned() {
 		const step = WIZARD_STEPS[wizardStep];
+		console.log(`\n[WIZARD] Step ${wizardStep + 1}: Calibrating ${step.wheels.join(" + ")} to ${step.targetAngle}°`);
 		
-		// Calibrate both wheels in the current step
-		for (const wheelName of step.wheels) {
+		// Calibrate both wheels in the current step with longer delay between them
+		for (let i = 0; i < step.wheels.length; i++) {
+			const wheelName = step.wheels[i];
+			const payload = { cmd: "calibrate", value: { wheel: wheelName, angle: step.targetAngle } };
+			console.log(`[SEND-${i+1}] Sending to /api/command: ${JSON.stringify(payload)}`);
+			
 			try {
 				const response = await fetch("/api/command", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						cmd: "calibrate",
-						value: { wheel: wheelName, angle: step.targetAngle }
-					})
+					body: JSON.stringify(payload)
 				});
 				
 				if (!response.ok) {
+					console.error(`[RCV-ERR] Server returned ${response.status}`);
 					alert("Failed to calibrate " + wheelName);
 					return;
 				}
+				const result = await response.json();
+				console.log(`[RCV-OK] Server responded: ${JSON.stringify(result)}`);
+				
+				// Add 750ms delay between calibrating each wheel to ensure file I/O completes
+				if (i < step.wheels.length - 1) {
+					console.log(`[DELAY] Waiting 750ms before next wheel...`);
+					await new Promise(resolve => setTimeout(resolve, 750));
+				}
 			} catch (error) {
+				console.error(`[FETCH-ERR] ${error.message}`);
 				alert("Error calibrating " + wheelName + ": " + error.message);
 				return;
 			}
 		}
 		
+		console.log(`[WIZARD-OK] ✓ ${step.stepName} wheels calibrated to ${step.targetAngle}°\n`);
 		alert(`✓ ${step.stepName} wheels calibrated to ${step.targetAngle}°`);
 		nextWizardStep();
 	}
@@ -1137,6 +1254,13 @@
 			wizardActive = false;
 			focusedWheel = null;
 			activeEdges = { left: false, right: false, top: false, bottom: false };
+			
+			// Send command to robot to clear any focused wheel
+			fetch("/api/command", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ cmd: "focus", value: "" })
+			}).catch(e => showError("Clear focus command failed: " + e.message));
 
 			// Move canvas back to main container
 			const canvas = document.getElementById("swerveCanvas");
