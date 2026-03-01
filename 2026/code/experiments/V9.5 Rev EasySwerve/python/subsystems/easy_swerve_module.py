@@ -33,7 +33,7 @@ class EasySwerveModule:
 	"""
 
 	def __init__(self, driving_can_id: int, turning_can_id: int, chassis_angular_offset: float,
-			driving_motor_on_bottom: bool, turning_motor_on_bottom: bool, module_name: str = "Module"):
+			driving_motor_on_bottom: bool, turning_motor_on_bottom: bool, module_name: str = "Module", encoder_offset: float = None):
 		"""
 		Initialize an EasySwerve module.
 
@@ -44,6 +44,7 @@ class EasySwerveModule:
 			driving_motor_on_bottom: Whether driving motor is on the bottom
 			turning_motor_on_bottom: Whether turning motor is on the bottom
 			module_name: Name for debugging (e.g., "Front Left")
+			encoder_offset: Raw encoder value at zero wheel position (calibration)
 		"""
 		self.module_name = module_name
 		self.driving_spark = None
@@ -62,6 +63,12 @@ class EasySwerveModule:
 		self.skipped_updates = 0
 		self.debug_enabled = False  # Only print when enabled
 		self.integral_accumulator = 0.0  # For I term in PI control
+		
+		# Encoder mechanical offset - use provided value or default to π/4
+		if encoder_offset is not None:
+			self.encoder_mechanical_offset = encoder_offset
+		else:
+			self.encoder_mechanical_offset = math.pi / 4  # Default: π/4 radians = 45°
 		
 		# Autotune state variables
 		self.autotune_active = False
@@ -91,10 +98,6 @@ class EasySwerveModule:
 		self.turning_spark = SparkMax(turning_can_id, SparkLowLevel.MotorType.kBrushless)
 		self.driving_encoder = self.driving_spark.getEncoder()
 		self.turning_encoder = self.turning_spark.getAbsoluteEncoder()
-		
-		# Mechanical offset: encoder is mounted 45° to the wheel
-		# If calibrated at 45° wrench hole, subtract this to get actual wheel angle
-		self.encoder_mechanical_offset = math.pi / 4  # π/4 radians = 45°
 		
 		if self.turning_encoder is None:
 			print(f"[{self.module_name}] WARNING: Turning encoder is None!")
@@ -159,13 +162,20 @@ class EasySwerveModule:
 				print(f"[{self.module_name}] kP={kp:.8f}, kI={ki:.10f}")
 			return  # Don't run normal control loop during autotune
 		
-		# Get current position from encoder
+		# Get current position from encoder (continuous multi-turn value)
 		raw_encoder_position = self.turning_encoder.getPosition()
 		
-		# Apply mechanical offset (calibration hole position offset)
-		current_angle = raw_encoder_position - self.encoder_mechanical_offset
+		# Normalize raw encoder to single rotation (-π to π)
+		raw_normalized = raw_encoder_position
+		while raw_normalized > 3.14159:
+			raw_normalized -= 6.28318
+		while raw_normalized < -3.14159:
+			raw_normalized += 6.28318
 		
-		# Normalize to -pi to pi for display
+		# Apply mechanical offset (calibration hole position offset)
+		current_angle = raw_normalized - self.encoder_mechanical_offset
+		
+		# Keep current_angle in -π to π range
 		while current_angle > 3.14159:
 			current_angle -= 6.28318
 		while current_angle < -3.14159:
@@ -391,3 +401,56 @@ class EasySwerveModule:
 		if not HAS_REV or self.driving_encoder is None:
 			return
 		self.driving_encoder.setPosition(0)
+
+	def print_sparkmax_config(self):
+		"""Print all SparkMax configuration values WITHOUT writing to firmware."""
+		if not HAS_REV:
+			print(f"[{self.module_name}] REV API not available")
+			return
+		
+		print(f"\n{'='*80}")
+		print(f"[{self.module_name}] === SPARKMAX CONFIGURATION DUMP ===")
+		print(f"{'='*80}")
+		
+		# DRIVING MOTOR
+		if self.driving_spark:
+			print(f"\n[{self.module_name}] DRIVING MOTOR (CAN ID: {self.driving_spark.getDeviceId()})")
+			print(f"  Applied Output: {self.driving_spark.getAppliedOutput():.3f}")
+			print(f"  Bus Voltage: {self.driving_spark.getBusVoltage():.2f}V")
+			print(f"  Output Current: {self.driving_spark.getOutputCurrent():.2f}A")
+			print(f"  Motor Temp: {self.driving_spark.getMotorTemperature():.1f}°C")
+			
+			if self.driving_encoder:
+				print(f"  Encoder Position: {self.driving_encoder.getPosition():.6f} m")
+				print(f"  Encoder Velocity: {self.driving_encoder.getVelocity():.6f} m/s")
+				print(f"  Encoder PosFactor: {self.driving_encoder.getPositionConversionFactor():.6f}")
+				print(f"  Encoder VelFactor: {self.driving_encoder.getVelocityConversionFactor():.6f}")
+			
+			if self.driving_closed_loop_controller:
+				print(f"  Closed Loop Reference: {self.driving_closed_loop_controller.getReference():.6f}")
+		else:
+			print(f"  [WARNING] Driving motor not initialized!")
+		
+		# TURNING MOTOR
+		if self.turning_spark:
+			print(f"\n[{self.module_name}] TURNING MOTOR (CAN ID: {self.turning_spark.getDeviceId()})")
+			print(f"  Applied Output: {self.turning_spark.getAppliedOutput():.3f}")
+			print(f"  Bus Voltage: {self.turning_spark.getBusVoltage():.2f}V")
+			print(f"  Output Current: {self.turning_spark.getOutputCurrent():.2f}A")
+			print(f"  Motor Temp: {self.turning_spark.getMotorTemperature():.1f}°C")
+			
+			if self.turning_encoder:
+				print(f"  Encoder Position (raw): {self.turning_encoder.getPosition():.6f} rad")
+				print(f"  Encoder Velocity: {self.turning_encoder.getVelocity():.6f} rad/s")
+				print(f"  Encoder PosFactor: {self.turning_encoder.getPositionConversionFactor():.6f}")
+				print(f"  Encoder VelFactor: {self.turning_encoder.getVelocityConversionFactor():.6f}")
+				print(f"  Mechanical Offset: {self.encoder_mechanical_offset:.6f} rad")
+			
+			if self.turning_closed_loop_controller:
+				print(f"  Closed Loop Reference: {self.turning_closed_loop_controller.getReference():.6f}")
+			
+			print(f"  PID Gains: kP={self.turn_kp:.8f}, kI={self.turn_ki:.10f}, kD={self.turn_kd:.8f}")
+		else:
+			print(f"  [WARNING] Turning motor not initialized!")
+		
+		print(f"{'='*80}\n")

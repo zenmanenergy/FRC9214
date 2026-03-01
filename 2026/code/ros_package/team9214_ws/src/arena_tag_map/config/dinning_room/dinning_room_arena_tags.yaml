@@ -1,0 +1,100 @@
+arena:
+  name: dinning_room
+  frame_id: map
+  convention:
+    units: meters
+    axes: ROS REP-103
+    description: +x forward, +y left, +z up
+    origin: south_west_corner
+  dimensions:
+    length_x_m: 4.04
+    width_y_m: 3.6576
+    height_z_m: 2.7178
+  bounds:
+    x_min: 0.0
+    x_max: 4.04
+    y_min: 0.0
+    y_max: 3.6576
+  objects:
+  - name: cabinet
+    length_m: 0.695
+    width_m: 0.36
+    south_west:
+      x: 3.0988
+      y: 2.9376
+    height_m: 1.143
+apriltags:
+  family: tag36h11
+  default_size_m: 0.1651
+  tags:
+  - id: 0
+    pose:
+      position:
+        x: 1.143
+        y: 3.6576
+        z: 0.9144
+      orientation_rpy:
+        roll: 0.0
+        pitch: 0.0
+        yaw: -1.57079632679
+    size_m: 0.1651
+    notes: North-East wall under mirror facing south
+  - id: 1
+    pose:
+      position:
+        x: 0.0
+        y: 2.6626
+        z: 0.9144
+      orientation_rpy:
+        roll: 0.0
+        pitch: 0.0
+        yaw: 0.0
+    size_m: 0.1651
+    notes: West wall center
+  - id: 2
+    pose:
+      position:
+        x: 3.0988
+        y: 3.1198
+        z: 0.9144
+      orientation_rpy:
+        roll: 0.0
+        pitch: 0.0
+        yaw: 3.141592653589793
+    notes: West side of Cabinet facing east
+tags:
+- id: 0
+  pose:
+    position:
+      x: 1.143
+      y: 3.6576
+      z: 0.9144
+    orientation_rpy:
+      roll: 0.0
+      pitch: 0.0
+      yaw: -1.57079632679
+  size_m: 0.1651
+  notes: North-East wall under mirror facing south
+- id: 1
+  pose:
+    position:
+      x: 0.0
+      y: 2.6626
+      z: 0.9144
+    orientation_rpy:
+      roll: 0.0
+      pitch: 0.0
+      yaw: 0.0
+  size_m: 0.1651
+  notes: West wall center
+- id: 2
+  pose:
+    position:
+      x: 3.0988
+      y: 3.1198
+      z: 0.9144
+    orientation_rpy:
+      roll: 0.0
+      pitch: 0.0
+      yaw: 3.141592653589793
+  notes: West side of Cabinet facing east

@@ -1,0 +1,62 @@
+arena:
+  name: "practice_arena"
+  frame_id: "map"
+  length_m: 16.46
+  width_m: 8.23
+  height_m: 2.5
+  origin_semantics: "center"   # center or south_west_corner
+
+map:
+  resolution_m: 0.05
+  include_walls: true
+  wall_thickness_m: 0.05
+  occupied_thresh: 0.65
+  free_thresh: 0.196
+
+# Boxes are axis-aligned. south_west is the southwest corner in map XY.
+objects:
+  - name: "loading_station"
+    length_m: 1.2
+    width_m: 0.8
+    height_m: 1.0
+    south_west:
+      x: -2.5
+      y: 1.0
+
+  - name: "center_barrier"
+    length_m: 0.9
+    width_m: 0.9
+    height_m: 0.4
+    south_west:
+      x: 0.5
+      y: 0.4
+
+apriltags:
+  family: "tag36h11"
+  default_size_m: 0.1651
+  tags:
+    - id: 1
+      size_m: 0.1651
+      x: -8.23
+      y: 0.0
+      height_m: 1.2
+      yaw_rad: 0.0
+      notes: "West wall center"
+
+    - id: 2
+      x: 8.23
+      y: 0.0
+      height_m: 1.2
+      yaw_deg: 180.0
+      notes: "East wall center"
+
+    - id: 3
+      position:
+        x: 0.0
+        y: -4.115
+      height_m: 1.2
+      orientation_rpy:
+        roll: 0.0
+        pitch: 0.0
+        yaw: 1.57079632679
+      notes: "South wall center"

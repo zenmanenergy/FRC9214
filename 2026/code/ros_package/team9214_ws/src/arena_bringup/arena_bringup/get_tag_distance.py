@@ -21,24 +21,29 @@ class TagDistanceReader(Node):
         self.tag_family = str(self.get_parameter("tag_family").value)
         self.lookup_timeout_sec = float(self.get_parameter("lookup_timeout_sec").value)
 
+        # Setup Transform Listeners
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
         self.latest_tag_id = None
         self.latest_frame_id = ""
 
+        # Subscribe to Detections
         self.create_subscription(
-            AprilTagDetectionArray,
-            self.detections_topic,
-            self._detections_cb,
-            10,
+            AprilTagDetectionArray, # Topic
+            self.detections_topic,  # Datatype
+            self._detections_cb,    # Callback function
+            10,                     # 
         )
+
+        # Periodicly call _report_distance function
         self.create_timer(0.2, self._report_distance)
 
         self.get_logger().info(
             f"Listening on {self.detections_topic}, camera_frame={self.camera_frame}, tag_family={self.tag_family}"
         )
 
+    # Callback called when detections are recieved.
     def _detections_cb(self, msg: AprilTagDetectionArray) -> None:
         if not msg.detections:
             return
@@ -54,6 +59,7 @@ class TagDistanceReader(Node):
         if msg.header.frame_id:
             self.latest_frame_id = msg.header.frame_id
 
+    # Periodically called function
     def _report_distance(self) -> None:
         if self.latest_tag_id is None:
             return
@@ -69,18 +75,21 @@ class TagDistanceReader(Node):
             str(self.latest_tag_id),
         ]
 
+        # Loop through frames
         for cam_frame in camera_frames:
             for tag_frame in tag_frames:
                 try:
+                    # Get transformed data
                     ts = self.tf_buffer.lookup_transform(
-                        cam_frame,
-                        tag_frame,
-                        Time(),
+                        cam_frame,  # Frame we need
+                        tag_frame,  # Source frame
+                        Time(),     # Time we want the transform from (0 is latest)
                         timeout=Duration(seconds=self.lookup_timeout_sec),
                     )
                 except Exception:
                     continue
 
+                # Get data from the cam_frame
                 x = float(ts.transform.translation.x)
                 y = float(ts.transform.translation.y)
                 z = float(ts.transform.translation.z)

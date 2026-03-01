@@ -51,3 +51,35 @@ package.xml
 
 
 [TODO] Take FRC files and turn them into a single file like `757-lab_arena_tags.yaml`
+
+## Generate World And Tag Maps
+
+Use the generator script to build:
+- a Nav2 map image + yaml (`.pgm` + `.yaml`)
+- an AprilTag layout yaml (`*_arena_tags.yaml`)
+
+Input spec template:
+- `arena_tag_map/config/generate_map_request_example.yaml`
+
+Run from the workspace root:
+
+```bash
+python3 src/arena_tag_map/scripts/generate_world_and_tag_maps.py \
+  --input src/arena_tag_map/config/generate_map_request_example.yaml \
+  --output-dir src/arena_tag_map/config \
+  --basename practice_field
+```
+
+Or after `colcon build`:
+
+```bash
+ros2 run arena_tag_map generate_world_and_tag_maps.py \
+  --input $(ros2 pkg prefix arena_tag_map)/share/arena_tag_map/config/generate_map_request_example.yaml \
+  --output-dir /tmp/generated_maps \
+  --basename practice_field
+```
+
+Notes:
+- Arena origin is set by `arena.origin_semantics` (`center` or `south_west_corner`).
+- Object boxes are axis-aligned and use `south_west` as the south-west corner in map XY.
+- Tag output includes both `apriltags.tags` and top-level `tags` for observer compatibility.

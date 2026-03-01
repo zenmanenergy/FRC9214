@@ -9,7 +9,9 @@ install(
 )
 
 install(
-  PROGRAMS scripts/load_map_in_nav2.sh
+  PROGRAMS
+    scripts/load_map_in_nav2.sh
+    scripts/generate_world_and_tag_maps.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Swerve Dashboard - Mode Selection</title>
+	<style>
+		* { margin: 0; padding: 0; box-sizing: border-box; }
+		
+		body {
+			font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+			background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			min-height: 100vh;
+			padding: 10px;
+		}
+		
+		.container {
+			background: white;
+			border-radius: 10px;
+			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+			padding: 40px;
+			max-width: 500px;
+			width: 100%;
+			text-align: center;
+		}
+		
+		h1 {
+			color: #333;
+			margin-bottom: 10px;
+			font-size: 28px;
+		}
+		
+		.status {
+			background: #fff3cd;
+			border: 1px solid #ffc107;
+			border-radius: 5px;
+			padding: 15px;
+			margin-bottom: 30px;
+			color: #856404;
+		}
+		
+		.mode-label {
+			font-weight: bold;
+			font-size: 16px;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			justify-content: center;
+		}
+		
+		.mode-indicator {
+			display: inline-block;
+			width: 12px;
+			height: 12px;
+			border-radius: 50%;
+			background: #ffc107;
+			animation: pulse 1s infinite;
+		}
+		
+		@keyframes pulse {
+			0%, 100% { opacity: 1; }
+			50% { opacity: 0.5; }
+		}
+		
+		.buttons {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 15px;
+			margin-top: 30px;
+		}
+		
+		.btn {
+			padding: 20px;
+			border: 2px solid #ddd;
+			border-radius: 8px;
+			text-decoration: none;
+			font-size: 16px;
+			font-weight: bold;
+			cursor: pointer;
+			transition: all 0.3s;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 8px;
+		}
+		
+		.btn:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+		}
+		
+		.btn-test {
+			background: #e8f1ff;
+			border-color: #3498db;
+			color: #2c3e50;
+		}
+		
+		.btn-test:hover {
+			background: #d0e5ff;
+			border-color: #2980b9;
+		}
+		
+		.btn-teleop {
+			background: #f0f9e8;
+			border-color: #27ae60;
+			color: #2c3e50;
+		}
+		
+		.btn-teleop:hover {
+			background: #dff5d0;
+			border-color: #229954;
+		}
+		
+		.icon {
+			font-size: 32px;
+		}
+		
+		.info {
+			margin-top: 30px;
+			padding: 15px;
+			background: #f8f9fa;
+			border-radius: 5px;
+			font-size: 12px;
+			color: #666;
+			line-height: 1.6;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>🐳 Swerve Drive Dashboard</h1>
+		
+		<div class="status">
+			<div class="mode-label">
+				<span class="mode-indicator"></span>
+				Current Mode: <span id="modeText">{{ mode }}</span>
+			</div>
+		</div>
+		
+		<p style="color: #666; margin-bottom: 20px;">
+			Select dashboard mode:
+		</p>
+		
+		<div class="buttons">
+			<a href="/test" class="btn btn-test">
+				<span class="icon">🔧</span>
+				<span>Test Mode</span>
+				<small>Calibration & Tuning</small>
+			</a>
+			<a href="/teleop" class="btn btn-teleop">
+				<span class="icon">🎮</span>
+				<span>Teleop Mode</span>
+				<small>Driving</small>
+			</a>
+		</div>
+		
+		<div class="info">
+			<strong>About:</strong><br>
+			• <strong>Test Mode:</strong> Wheel calibration, encoder tuning, PID autotuning<br>
+			• <strong>Teleop Mode:</strong> Real-time telemetry display for driver<br>
+			<br>
+			The dashboard will automatically switch when the robot changes modes.
+		</div>
+	</div>
+	
+	<script>
+		// Auto-detect mode from API every 500ms
+		function checkMode() {
+			fetch('/status')
+				.then(r => r.json())
+				.then(data => {
+					if (data.mode && data.mode !== 'Unknown') {
+						console.log(`[REDIRECT] Detected mode: ${data.mode}`);
+						if (data.mode === 'Test') {
+							window.location.href = '/test';
+						} else if (data.mode === 'Teleop') {
+							window.location.href = '/teleop';
+						}
+					}
+				})
+				.catch(e => console.log('Status check failed'));
+		}
+		
+		// Check every 500ms
+		setInterval(checkMode, 500);
+		// Also check on page load
+		checkMode();
+	</script>
+</body>
+</html>

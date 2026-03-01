@@ -36,6 +36,7 @@ setup(
             "autonomy_mode_manager = arena_bringup.autonomy_mode_manager:main",
             "nt4_mode_bridge = arena_bringup.nt4_mode_bridge:main",
             "sim_inputs = arena_bringup.sim_inputs:main",
+            "tag_test_monitor = arena_bringup.tag_test_monitor:main",
         ]
     },
 )

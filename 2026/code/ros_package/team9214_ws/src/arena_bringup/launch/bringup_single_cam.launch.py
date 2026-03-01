@@ -403,8 +403,11 @@ def _make_nodes(context, *args, **kwargs):
     detection_topic = f"/{camera_ns}/{detections_topic}"
     robot_description = _load_robot_description(urdf_xacro)
     apriltag_params = _load_apriltag_params(apriltag_params_yaml)
-    ekf_world_frame_override = "map" if not run_ekf_odom else ""
-    ekf_odom_frame_override = "map" if not run_ekf_odom else ""
+    # In single-filter mode (run_ekf_odom=false), keep frames unique:
+    # map_frame=map, odom_frame=odom, base_link_frame=base_link.
+    # Use world_frame=odom so ekf_map publishes odom->base_link directly.
+    ekf_world_frame_override = "odom" if not run_ekf_odom else ""
+    ekf_odom_frame_override = ""
     ekf_map_params_yaml = _prepare_ekf_params_yaml(
         ekf_map_yaml,
         "ekf_map",

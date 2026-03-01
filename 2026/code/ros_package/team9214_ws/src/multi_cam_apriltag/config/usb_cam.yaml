@@ -13,4 +13,4 @@
       # (file:///...) is the safe pattern for camera calibration YAMLs. :contentReference[oaicite:2]{index=2}
       camera_name: usb_cam
       # camera_name: camera
-      camera_info_url: file:///home/robots/source_code/first_robotics_comp/frc/team9214_ws/src/multi_cam_apriltag/config/camera_1.yaml
+      camera_info_url: file:///home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/multi_cam_apriltag/config/AlphaCam_calibration.yaml
