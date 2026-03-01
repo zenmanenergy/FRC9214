@@ -1,0 +1,14 @@
+{
+  "offsets": {
+    "front_right": 0.0,
+    "rear_right": 0.0,
+    "rear_left": 0.0,
+    "front_left": 0.0
+  },
+  "pid_gains": {
+    "kp": 0.003,
+    "ki": 0.005,
+    "kd": 0.0001
+  },
+  "pid_tuning_history": []
+}
