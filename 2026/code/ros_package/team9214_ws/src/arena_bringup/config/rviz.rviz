@@ -12,6 +12,11 @@ Visualization Manager:
       Plane Cell Count: 20
       Plane: XY
       Reference Frame: map
+    - Class: rviz_default_plugins/Map
+      Enabled: true
+      Name: ArenaMap
+      Topic:
+        Value: /map
     - Class: rviz_default_plugins/TF
       Enabled: true
       Name: TF
@@ -25,6 +30,16 @@ Visualization Manager:
       Name: TagGlobalPose
       Topic:
         Value: /tag_global_pose
+    - Class: rviz_default_plugins/Odometry
+      Enabled: true
+      Name: FilteredOdom
+      Topic:
+        Value: /odometry/filtered
+    - Class: rviz_default_plugins/Image
+      Enabled: true
+      Name: TagOverlayImage
+      Topic:
+        Value: /camera_1/tag_overlay
   Fixed Frame: map
   Global Options:
     Background Color: 48; 48; 48

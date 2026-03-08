@@ -16,17 +16,19 @@
   <exec_depend>nav2_msgs</exec_depend>
   <exec_depend>action_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>apriltag_msgs</exec_depend>
+  <exec_depend>cv_bridge</exec_depend>
   <exec_depend>pyntcore</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>xacro</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
 
-  <exec_depend>arena_description</exec_depend>
-  <exec_depend>arena_bt_nodes</exec_depend> <!-- libarena_bt_nodes.so -->
-  <exec_depend>arena_tag_map</exec_depend>
-  <exec_depend>localization_fusion</exec_depend>
+  <exec_depend>arena_robot_and_maps</exec_depend>
+  <!-- <exec_depend>arena_bt_nodes</exec_depend> libarena_bt_nodes.so -->
+  <!-- <exec_depend>arena_tag_map</exec_depend> -->
+  <!-- <exec_depend>localization_fusion</exec_depend> -->
   <exec_depend>tag_pose_observer</exec_depend>
 
   <exec_depend>apriltag_ros</exec_depend>

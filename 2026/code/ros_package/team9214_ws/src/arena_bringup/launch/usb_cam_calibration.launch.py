@@ -20,7 +20,8 @@ def generate_launch_description():
             name='camera',
             output='screen',
             parameters=[
-                {'video_device': '/dev/video0'}, # Check your device path
+                # {'video_device': '/dev/video0'}, # Check your device path
+                {'video_device': '/dev/video1'}, # Check your device path
                 {'image_width': 640},
                 {'image_height': 480},
                 # {'image_width': 1280},

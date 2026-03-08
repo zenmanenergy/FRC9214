@@ -17,8 +17,9 @@ from ament_index_python.packages import get_package_share_directory
 import os
 
 def _make_nodes(context, *args, **kwargs):
-    arena_description_share = get_package_share_directory("arena_description")
-    arena_tag_map_share = get_package_share_directory("arena_tag_map")
+    # arena_description_share = get_package_share_directory("arena_description")
+    # arena_tag_map_share = get_package_share_directory("arena_tag_map")
+    arena_robot_and_maps_share = get_package_share_directory("arena_robot_and_maps")
     tag_pose_observer_share = get_package_share_directory("tag_pose_observer")
     localization_share = get_package_share_directory("localization_fusion")
     bringup_share = get_package_share_directory("arena_bringup")
@@ -184,14 +185,15 @@ def _make_nodes(context, *args, **kwargs):
     return nodes
 
 def generate_launch_description():
-    arena_description_share = get_package_share_directory("arena_description")
-    arena_tag_map_share = get_package_share_directory("arena_tag_map")
+    # arena_description_share = get_package_share_directory("arena_description")
+    # arena_tag_map_share = get_package_share_directory("arena_tag_map")
+    arena_robot_and_maps_share = get_package_share_directory("arena_robot_and_maps")
     tag_pose_observer_share = get_package_share_directory("tag_pose_observer")
     localization_share = get_package_share_directory("localization_fusion")
     bringup_share = get_package_share_directory("arena_bringup")
 
-    default_urdf_xacro = os.path.join(arena_description_share, "urdf", "robot.urdf.xacro")
-    default_tag_map = os.path.join(arena_tag_map_share, "config", "arena_tags.yaml")
+    default_urdf_xacro = os.path.join(arena_robot_and_maps_share, "urdf", "robot.urdf.xacro")
+    default_tag_map = os.path.join(arena_robot_and_maps_share, "config", "arena_tags.yaml")
     default_observer_yaml = os.path.join(tag_pose_observer_share, "config", "observer.yaml")
     default_ekf_map_yaml = os.path.join(localization_share, "config", "ekf_map.yaml")
     default_ekf_odom_yaml = os.path.join(localization_share, "config", "ekf_odom.yaml")

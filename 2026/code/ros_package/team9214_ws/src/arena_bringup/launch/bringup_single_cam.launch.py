@@ -189,18 +189,18 @@ def _make_nodes(context, *args, **kwargs):
         cfg,
         default_tag_map,
     )
-    ekf_map_yaml = _resolve_value(
-        "ekf_map_yaml",
-        LaunchConfiguration("ekf_map_yaml").perform(context),
-        cfg,
-        default_ekf_map_yaml,
-    )
-    ekf_odom_yaml = _resolve_value(
-        "ekf_odom_yaml",
-        LaunchConfiguration("ekf_odom_yaml").perform(context),
-        cfg,
-        default_ekf_odom_yaml,
-    )
+    # ekf_map_yaml = _resolve_value(
+    #     "ekf_map_yaml",
+    #     LaunchConfiguration("ekf_map_yaml").perform(context),
+    #     cfg,
+    #     default_ekf_map_yaml,
+    # )
+    # ekf_odom_yaml = _resolve_value(
+    #     "ekf_odom_yaml",
+    #     LaunchConfiguration("ekf_odom_yaml").perform(context),
+    #     cfg,
+    #     default_ekf_odom_yaml,
+    # )
     rviz_config = _resolve_value(
         "rviz_config",
         LaunchConfiguration("rviz_config").perform(context),
@@ -238,6 +238,12 @@ def _make_nodes(context, *args, **kwargs):
         cfg,
         "tag_detections",
     )
+    overlay_topic = _resolve_value(
+        "overlay_topic",
+        LaunchConfiguration("overlay_topic").perform(context),
+        cfg,
+        "tag_overlay",
+    )
 
     use_rviz = _to_bool(
         _resolve_value("use_rviz", LaunchConfiguration("use_rviz").perform(context), cfg, "true")
@@ -256,6 +262,14 @@ def _make_nodes(context, *args, **kwargs):
             LaunchConfiguration("use_rectify").perform(context),
             cfg,
             "true",
+        )
+    )
+    use_tag_overlay = _to_bool(
+        _resolve_value(
+            "use_tag_overlay",
+            LaunchConfiguration("use_tag_overlay").perform(context),
+            cfg,
+            "false",
         )
     )
     use_static_camera_tf = _to_bool(
@@ -403,25 +417,25 @@ def _make_nodes(context, *args, **kwargs):
     detection_topic = f"/{camera_ns}/{detections_topic}"
     robot_description = _load_robot_description(urdf_xacro)
     apriltag_params = _load_apriltag_params(apriltag_params_yaml)
-    # In single-filter mode (run_ekf_odom=false), keep frames unique:
-    # map_frame=map, odom_frame=odom, base_link_frame=base_link.
-    # Use world_frame=odom so ekf_map publishes odom->base_link directly.
-    ekf_world_frame_override = "odom" if not run_ekf_odom else ""
-    ekf_odom_frame_override = ""
-    ekf_map_params_yaml = _prepare_ekf_params_yaml(
-        ekf_map_yaml,
-        "ekf_map",
-        use_wheel_odom=use_wheel_odom,
-        use_imu=use_imu,
-        world_frame_override=ekf_world_frame_override,
-        odom_frame_override=ekf_odom_frame_override,
-    )
-    ekf_odom_params_yaml = _prepare_ekf_params_yaml(
-        ekf_odom_yaml,
-        "ekf_odom",
-        use_wheel_odom=use_wheel_odom,
-        use_imu=use_imu,
-    )
+    # # In single-filter mode (run_ekf_odom=false), keep frames unique:
+    # # map_frame=map, odom_frame=odom, base_link_frame=base_link.
+    # # Use world_frame=odom so ekf_map publishes odom->base_link directly.
+    # ekf_world_frame_override = "odom" if not run_ekf_odom else ""
+    # ekf_odom_frame_override = ""
+    # ekf_map_params_yaml = _prepare_ekf_params_yaml(
+    #     ekf_map_yaml,
+    #     "ekf_map",
+    #     use_wheel_odom=use_wheel_odom,
+    #     use_imu=use_imu,
+    #     world_frame_override=ekf_world_frame_override,
+    #     odom_frame_override=ekf_odom_frame_override,
+    # )
+    # ekf_odom_params_yaml = _prepare_ekf_params_yaml(
+    #     ekf_odom_yaml,
+    #     "ekf_odom",
+    #     use_wheel_odom=use_wheel_odom,
+    #     use_imu=use_imu,
+    # )
 
     nodes = [
         Node(
@@ -505,6 +519,27 @@ def _make_nodes(context, *args, **kwargs):
                 ("detections", detections_topic),
             ],
         ),
+    ])
+
+    if use_tag_overlay:
+        nodes.append(
+            Node(
+                package="arena_bringup",
+                executable="apriltag_overlay",
+                name="apriltag_overlay",
+                namespace=camera_ns,
+                output="screen",
+                parameters=[
+                    {
+                        "image_topic": image_topic,
+                        "detections_topic": detections_topic,
+                        "output_topic": overlay_topic,
+                    }
+                ],
+            )
+        )
+
+    nodes.append(
         Node(
             package="tag_pose_observer",
             executable="tag_pose_observer",
@@ -519,29 +554,29 @@ def _make_nodes(context, *args, **kwargs):
                     "publish_topic": "/tag_global_pose",
                 },
             ],
-        ),
-    ])
-
-    if run_ekf_odom:
-        nodes.append(
-            Node(
-                package="robot_localization",
-                executable="ekf_node",
-                name="ekf_odom",
-                output="screen",
-                parameters=[ekf_odom_params_yaml],
-            )
-        )
-
-    nodes.append(
-        Node(
-            package="robot_localization",
-            executable="ekf_node",
-            name="ekf_map",
-            output="screen",
-            parameters=[ekf_map_params_yaml],
         )
     )
+
+    # if run_ekf_odom:
+    #     nodes.append(
+    #         Node(
+    #             package="robot_localization",
+    #             executable="ekf_node",
+    #             name="ekf_odom",
+    #             output="screen",
+    #             parameters=[ekf_odom_params_yaml],
+    #         )
+    #     )
+
+    # nodes.append(
+    #     Node(
+    #         package="robot_localization",
+    #         executable="ekf_node",
+    #         name="ekf_map",
+    #         output="screen",
+    #         parameters=[ekf_map_params_yaml],
+    #     )
+    # )
 
     if use_rviz:
         nodes.append(
@@ -578,6 +613,8 @@ def generate_launch_description():
         DeclareLaunchArgument("image_topic", default_value=AUTO),
         DeclareLaunchArgument("camera_info_topic", default_value=AUTO),
         DeclareLaunchArgument("detections_topic", default_value=AUTO),
+        DeclareLaunchArgument("use_tag_overlay", default_value=AUTO),
+        DeclareLaunchArgument("overlay_topic", default_value=AUTO),
 
         DeclareLaunchArgument("use_camera_driver", default_value=AUTO),
         DeclareLaunchArgument("use_rectify", default_value=AUTO),
