@@ -31,6 +31,8 @@ class DashboardServer:
 			"rear_left": 0,
 			"front_left": 0
 		}
+		self.turret_angle = 0
+		self.turret_power = 0
 		self.counter = 0
 		self.robot_enabled = False
 		self.robot_mode = "Unknown"
@@ -71,6 +73,8 @@ class DashboardServer:
 				"type": "state",
 				"angles": self.wheel_angles,
 				"power": self.wheel_power,
+				"turret_angle": self.turret_angle,
+				"turret_power": self.turret_power,
 				"counter": self.counter,
 				"robot_enabled": self.robot_enabled,
 				"robot_mode": self.robot_mode
@@ -114,14 +118,22 @@ class DashboardServer:
 						"rear_left": self.table.getNumber("RL Power", 0),
 						"front_left": self.table.getNumber("FL Power", 0)
 					}
+					new_turret_angle = self.table.getNumber("Turret Angle", 0)
+					new_turret_power = self.table.getNumber("Turret Power", 0)
+					new_turret_left_limit = self.table.getNumber("Turret Left Limit", 0)
+					new_turret_right_limit = self.table.getNumber("Turret Right Limit", 360)
 					new_counter = self.table.getNumber("Counter", 0)
 					new_robot_enabled = self.table.getBoolean("Robot Enabled", False)
 					new_robot_mode = self.table.getString("robot_mode", "Unknown")
 					
-					if (new_angles != self.wheel_angles or new_power != self.wheel_power or new_counter != self.counter or 
-						new_robot_enabled != self.robot_enabled or new_robot_mode != self.robot_mode):
+					if (new_angles != self.wheel_angles or new_power != self.wheel_power or new_turret_angle != self.turret_angle or new_turret_power != self.turret_power or new_counter != self.counter or 
+						new_robot_enabled != self.robot_enabled or new_robot_mode != self.robot_mode or new_turret_left_limit != getattr(self, 'turret_left_limit', 0) or new_turret_right_limit != getattr(self, 'turret_right_limit', 360)):
 						self.wheel_angles = new_angles
 						self.wheel_power = new_power
+						self.turret_angle = new_turret_angle
+						self.turret_power = new_turret_power
+						self.turret_left_limit = new_turret_left_limit
+						self.turret_right_limit = new_turret_right_limit
 						self.counter = new_counter
 						self.robot_enabled = new_robot_enabled
 						self.robot_mode = new_robot_mode
@@ -129,7 +141,11 @@ class DashboardServer:
 						self._broadcast_to_all({
 							"type": "state",
 							"angles": self.wheel_angles,
-						"power": self.wheel_power,
+							"power": self.wheel_power,
+							"turret_angle": self.turret_angle,
+							"turret_power": self.turret_power,
+							"turret_left_limit": self.turret_left_limit,
+							"turret_right_limit": self.turret_right_limit,
 						})
 					
 					if first_read and self.counter > 0:
@@ -181,12 +197,24 @@ if HAS_FLASK_SOCK:
 						dashboard.table.putBoolean("align_command", True)
 					elif cmd == "save_zero":
 						dashboard.table.putBoolean("save_zero_command", True)
+					elif cmd == "turret_set_zero":
+						print("[WS-DEBUG] turret_set_zero command received!")
+						dashboard.table.putBoolean("turret_set_zero_command", True)
+						print("[WS-DEBUG] turret_set_zero_command set to True in NetworkTables")
+					elif cmd == "turret_set_left_limit":
+						print("[WS-DEBUG] turret_set_left_limit command received!")
+						dashboard.table.putBoolean("turret_set_left_limit_command", True)
+						print("[WS-DEBUG] turret_set_left_limit_command set to True in NetworkTables")
+					elif cmd == "turret_set_right_limit":
+						print("[WS-DEBUG] turret_set_right_limit command received!")
+						dashboard.table.putBoolean("turret_set_right_limit_command", True)
+						print("[WS-DEBUG] turret_set_right_limit_command set to True in NetworkTables")
 					elif cmd == "calibrate":
 						wheel = value.get("wheel")
 						angle = value.get("angle", 0)
 						dashboard.table.putString("calibrate_wheel", wheel)
 						dashboard.table.putNumber("calibrate_angle", angle)
-					
+				
 				except json.JSONDecodeError:
 					ws.send(json.dumps({"type": "error", "message": "Invalid JSON"}))
 				except Exception as e:

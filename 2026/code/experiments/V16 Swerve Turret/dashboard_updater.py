@@ -2,16 +2,18 @@ from wpilib import SmartDashboard
 
 
 class DashboardUpdater:
-	"""Manages all SmartDashboard updates for the swerve drive."""
+	"""Manages all SmartDashboard updates for the swerve drive and turret."""
 
-	def __init__(self, swerve_drive):
+	def __init__(self, swerve_drive, turret=None):
 		"""
 		Initialize the dashboard updater.
 
 		Args:
 			swerve_drive: SwerveDrive instance to read wheel angles from
+			turret: Turret instance to read turret angle from (optional)
 		"""
 		self.drive = swerve_drive
+		self.turret = turret
 		self.counter = 0
 
 	def update(self):
@@ -31,3 +33,12 @@ class DashboardUpdater:
 		SmartDashboard.putNumber("RR Power", self.drive.get_wheel_power("rear_right"))
 		SmartDashboard.putNumber("RL Power", self.drive.get_wheel_power("rear_left"))
 		SmartDashboard.putNumber("FL Power", self.drive.get_wheel_power("front_left"))
+		
+		# Turret angle and power (if turret is available)
+		if self.turret:
+			turret_angle = self.turret.get_angle()
+			SmartDashboard.putNumber("Turret Angle", turret_angle)
+			SmartDashboard.putNumber("Turret Power", self.turret.get_turn_power())
+			# Send limits for display
+			SmartDashboard.putNumber("Turret Left Limit", self.turret.get_left_limit())
+			SmartDashboard.putNumber("Turret Right Limit", self.turret.get_right_limit())

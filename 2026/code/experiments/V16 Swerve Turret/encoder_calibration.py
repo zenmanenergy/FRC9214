@@ -40,7 +40,10 @@ class EncoderCalibration:
 				"front_right": 0.0,
 				"rear_right": 0.0,
 				"rear_left": 0.0,
-				"front_left": 0.0
+				"front_left": 0.0,
+				"turret": 0.0,
+				"turret_left_limit": 0.0,
+				"turret_right_limit": 360.0
 			},
 			"pid_gains": {
 				"kp": 0.003,

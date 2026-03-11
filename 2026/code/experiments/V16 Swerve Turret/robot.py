@@ -2,7 +2,9 @@
 import wpilib
 from wpilib import Joystick, SmartDashboard, DriverStation
 from swerve_drive import SwerveDrive
+from turret import Turret
 from dashboard_updater import DashboardUpdater
+from encoder_calibration import EncoderCalibration
 import swerve_config as config
 
 
@@ -17,8 +19,23 @@ class Robot(wpilib.TimedRobot):
 		print("[ROBOT-INIT] SwerveDrive created successfully", flush=True)
 		sys.stdout.flush()
 		
+		self.turret = Turret(turn_canid=10, encoder_dio=4)
+		print("[ROBOT-INIT] Turret created successfully", flush=True)
+		sys.stdout.flush()
+		
+		# Load calibration for both swerve and turret
+		self.calibration = EncoderCalibration()
+		turret_offset = self.calibration.get_offset("turret")
+		self.turret.set_zero_offset(turret_offset)
+		turret_left_limit = self.calibration.get_offset("turret_left_limit")
+		turret_right_limit = self.calibration.get_offset("turret_right_limit")
+		self.turret.set_left_limit(turret_left_limit)
+		self.turret.set_right_limit(turret_right_limit)
+		print(f"[ROBOT-INIT] Loaded turret offset: {turret_offset:.1f}, left_limit: {turret_left_limit:.1f}, right_limit: {turret_right_limit:.1f}", flush=True)
+		sys.stdout.flush()
+		
 		self.joystick = Joystick(0)
-		self.dashboard = DashboardUpdater(self.drive)
+		self.dashboard = DashboardUpdater(self.drive, self.turret)
 		
 		# Test state
 		self.focused = None
@@ -34,6 +51,9 @@ class Robot(wpilib.TimedRobot):
 		SmartDashboard.putNumber("calibrate_angle", 0)
 		SmartDashboard.putString("focused_wheel", "")
 		SmartDashboard.putString("robot_mode", "Unknown")
+		SmartDashboard.putBoolean("turret_set_zero_command", False)
+		SmartDashboard.putBoolean("turret_set_left_limit_command", False)
+		SmartDashboard.putBoolean("turret_set_right_limit_command", False)
 		
 		print("[ROBOT] Ready. Press A/B/X/Y to focus on wheels.\n")
 	
@@ -208,6 +228,48 @@ class Robot(wpilib.TimedRobot):
 			SmartDashboard.putString("focused_wheel", "")
 			self.last_focused_wheel = None
 			print(f"[ZEROING] Saved zero for {focused_wheel}\n")
+		
+		# Handle turret set zero command
+		turret_set_zero_command = SmartDashboard.getBoolean("turret_set_zero_command", False)
+		if turret_set_zero_command:
+			print(f"[TURRET-DEBUG] turret_set_zero_command received!")
+			raw_encoder_degrees = self.turret.get_raw_encoder_degrees()
+			print(f"[TURRET-DEBUG] Raw encoder angle: {raw_encoder_degrees:.1f}")
+			self.turret.set_zero_offset(raw_encoder_degrees)
+			self.calibration.set_offset("turret", raw_encoder_degrees)
+			print(f"[TURRET-DEBUG] Saving to file...")
+			self.calibration.save_calibration()
+			self.turret.stop()
+			SmartDashboard.putBoolean("turret_set_zero_command", False)
+			print(f"[TURRET-ZEROING] Saved turret zero at encoder angle: {raw_encoder_degrees:.1f}\n")
+		
+		# Handle turret set left limit command
+		turret_set_left_limit_command = SmartDashboard.getBoolean("turret_set_left_limit_command", False)
+		if turret_set_left_limit_command:
+			print(f"[TURRET-DEBUG] turret_set_left_limit_command received!")
+			turret_angle = self.turret.get_angle()
+			print(f"[TURRET-DEBUG] Current turret angle: {turret_angle}°")
+			self.turret.set_left_limit(turret_angle)
+			self.calibration.set_offset("turret_left_limit", turret_angle)
+			print(f"[TURRET-DEBUG] Saving to file...")
+			self.calibration.save_calibration()
+			self.turret.stop()
+			SmartDashboard.putBoolean("turret_set_left_limit_command", False)
+			print(f"[TURRET-LIMIT] Saved turret left limit at: {turret_angle}°\n")
+		
+		# Handle turret set right limit command
+		turret_set_right_limit_command = SmartDashboard.getBoolean("turret_set_right_limit_command", False)
+		if turret_set_right_limit_command:
+			print(f"[TURRET-DEBUG] turret_set_right_limit_command received!")
+			turret_angle = self.turret.get_angle()
+			print(f"[TURRET-DEBUG] Current turret angle: {turret_angle}°")
+			self.turret.set_right_limit(turret_angle)
+			self.calibration.set_offset("turret_right_limit", turret_angle)
+			print(f"[TURRET-DEBUG] Saving to file...")
+			self.calibration.save_calibration()
+			self.turret.stop()
+			SmartDashboard.putBoolean("turret_set_right_limit_command", False)
+			print(f"[TURRET-LIMIT] Saved turret right limit at: {turret_angle}°\n")
 		
 		# Update continuous wheel drive (from dashboard arrow buttons)
 		if self.driving_wheel_to_angle:

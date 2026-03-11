@@ -27,7 +27,9 @@ class SwerveDrive:
 		# Load calibration
 		self.calibration = EncoderCalibration()
 		for wheel_name, offset in self.calibration.offsets.items():
-			self.wheels[wheel_name].offset = offset
+			# Only apply offsets to actual wheels (skip turret offsets)
+			if wheel_name in self.wheels:
+				self.wheels[wheel_name].offset = offset
 		
 		print("[ROBOT] Initialized 4 wheels with offsets")
 		

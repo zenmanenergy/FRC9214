@@ -15,6 +15,8 @@
 			align-items: center;
 			min-height: 100vh;
 			padding: 10px;
+			flex-wrap: wrap;
+			gap: 15px;
 		}
 		
 		.container {
@@ -22,8 +24,18 @@
 			border-radius: 10px;
 			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 			padding: 20px;
-			max-width: 800px;
-			width: 100%;
+			display: flex;
+			flex-direction: column;
+		}
+		
+		#turretContainer {
+			width: 400px;
+			height: auto;
+		}
+		
+		#swerveContainer {
+			width: 800px;
+			height: auto;
 		}
 		
 		h1 {
@@ -83,6 +95,22 @@
 		.canvas-wrapper {
 			position: relative;
 			display: inline-block;
+		}
+		
+		.turret-canvas-wrapper {
+			position: relative;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			margin-bottom: 15px;
+		}
+		
+		.turret-canvas-wrapper {
+			position: relative;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			margin-bottom: 15px;
 		}
 		
 		canvas {
@@ -210,8 +238,28 @@
 	</style>
 </head>
 <body>
-	<div class="container">
-		<h1>🐳 Swerve Drive - Teleop</h1>
+	<div class="container" id="turretContainer">
+		<h1>🎯 Turret</h1>
+		
+		<div class="turret-canvas-wrapper">
+			<canvas id="turretCanvas" width="200" height="200"></canvas>
+		</div>
+		
+		<div class="info-box">
+			<div class="info-title">Turret Angle</div>
+			<div style="text-align: center; padding: 20px;">
+				<div style="font-size: 48px; color: #2c3e50; font-weight: bold; margin-bottom: 10px;">
+					<span id="turret-angle-value">0°</span>
+				</div>
+				<div class="power-bar-container" style="max-width: 100%; margin: 0 auto;">
+					<div class="power-bar" id="turret-power" style="width: 0%"></div>
+				</div>
+				<div class="power-label" id="turret-power-label">0%</div>
+			</div>
+		</div>
+	</div>
+	<div class="container" id="swerveContainer">
+		<h1>🐳 Swerve Drive</h1>
 		
 		<div class="status-bar">
 			<div class="status-item">
@@ -361,6 +409,28 @@
 				updatePowerBar("rr", data.power.rear_right);
 			}
 			
+			// Turret angle
+			if (data.turret_angle !== undefined) {
+				currentTurretAngle = data.turret_angle;
+				document.getElementById("turret-angle-value").textContent = Math.round(data.turret_angle) + "°";
+				drawTurret();
+			}
+			
+			// Turret power
+			if (data.turret_power !== undefined) {
+				updatePowerBar("turret", data.turret_power);
+			}
+			
+			// Turret limits
+			if (data.turret_left_limit !== undefined) {
+				turretLeftLimit = data.turret_left_limit;
+				drawTurret();
+			}
+			if (data.turret_right_limit !== undefined) {
+				turretRightLimit = data.turret_right_limit;
+				drawTurret();
+			}
+			
 			if (data.counter !== undefined) {
 				frameCount = data.counter;
 				document.getElementById("frameCounter").textContent = frameCount;
@@ -482,9 +552,125 @@
 			});
 		}
 		
+		// Turret canvas drawing
+		let turretCanvas = null;
+		let turretCtx = null;
+		
+		function initTurretCanvas() {
+			if (!turretCanvas) {
+				turretCanvas = document.getElementById("turretCanvas");
+				if (turretCanvas) {
+					turretCtx = turretCanvas.getContext("2d");
+					console.log("[TURRET] Canvas initialized:", turretCanvas.width, turretCanvas.height);
+				} else {
+					console.error("[TURRET] Canvas element not found!");
+				}
+			}
+		}
+		// These will be calculated once the canvas is initialized
+		let TURRET_CENTER_X = 0;
+		let TURRET_CENTER_Y = 0;
+		const TURRET_RADIUS = 70;
+		let currentTurretAngle = 0;
+		let turretLeftLimit = 0;
+		let turretRightLimit = 360;
+		
+		function drawTurret() {
+			initTurretCanvas();
+			if (!turretCtx || !turretCanvas) {
+				console.error("[TURRET] Context or canvas not available");
+				return;
+			}
+			
+			// Calculate center coordinates
+			TURRET_CENTER_X = turretCanvas.width / 2;
+			TURRET_CENTER_Y = turretCanvas.height / 2;
+			
+			turretCtx.clearRect(0, 0, turretCanvas.width, turretCanvas.height);
+			
+			// Outer circle border
+			turretCtx.strokeStyle = "#3498db";
+			turretCtx.lineWidth = 3;
+			turretCtx.beginPath();
+			turretCtx.arc(TURRET_CENTER_X, TURRET_CENTER_Y, TURRET_RADIUS, 0, 2 * Math.PI);
+			turretCtx.stroke();
+			
+			// Center circle
+			turretCtx.fillStyle = "#2c3e50";
+			turretCtx.beginPath();
+			turretCtx.arc(TURRET_CENTER_X, TURRET_CENTER_Y, 8, 0, 2 * Math.PI);
+			turretCtx.fill();
+			
+			// Degree markings (0, 90, 180, 270)
+			turretCtx.fillStyle = "#2c3e50";
+			turretCtx.font = "bold 11px Arial";
+			turretCtx.textAlign = "center";
+			turretCtx.textBaseline = "middle";
+			
+			const labelRadius = TURRET_RADIUS + 18;
+			const angles = [0, 90, 180, 270];
+			const labels = ["0°", "90°", "180°", "270°"];
+			
+			angles.forEach((deg, idx) => {
+				const rad = deg * (Math.PI / 180) - Math.PI / 2;
+				const x = TURRET_CENTER_X + labelRadius * Math.cos(rad);
+				const y = TURRET_CENTER_Y + labelRadius * Math.sin(rad);
+				turretCtx.fillText(labels[idx], x, y);
+			});
+			
+			// Draw limit markers on the outer circle
+			// Left limit (yellow)
+			const leftLimitRad = turretLeftLimit * (Math.PI / 180) - Math.PI / 2;
+			const leftLimitX1 = TURRET_CENTER_X + TURRET_RADIUS * Math.cos(leftLimitRad);
+			const leftLimitY1 = TURRET_CENTER_Y + TURRET_RADIUS * Math.sin(leftLimitRad);
+			const leftLimitX2 = TURRET_CENTER_X + (TURRET_RADIUS + 12) * Math.cos(leftLimitRad);
+			const leftLimitY2 = TURRET_CENTER_Y + (TURRET_RADIUS + 12) * Math.sin(leftLimitRad);
+			turretCtx.strokeStyle = "#f1c40f";
+			turretCtx.lineWidth = 3;
+			turretCtx.beginPath();
+			turretCtx.moveTo(leftLimitX1, leftLimitY1);
+			turretCtx.lineTo(leftLimitX2, leftLimitY2);
+			turretCtx.stroke();
+			
+			// Right limit (orange)
+			const rightLimitRad = turretRightLimit * (Math.PI / 180) - Math.PI / 2;
+			const rightLimitX1 = TURRET_CENTER_X + TURRET_RADIUS * Math.cos(rightLimitRad);
+			const rightLimitY1 = TURRET_CENTER_Y + TURRET_RADIUS * Math.sin(rightLimitRad);
+			const rightLimitX2 = TURRET_CENTER_X + (TURRET_RADIUS + 12) * Math.cos(rightLimitRad);
+			const rightLimitY2 = TURRET_CENTER_Y + (TURRET_RADIUS + 12) * Math.sin(rightLimitRad);
+			turretCtx.strokeStyle = "#e67e22";
+			turretCtx.lineWidth = 3;
+			turretCtx.beginPath();
+			turretCtx.moveTo(rightLimitX1, rightLimitY1);
+			turretCtx.lineTo(rightLimitX2, rightLimitY2);
+			turretCtx.stroke();
+			
+			// Direction line from center based on current angle
+			const angleRad = currentTurretAngle * (Math.PI / 180) - Math.PI / 2;
+			const lineLen = TURRET_RADIUS - 8;
+			const endX = TURRET_CENTER_X + lineLen * Math.cos(angleRad);
+			const endY = TURRET_CENTER_Y + lineLen * Math.sin(angleRad);
+			
+			turretCtx.strokeStyle = "#e74c3c";
+			turretCtx.lineWidth = 3;
+			turretCtx.beginPath();
+			turretCtx.moveTo(TURRET_CENTER_X, TURRET_CENTER_Y);
+			turretCtx.lineTo(endX, endY);
+			turretCtx.stroke();
+			
+			// Arrow tip
+			turretCtx.fillStyle = "#e74c3c";
+			const arrowSize = 6;
+			turretCtx.beginPath();
+			turretCtx.arc(endX, endY, arrowSize, 0, 2 * Math.PI);
+			turretCtx.fill();
+		}
+		
 		// Initialize
 		window.addEventListener("load", () => {
+			initTurretCanvas();
 			drawSwerve();
+			drawTurret();
 			connectWebSocket();
 		});
 	</script>

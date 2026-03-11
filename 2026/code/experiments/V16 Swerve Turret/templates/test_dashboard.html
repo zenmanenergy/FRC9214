@@ -331,48 +331,57 @@
 					<button class="button btn-danger" id="autotuneBtn" onclick="if(isRobotEnabled) startAutotune(); else showError('Bot must be enabled to autotune')">⚙️ Autotune PID</button>
 					<button class="button btn-primary" onclick="if(isRobotEnabled) window.location.href='/history'; else showError('Bot must be enabled to view history')">📊 Tuning History</button>
 				</div>
-		
-		<div class="section">
-			<div class="section-title">🐛 Debug Mode</div>
-			<button class="button" id="debugToggleBtn" onclick="toggleDebugMode()" style="background: #e74c3c; margin-bottom: 8px;">Enable Debug (Rear Right Only)</button>
-			<div id="debugStatus" style="font-size: 11px; color: #666; margin-bottom: 8px;">OFF</div>
-			<button class="button btn-primary" onclick="if(isRobotEnabled) sendCommand('set_wheels_direction', {front_left: 0, front_right: 0, rear_left: 0, rear_right: 0}); else showError('Bot must be enabled')" style="font-size: 11px; padding: 6px;">RR → 0°</button>
-			<button class="button btn-primary" onclick="if(isRobotEnabled) sendCommand('set_wheels_direction', {front_left: 0, front_right: 0, rear_left: 0, rear_right: 45}); else showError('Bot must be enabled')" style="font-size: 11px; padding: 6px;">RR → 45°</button>
-			<button class="button btn-primary" onclick="if(isRobotEnabled) sendCommand('set_wheels_direction', {front_left: 0, front_right: 0, rear_left: 0, rear_right: 90}); else showError('Bot must be enabled')" style="font-size: 11px; padding: 6px;">RR → 90°</button>
-			<button class="button btn-primary" onclick="if(isRobotEnabled) sendCommand('set_wheels_direction', {front_left: 0, front_right: 0, rear_left: 0, rear_right: 180}); else showError('Bot must be enabled')" style="font-size: 11px; padding: 6px;">RR → 180°</button>
-		</div>
-	</div>
+				<div class="section">
+					<div class="section-title">Turret</div>
+					<button class="button btn-primary" onclick="if(isRobotEnabled) {console.log('[BTN] Turret Set Zero clicked'); sendCommand('turret_set_zero', '');} else showError('Bot must be enabled')">🎯 Turret Set Zero</button>
+					<button class="button btn-primary" onclick="if(isRobotEnabled) {console.log('[BTN] Turret Set Max Left clicked'); sendCommand('turret_set_left_limit', '');} else showError('Bot must be enabled')">🎯 Turret Set Left limit</button>
+					<button class="button btn-primary" onclick="if(isRobotEnabled) {console.log('[BTN] Turret Set Max Right clicked'); sendCommand('turret_set_right_limit', '');} else showError('Bot must be enabled')">🎯 Turret Set Right limit</button>
+				</div>
+				<div class="section">
+					<div class="section-title">🐛 Debug Mode</div>
+					<button class="button" id="debugToggleBtn" onclick="toggleDebugMode()" style="background: #e74c3c; margin-bottom: 8px;">Enable Debug (Rear Right Only)</button>
+					<div id="debugStatus" style="font-size: 11px; color: #666; margin-bottom: 8px;">OFF</div>
+					<button class="button btn-primary" onclick="if(isRobotEnabled) sendCommand('set_wheels_direction', {front_left: 0, front_right: 0, rear_left: 0, rear_right: 0}); else showError('Bot must be enabled')" style="font-size: 11px; padding: 6px;">RR → 0°</button>
+					<button class="button btn-primary" onclick="if(isRobotEnabled) sendCommand('set_wheels_direction', {front_left: 0, front_right: 0, rear_left: 0, rear_right: 45}); else showError('Bot must be enabled')" style="font-size: 11px; padding: 6px;">RR → 45°</button>
+					<button class="button btn-primary" onclick="if(isRobotEnabled) sendCommand('set_wheels_direction', {front_left: 0, front_right: 0, rear_left: 0, rear_right: 90}); else showError('Bot must be enabled')" style="font-size: 11px; padding: 6px;">RR → 90°</button>
+					<button class="button btn-primary" onclick="if(isRobotEnabled) sendCommand('set_wheels_direction', {front_left: 0, front_right: 0, rear_left: 0, rear_right: 180}); else showError('Bot must be enabled')" style="font-size: 11px; padding: 6px;">RR → 180°</button>
+				</div>
+			</div>
 	
 	<!-- CENTER PANEL -->
-	<div class="center-panel">
-		<div class="canvas-wrapper">
-			<canvas id="swerveCanvas" width="320" height="320"></canvas>
+			<div class="center-panel">
+				<div class="canvas-wrapper">
+					<canvas id="swerveCanvas" width="320" height="320"></canvas>
 					<div style="position: absolute; top: 0; left: 0; width: 320px; height: 320px; pointer-events: none;">
-									<div id="canvas-fl-angle" class="canvas-angle-box value" style="pointer-events: auto;" onclick="if(isRobotEnabled) editCanvasAngle('front_left', this); else showError('Bot must be enabled to edit angles')">0°</div>
+						<div id="canvas-fl-angle" class="canvas-angle-box value" style="pointer-events: auto;" onclick="if(isRobotEnabled) editCanvasAngle('front_left', this); else showError('Bot must be enabled to edit angles')">0°</div>
 						<div id="fl-btns" class="angle-adjust-buttons" style="top: 5px; left: 58px; pointer-events: auto;">
-										<button class="angle-btn-up" onclick="if(isRobotEnabled) adjustAngle('front_left', 5); else showError('Bot must be enabled to adjust angles')">▲</button>
-										<button class="angle-btn-down" onclick="if(isRobotEnabled) adjustAngle('front_left', -5); else showError('Bot must be enabled to adjust angles')">▼</button>
+							<button class="angle-btn-up" onclick="if(isRobotEnabled) adjustAngle('front_left', 5); else showError('Bot must be enabled to adjust angles')">▲</button>
+							<button class="angle-btn-down" onclick="if(isRobotEnabled) adjustAngle('front_left', -5); else showError('Bot must be enabled to adjust angles')">▼</button>
 						</div>
-						
-									<div id="canvas-fr-angle" class="canvas-angle-box value" style="pointer-events: auto;" onclick="if(isRobotEnabled) editCanvasAngle('front_right', this); else showError('Bot must be enabled to edit angles')">0°</div>
+					
+						<div id="canvas-fr-angle" class="canvas-angle-box value" style="pointer-events: auto;" onclick="if(isRobotEnabled) editCanvasAngle('front_right', this); else showError('Bot must be enabled to edit angles')">0°</div>
 						<div id="fr-btns" class="angle-adjust-buttons" style="top: 5px; right: 58px; pointer-events: auto;">
-										<button class="angle-btn-up" onclick="if(isRobotEnabled) adjustAngle('front_right', 5); else showError('Bot must be enabled to adjust angles')">▲</button>
-										<button class="angle-btn-down" onclick="if(isRobotEnabled) adjustAngle('front_right', -5); else showError('Bot must be enabled to adjust angles')">▼</button>
+							<button class="angle-btn-up" onclick="if(isRobotEnabled) adjustAngle('front_right', 5); else showError('Bot must be enabled to adjust angles')">▲</button>
+							<button class="angle-btn-down" onclick="if(isRobotEnabled) adjustAngle('front_right', -5); else showError('Bot must be enabled to adjust angles')">▼</button>
 						</div>
-						
-									<div id="canvas-rl-angle" class="canvas-angle-box value" style="pointer-events: auto;" onclick="if(isRobotEnabled) editCanvasAngle('rear_left', this); else showError('Bot must be enabled to edit angles')">0°</div>
+		
+						<div id="canvas-rl-angle" class="canvas-angle-box value" style="pointer-events: auto;" onclick="if(isRobotEnabled) editCanvasAngle('rear_left', this); else showError('Bot must be enabled to edit angles')">0°</div>
 						<div id="rl-btns" class="angle-adjust-buttons" style="bottom: 5px; left: 58px; pointer-events: auto;">
-										<button class="angle-btn-up" onclick="if(isRobotEnabled) adjustAngle('rear_left', 5); else showError('Bot must be enabled to adjust angles')">▲</button>
-										<button class="angle-btn-down" onclick="if(isRobotEnabled) adjustAngle('rear_left', -5); else showError('Bot must be enabled to adjust angles')">▼</button>
+							<button class="angle-btn-up" onclick="if(isRobotEnabled) adjustAngle('rear_left', 5); else showError('Bot must be enabled to adjust angles')">▲</button>
+							<button class="angle-btn-down" onclick="if(isRobotEnabled) adjustAngle('rear_left', -5); else showError('Bot must be enabled to adjust angles')">▼</button>
 						</div>
-						
-									<div id="canvas-rr-angle" class="canvas-angle-box value" style="pointer-events: auto;" onclick="if(isRobotEnabled) editCanvasAngle('rear_right', this); else showError('Bot must be enabled to edit angles')">0°</div>
-						<div id="rr-btns" class="angle-adjust-buttons" style="bottom: 5px; right: 58px; pointer-events: auto;">
-										<button class="angle-btn-up" onclick="if(isRobotEnabled) adjustAngle('rear_right', 5); else showError('Bot must be enabled to adjust angles')">▲</button>
-										<button class="angle-btn-down" onclick="if(isRobotEnabled) adjustAngle('rear_right', -5); else showError('Bot must be enabled to adjust angles')">▼</button>
+			
+							<div id="canvas-rr-angle" class="canvas-angle-box value" style="pointer-events: auto;" onclick="if(isRobotEnabled) editCanvasAngle('rear_right', this); else showError('Bot must be enabled to edit angles')">0°</div>
+							<div id="rr-btns" class="angle-adjust-buttons" style="bottom: 5px; right: 58px; pointer-events: auto;">
+								<button class="angle-btn-up" onclick="if(isRobotEnabled) adjustAngle('rear_right', 5); else showError('Bot must be enabled to adjust angles')">▲</button>
+								<button class="angle-btn-down" onclick="if(isRobotEnabled) adjustAngle('rear_right', -5); else showError('Bot must be enabled to adjust angles')">▼</button>
+							</div>
 						</div>
 					</div>
 				</div>
+			
+			<div class="turret-canvas-wrapper">
+				<canvas id="turretCanvas" width="200" height="200"></canvas>
 			</div>
 			
 			<!-- RIGHT PANEL -->
@@ -522,6 +531,18 @@
 					}
 				}
 				drawSwerve();
+			}
+			if (data.turret_angle !== undefined) {
+				currentTurretAngle = data.turret_angle;
+				drawTurret();
+			}
+			if (data.turret_left_limit !== undefined) {
+				turretLeftLimit = data.turret_left_limit;
+				drawTurret();
+			}
+			if (data.turret_right_limit !== undefined) {
+				turretRightLimit = data.turret_right_limit;
+				drawTurret();
 			}
 			if (data.robot_enabled !== undefined) {
 				isRobotEnabled = data.robot_enabled;
@@ -677,6 +698,97 @@
 			};
 		}
 		
+		// ===== Turret Canvas Drawing =====
+		const turretCanvas = document.getElementById("turretCanvas");
+		const turretCtx = turretCanvas.getContext("2d");
+		const TURRET_CENTER_X = turretCanvas.width / 2;
+		const TURRET_CENTER_Y = turretCanvas.height / 2;
+		const TURRET_RADIUS = 70;
+		let currentTurretAngle = 0;
+		let turretLeftLimit = 0;
+		let turretRightLimit = 360;
+		
+		function drawTurret() {
+			turretCtx.clearRect(0, 0, turretCanvas.width, turretCanvas.height);
+			
+			// Outer circle border
+			turretCtx.strokeStyle = "#3498db";
+			turretCtx.lineWidth = 3;
+			turretCtx.beginPath();
+			turretCtx.arc(TURRET_CENTER_X, TURRET_CENTER_Y, TURRET_RADIUS, 0, 2 * Math.PI);
+			turretCtx.stroke();
+			
+			// Center circle
+			turretCtx.fillStyle = "#333";
+			turretCtx.beginPath();
+			turretCtx.arc(TURRET_CENTER_X, TURRET_CENTER_Y, 8, 0, 2 * Math.PI);
+			turretCtx.fill();
+			
+			// Degree markings (0, 90, 180, 270)
+			turretCtx.fillStyle = "#333";
+			turretCtx.font = "bold 11px Arial";
+			turretCtx.textAlign = "center";
+			turretCtx.textBaseline = "middle";
+			
+			const labelRadius = TURRET_RADIUS + 18;
+			const angles = [0, 90, 180, 270];
+			const labels = ["0°", "90°", "180°", "270°"];
+			
+			angles.forEach((deg, idx) => {
+				const rad = deg * (Math.PI / 180) - Math.PI / 2;
+				const x = TURRET_CENTER_X + labelRadius * Math.cos(rad);
+				const y = TURRET_CENTER_Y + labelRadius * Math.sin(rad);
+				turretCtx.fillText(labels[idx], x, y);
+			});
+			
+			// Draw limit markers on the outer circle
+			// Left limit (yellow)
+			const leftLimitRad = turretLeftLimit * (Math.PI / 180) - Math.PI / 2;
+			const leftLimitX1 = TURRET_CENTER_X + TURRET_RADIUS * Math.cos(leftLimitRad);
+			const leftLimitY1 = TURRET_CENTER_Y + TURRET_RADIUS * Math.sin(leftLimitRad);
+			const leftLimitX2 = TURRET_CENTER_X + (TURRET_RADIUS + 15) * Math.cos(leftLimitRad);
+			const leftLimitY2 = TURRET_CENTER_Y + (TURRET_RADIUS + 15) * Math.sin(leftLimitRad);
+			turretCtx.strokeStyle = "#f1c40f";
+			turretCtx.lineWidth = 4;
+			turretCtx.beginPath();
+			turretCtx.moveTo(leftLimitX1, leftLimitY1);
+			turretCtx.lineTo(leftLimitX2, leftLimitY2);
+			turretCtx.stroke();
+			
+			// Right limit (orange)
+			const rightLimitRad = turretRightLimit * (Math.PI / 180) - Math.PI / 2;
+			const rightLimitX1 = TURRET_CENTER_X + TURRET_RADIUS * Math.cos(rightLimitRad);
+			const rightLimitY1 = TURRET_CENTER_Y + TURRET_RADIUS * Math.sin(rightLimitRad);
+			const rightLimitX2 = TURRET_CENTER_X + (TURRET_RADIUS + 15) * Math.cos(rightLimitRad);
+			const rightLimitY2 = TURRET_CENTER_Y + (TURRET_RADIUS + 15) * Math.sin(rightLimitRad);
+			turretCtx.strokeStyle = "#e67e22";
+			turretCtx.lineWidth = 4;
+			turretCtx.beginPath();
+			turretCtx.moveTo(rightLimitX1, rightLimitY1);
+			turretCtx.lineTo(rightLimitX2, rightLimitY2);
+			turretCtx.stroke();
+			
+			// Direction line from center based on current angle
+			const angleRad = currentTurretAngle * (Math.PI / 180) - Math.PI / 2;
+			const lineLen = TURRET_RADIUS - 8;
+			const endX = TURRET_CENTER_X + lineLen * Math.cos(angleRad);
+			const endY = TURRET_CENTER_Y + lineLen * Math.sin(angleRad);
+			
+			turretCtx.strokeStyle = "#e74c3c";
+			turretCtx.lineWidth = 3;
+			turretCtx.beginPath();
+			turretCtx.moveTo(TURRET_CENTER_X, TURRET_CENTER_Y);
+			turretCtx.lineTo(endX, endY);
+			turretCtx.stroke();
+			
+			// Arrow tip
+			turretCtx.fillStyle = "#e74c3c";
+			const arrowSize = 6;
+			turretCtx.beginPath();
+			turretCtx.arc(endX, endY, arrowSize, 0, 2 * Math.PI);
+			turretCtx.fill();
+		}
+		
 		// ===== Angle Adjustment with Arrow Buttons =====
 		function adjustAngle(wheelName, delta) {
 			console.log(`[ADJUST] wheelName=${wheelName}, delta=${delta}`);
@@ -789,6 +901,7 @@
 		// ===== Initialize =====
 		window.addEventListener("load", () => {
 			drawSwerve();
+			drawTurret();
 			updatePresetsPanel();
 			connectWebSocket();
 		});
