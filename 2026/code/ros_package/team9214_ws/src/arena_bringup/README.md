@@ -31,7 +31,7 @@ source install/setup.bash
 ```bash
 ros2 launch arena_bringup bringup_single_cam.launch.py \
   camera_ns:=camera_1 \
-  tag_map_yaml:=/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_robot_and_maps/arena_tag_map/config/757-lab_arena_tags.yaml
+  tag_map_yaml:=/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_tag_map/config/757-lab_arena_tags.yaml
 ```
 
 ## Run: navigation stack directly
@@ -40,7 +40,7 @@ ros2 launch arena_bringup bringup_single_cam.launch.py \
 ros2 launch arena_bringup navigation.launch.py \
   params_file:=/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_bringup/params/nav2_params.yaml \
   launch_map_server:=true \
-  map:=/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_robot_and_maps/arena_tag_map/config/frc2026_field_blank.yaml \
+  map:=/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_tag_map/config/frc2026_field_blank.yaml \
   autostart:=true
 ```
 
@@ -64,7 +64,7 @@ ros2 launch arena_bringup sim_harness.launch.py \
   nav_params_file:=/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_bringup/params/nav2_params_sim.yaml \
   nav_autostart:=true \
   nav_launch_map_server:=true \
-  nav_map_yaml:=/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_robot_and_maps/arena_tag_map/config/frc2026_field_blank.yaml \
+  nav_map_yaml:=/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_tag_map/config/frc2026_field_blank.yaml \
   enable_autonomy_mode_manager:=true \
   autonomy_goal_behavior_tree:=/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_bringup/behavior_trees/custom_bt.xml \
   mode_schedule:=disabled:3,teleop:3,autonomous:12,disabled:3

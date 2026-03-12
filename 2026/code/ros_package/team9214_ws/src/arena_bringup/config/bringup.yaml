@@ -2,14 +2,14 @@ bringup:
   ros__parameters:
     #############################################################################
     # Config file paths
-    urdf_xacro: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_robot_and_maps/arena_description/urdf/robot.urdf.xacro"
-    tag_map_yaml: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_robot_and_maps/arena_tag_map/config/camera_test_arena_tags.yaml"
+    urdf_xacro: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_description/urdf/robot.urdf.xacro"
+    tag_map_yaml: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_tag_map/config/camera_test_arena_tags.yaml"
     observer_yaml: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/tag_pose_observer/config/observer.yaml"
-    # ekf_map_yaml: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/localization_fusion/config/ekf_map.yaml"
-    # ekf_odom_yaml: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/localization_fusion/config/ekf_odom.yaml"
+    ekf_map_yaml: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/localization_fusion/config/ekf_map.yaml"
+    ekf_odom_yaml: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/localization_fusion/config/ekf_odom.yaml"
     rviz_config: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_bringup/config/rviz.rviz"
-    # apriltag_params_yaml: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_robot_and_maps/arena_tag_map/config/frc2026_apriltag_ros.yaml"
-    apriltag_params_yaml: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_robot_and_maps/arena_tag_map/config/camera_test_arena_tags.yaml"
+    # apriltag_params_yaml: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_tag_map/config/frc2026_apriltag_ros.yaml"
+    apriltag_params_yaml: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_tag_map/config/camera_test_arena_tags.yaml"
     use_rviz: true
 
     ######################################################################
@@ -24,7 +24,7 @@ bringup:
     # Camera stream parameters (for usb_cam node)
     use_camera_driver: true
     use_rectify: true
-    video_device: "/dev/video1"
+    video_device: "/dev/video2"
     framerate: 30.0
     image_width: 640
     image_height: 480
@@ -34,7 +34,9 @@ bringup:
     # camera_info_url: "file:///home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/multi_cam_apriltag/config/camera_1_new.yaml"
     # camera_info_url: "file:///home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/multi_cam_apriltag/config/camera_1_new.yaml"
     # camera_info_url: "file:///home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/multi_cam_apriltag/config/AlphaCam_calibration.yaml"
+    # camera_info_url: "file:///home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/multi_cam_apriltag/config/wc3.yaml"
     camera_info_url: "file:///home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/multi_cam_apriltag/config/cam_wc4_calibration.yaml"
+    # camera_info_url: "file:///home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/multi_cam_apriltag/config/wc6_calibration.yaml"
     
     ########################################################################################################################################
     # Translation values below are passed to the static_transform_publisher for the camera TF when use_static_camera_tf is true.
@@ -46,7 +48,7 @@ bringup:
     # x,y, ans z translation are offsets (in meters) from the base_link to the camera frame
     camera_tf_x: 0.20 # 20 cm forward of base_link
     camera_tf_y: 0.00 # centered on the robot
-    camera_tf_z: 0.30 # 30 cm above the base_link
+    camera_tf_z: 0.59 # 59 cm above the base_link
 
     # roll, pitch, and yaw are rotation angles (in radians) around the respective axes from the base_link to the camera frame
     camera_tf_roll: -1.57079632679 # -90 degrees around x-axis to convert from camera optical frame to ROS standard
@@ -56,8 +58,8 @@ bringup:
     ###########################################################################   
     # Sensor availability toggles for EKF inputs.
     # Set false when the robot is not providing those topics yet.
-    # use_wheel_odom: false
-    # use_imu: false 
+    use_wheel_odom: false
+    use_imu: false 
     # When false, only ekf_map runs and is forced to world_frame=odom.
-    # run_ekf_odom: false
+    run_ekf_odom: false
    

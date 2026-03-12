@@ -1,0 +1,101 @@
+# 757-lab_arena_tags.yaml
+#
+# This template makes the coordinate system explicit and 
+# keeps everything in one place.
+#
+arena:
+  name: "lab_test_arena_v1"
+  frame_id: "map"
+
+  # Explicit coordinate convention so everyone stays consistent
+  convention:
+    units: "meters"
+    axes: "ROS REP-103"
+    description: "+x forward, +y left, +z up"
+    origin: "center" # explicit
+
+# dimensions:
+#   # Full extents
+#   length_x_m: 16.460     # along +X / -X (forward/back)
+#   width_y_m:  8.230      # along +Y / -Y (left/right)
+#   height_z_m: 2.500
+
+# # Helpful derived half-extents (purely informational, but nice for sanity checks)
+# half_extents:
+#   x_half_m: 8.230
+#   y_half_m: 4.115
+#   z_half_m: 1.250
+
+  # Arena boundary (useful for sanity checks + nav2 map origin selection)
+  bounds:
+    # Choose ONE: corner-origin or center-origin. This is descriptive only,
+    # but it forces you to be explicit when authoring tag poses.
+    origin_semantics: "center" #"south_west_corner"
+    width_m: 3.048 # 10 feet y-axis
+    length_m: 3.6576 # 14 feet x-axis
+    height_m: 4.572 # 15 feet z-axis
+
+    # Top-left and bottom-right corners (if using center origin (0,0,0))
+    corners:
+      top_left:
+        x: 1.8288
+        y: 1.524
+
+      bottom_right:
+        x: -1.8288
+        y: -1.524
+      
+    # Hub location (if applicable)
+    blue_hub:
+      width_m: 1.1938  # 47 inches
+      length_m: 1.1938 # 47 inches
+
+      # Located top right corner
+      position: { x: 1.8288 - 0.5969, y: 1.524 - 0.5969, z: 0.0 }
+      orientation_rpy: { roll: 0.0, pitch: 0.0, yaw: 0.0 }
+      notes: "Top Right Hub"
+      # [TODO]
+      # position: { x: 0.0, y: 0.0, z: 0.0 }
+      # orientation_rpy: { roll: 0.0, pitch: 0.0, yaw: 0.0 }
+      # notes: "Center of 10-foot side"
+
+    # Hub located bottom left corner
+    red_hub:
+      width_m: 1.1938  # 47 inches
+      length_m: 1.1938 # 47 inches
+      position: { x: -1.8288 + 0.5969, y: -1.524 + 0.5969, z: 0.0 }
+      orientation_rpy: { roll: 0.0, pitch: 0.0, yaw: 3.14159265359 }
+      notes: "Bottom Left Hub"
+
+apriltags:
+  family: "tag36h11"
+  default_size_m: 0.1651   # 6.5 in
+  # If you have multiple sizes, you can override per-tag
+
+  # Each tag pose is in the arena frame (map)
+  # Orientation: use yaw about +Z for wall-mounted tags, with roll/pitch usually 0
+  tags:
+    - id: 1
+      size_m: 0.1651
+      pose:
+        position: { x: 0.500, y: 0.500, z: 1.200 }
+        orientation_rpy: { roll: 0.0, pitch: 0.0, yaw: 0.0 }
+      notes: "Top Right Hub, facing +X, -Y"
+
+    - id: 2
+      pose:
+        position: { x: 15.960, y: 0.500, z: 1.200 }
+        orientation_rpy: { roll: 0.0, pitch: 0.0, yaw: 3.14159265359 }
+      notes: "East wall, facing -X"
+
+    - id: 3
+      pose:
+        position: { x: 8.230, y: 0.250, z: 1.200 }
+        orientation_rpy: { roll: 0.0, pitch: 0.0, yaw: 1.57079632679 }
+      notes: "South wall, facing +Y"
+
+    - id: 4
+      pose:
+        position: { x: 8.230, y: 16.210, z: 1.200 }
+        orientation_rpy: { roll: 0.0, pitch: 0.0, yaw: -1.57079632679 }
+      notes: "North wall, facing -Y"

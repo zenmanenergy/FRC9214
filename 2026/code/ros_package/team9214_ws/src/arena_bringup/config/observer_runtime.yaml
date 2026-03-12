@@ -1,6 +1,6 @@
 tag_pose_observer:
   ros__parameters:
-    tag_map_yaml: "/home/robots/source_code/first_robotics_comp/frc/team9214_ws/src/arena_robot_and_maps/arena_tag_map/config/757-lab_arena_tags.yaml"
-    # tag_map_yaml: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_robot_and_maps/arena_tag_map/config/camera_test_arena_tags.yaml"
+    tag_map_yaml: "/home/robots/source_code/first_robotics_comp/frc/team9214_ws/src/arena_tag_map/config/757-lab_arena_tags.yaml"
+    # tag_map_yaml: "/home/robots/source_code/github/zenmanenergy/FRC9214/2026/code/ros_package/team9214_ws/src/arena_tag_map/config/camera_test_arena_tags.yaml"
     detection_topics: ["/camera_1/tag_detections", "/camera_2/tag_detections"]
     publish_topic: /tag_global_pose

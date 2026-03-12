@@ -1,0 +1,130 @@
+# Each entry is a static transform from 'map' -> 'tag_<ID>'
+static_transforms:
+  - parent: map
+    child: tag_1
+    translation: [11.863959, 7.411491399999999, 0.889]
+    rotation_xyzw: [0.0, 0.0, 1.0, 6.123233995736766e-17]
+  - parent: map
+    child: tag_2
+    translation: [11.9013986, 4.6247558, 1.12395]
+    rotation_xyzw: [0.0, 0.0, 0.7071067811865476, 0.7071067811865476]
+  - parent: map
+    child: tag_3
+    translation: [11.2978438, 4.3769534, 1.12395]
+    rotation_xyzw: [0.0, 0.0, 1.0, 6.123233995736766e-17]
+  - parent: map
+    child: tag_4
+    translation: [11.2978438, 4.0213534, 1.12395]
+    rotation_xyzw: [0.0, 0.0, 1.0, 6.123233995736766e-17]
+  - parent: map
+    child: tag_5
+    translation: [11.9013986, 3.417951, 1.12395]
+    rotation_xyzw: [-0.0, 0.0, 0.7071067811865476, -0.7071067811865475]
+  - parent: map
+    child: tag_6
+    translation: [11.863959, 0.6312154, 0.889]
+    rotation_xyzw: [0.0, 0.0, 1.0, 6.123233995736766e-17]
+  - parent: map
+    child: tag_7
+    translation: [11.9388636, 0.6312154, 0.889]
+    rotation_xyzw: [0.0, 0.0, 0.0, 1.0]
+  - parent: map
+    child: tag_8
+    translation: [12.2569986, 3.417951, 1.12395]
+    rotation_xyzw: [-0.0, 0.0, 0.7071067811865476, -0.7071067811865475]
+  - parent: map
+    child: tag_9
+    translation: [12.5051566, 3.6657534, 1.12395]
+    rotation_xyzw: [0.0, 0.0, 0.0, 1.0]
+  - parent: map
+    child: tag_10
+    translation: [12.5051566, 4.0213534, 1.12395]
+    rotation_xyzw: [0.0, 0.0, 0.0, 1.0]
+  - parent: map
+    child: tag_11
+    translation: [12.2569986, 4.6247558, 1.12395]
+    rotation_xyzw: [0.0, 0.0, 0.7071067811865476, 0.7071067811865476]
+  - parent: map
+    child: tag_12
+    translation: [11.9388636, 7.411491399999999, 0.889]
+    rotation_xyzw: [0.0, 0.0, 0.0, 1.0]
+  - parent: map
+    child: tag_13
+    translation: [16.499332, 7.391907999999999, 0.55245]
+    rotation_xyzw: [0.0, 0.0, 1.0, 6.123233995736766e-17]
+  - parent: map
+    child: tag_14
+    translation: [16.499332, 6.960107999999999, 0.55245]
+    rotation_xyzw: [0.0, 0.0, 1.0, 6.123233995736766e-17]
+  - parent: map
+    child: tag_15
+    translation: [16.4989764, 4.3124882, 0.55245]
+    rotation_xyzw: [0.0, 0.0, 1.0, 6.123233995736766e-17]
+  - parent: map
+    child: tag_16
+    translation: [16.4989764, 3.8806881999999994, 0.55245]
+    rotation_xyzw: [0.0, 0.0, 1.0, 6.123233995736766e-17]
+  - parent: map
+    child: tag_17
+    translation: [4.6490636, 0.6312154, 0.889]
+    rotation_xyzw: [0.0, 0.0, 0.0, 1.0]
+  - parent: map
+    child: tag_18
+    translation: [4.6115986, 3.417951, 1.12395]
+    rotation_xyzw: [-0.0, 0.0, 0.7071067811865476, -0.7071067811865475]
+  - parent: map
+    child: tag_19
+    translation: [5.2151534, 3.6657534, 1.12395]
+    rotation_xyzw: [0.0, 0.0, 0.0, 1.0]
+  - parent: map
+    child: tag_20
+    translation: [5.2151534, 4.0213534, 1.12395]
+    rotation_xyzw: [0.0, 0.0, 0.0, 1.0]
+  - parent: map
+    child: tag_21
+    translation: [4.6115986, 4.6247558, 1.12395]
+    rotation_xyzw: [0.0, 0.0, 0.7071067811865476, 0.7071067811865476]
+  - parent: map
+    child: tag_22
+    translation: [4.6490636, 7.411491399999999, 0.889]
+    rotation_xyzw: [0.0, 0.0, 0.0, 1.0]
+  - parent: map
+    child: tag_23
+    translation: [4.574159, 7.411491399999999, 0.889]
+    rotation_xyzw: [0.0, 0.0, 1.0, 6.123233995736766e-17]
+  - parent: map
+    child: tag_24
+    translation: [4.2559986, 4.6247558, 1.12395]
+    rotation_xyzw: [0.0, 0.0, 0.7071067811865476, 0.7071067811865476]
+  - parent: map
+    child: tag_25
+    translation: [4.007866, 4.3769534, 1.12395]
+    rotation_xyzw: [0.0, 0.0, 1.0, 6.123233995736766e-17]
+  - parent: map
+    child: tag_26
+    translation: [4.007866, 4.0213534, 1.12395]
+    rotation_xyzw: [0.0, 0.0, 1.0, 6.123233995736766e-17]
+  - parent: map
+    child: tag_27
+    translation: [4.2559986, 3.417951, 1.12395]
+    rotation_xyzw: [-0.0, 0.0, 0.7071067811865476, -0.7071067811865475]
+  - parent: map
+    child: tag_28
+    translation: [4.574159, 0.6312154, 0.889]
+    rotation_xyzw: [0.0, 0.0, 1.0, 6.123233995736766e-17]
+  - parent: map
+    child: tag_29
+    translation: [0.0136906, 0.6507734, 0.55245]
+    rotation_xyzw: [0.0, 0.0, 0.0, 1.0]
+  - parent: map
+    child: tag_30
+    translation: [0.0136906, 1.0825734, 0.55245]
+    rotation_xyzw: [0.0, 0.0, 0.0, 1.0]
+  - parent: map
+    child: tag_31
+    translation: [0.0140462, 3.7301932, 0.55245]
+    rotation_xyzw: [0.0, 0.0, 0.0, 1.0]
+  - parent: map
+    child: tag_32
+    translation: [0.0140462, 4.1619931999999995, 0.55245]
+    rotation_xyzw: [0.0, 0.0, 0.0, 1.0]

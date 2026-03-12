@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<robot name="arena_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <link name="base_link"/>
+
+  <!-- Camera 1 (forward) -->
+  <link name="camera_1_link"/>
+  <joint name="base_to_camera_1" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_1_link"/>
+    <!-- Replace with your measured/calibrated extrinsics -->
+    <origin xyz="0.20 0.00 0.30" rpy="0 0 0"/>
+  </joint>
+
+  <link name="camera_1_optical_frame"/>
+  <joint name="camera_1_to_optical" type="fixed">
+    <parent link="camera_1_link"/>
+    <child link="camera_1_optical_frame"/>
+    <!-- REP-103 optical: +Z forward, +X right, +Y down -->
+    <origin xyz="0 0 0" rpy="-1.57079632679 0 -1.57079632679"/>
+  </joint>
+
+  <!-- Camera 2 (rear) -->
+  <link name="camera_2_link"/>
+  <joint name="base_to_camera_2" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_2_link"/>
+    <origin xyz="-0.20 0.00 0.30" rpy="0 0 3.14159265359"/>
+  </joint>
+
+  <link name="camera_2_optical_frame"/>
+  <joint name="camera_2_to_optical" type="fixed">
+    <parent link="camera_2_link"/>
+    <child link="camera_2_optical_frame"/>
+    <origin xyz="0 0 0" rpy="-1.57079632679 0 -1.57079632679"/>
+  </joint>
+
+  <!-- Camera 3 (rear) -->
+  <link name="camera_3_link"/>
+  <joint name="base_to_camera_3" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_3_link"/>
+    <origin xyz="-0.20 0.10 0.30" rpy="0 0 3.14159265359"/>
+  </joint>
+
+  <link name="camera_3_optical_frame"/>
+  <joint name="camera_3_to_optical" type="fixed">
+    <parent link="camera_3_link"/>
+    <child link="camera_3_optical_frame"/>
+    <origin xyz="0 0 0" rpy="-1.57079632679 0 -1.57079632679"/>
+  </joint>
+
+</robot>

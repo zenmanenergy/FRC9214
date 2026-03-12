@@ -1,0 +1,62 @@
+# arena.yaml — center-origin arena definition + AprilTag ground truth
+arena:
+  name: "known_arena_center_origin_v1"
+  frame_id: "map"
+
+  convention:
+    units: "meters"
+    axes: "ROS REP-103"
+    description: "x forward, y left, z up"
+    origin: "center"   # explicit
+
+  dimensions:
+    # Full extents
+    length_x_m: 16.460     # along +X / -X (forward/back)
+    width_y_m:  8.230      # along +Y / -Y (left/right)
+    height_z_m: 2.500
+
+  # Helpful derived half-extents (purely informational, but nice for sanity checks)
+  half_extents:
+    x_half_m: 8.230
+    y_half_m: 4.115
+    z_half_m: 1.250
+
+apriltags:
+  family: "tag36h11"
+  default_size_m: 0.1651
+
+  # Poses are in 'map' where (0,0,0) is arena center.
+  # For wall tags:
+  #   - West wall is at x = -x_half_m  (faces +X)
+  #   - East wall is at x = +x_half_m  (faces -X)
+  #   - South wall is at y = -y_half_m (faces +Y)
+  #   - North wall is at y = +y_half_m (faces -Y)
+  tags:
+    # Example: WEST wall, facing +X (yaw = 0)
+    - id: 1
+      size_m: 0.1651
+      pose:
+        position: { x: -8.230, y:  0.000, z: 1.200 }
+        orientation_rpy: { roll: 0.0, pitch: 0.0, yaw: 0.0 }
+      notes: "West wall centerline, facing +X"
+
+    # Example: EAST wall, facing -X (yaw = pi)
+    - id: 2
+      pose:
+        position: { x:  8.230, y:  0.000, z: 1.200 }
+        orientation_rpy: { roll: 0.0, pitch: 0.0, yaw: 3.141592653589793 }
+      notes: "East wall centerline, facing -X"
+
+    # Example: SOUTH wall, facing +Y (yaw = +pi/2)
+    - id: 3
+      pose:
+        position: { x: 0.000, y: -4.115, z: 1.200 }
+        orientation_rpy: { roll: 0.0, pitch: 0.0, yaw: 1.5707963267948966 }
+      notes: "South wall centerline, facing +Y"
+
+    # Example: NORTH wall, facing -Y (yaw = -pi/2)
+    - id: 4
+      pose:
+        position: { x: 0.000, y:  4.115, z: 1.200 }
+        orientation_rpy: { roll: 0.0, pitch: 0.0, yaw: -1.5707963267948966 }
+      notes: "North wall centerline, facing -Y"

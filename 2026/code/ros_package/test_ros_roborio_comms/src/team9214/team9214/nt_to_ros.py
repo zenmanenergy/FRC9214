@@ -66,6 +66,7 @@ class NtToRos(Node):
         rate = float(self.get_parameter("publish_rate_hz").value)
         self.timer = self.create_timer(1.0 / rate, self.publish_odom)
 
+        # Log connection info
         self.get_logger().info(f"NT4→ROS: server={nt_server} table=/{table_name} -> /odom")
 
     def publish_odom(self):
@@ -95,6 +96,7 @@ class NtToRos(Node):
         # self.get_logger().info(f"NT4→ROS: position.x={msg.pose.pose.position.x} 
         #                         position.y={msg.pose.pose.position.y} 
         #                         position.x={msg.pose.pose.position.z}")
+        # Publish the Odometry message to the /odom topic
         self.pub.publish(msg)
 
 

@@ -59,7 +59,7 @@ class RosToNt(Node):
         self.last_vy = 0.0
         self.last_wz = 0.0
 
-        # ROS subscription
+        # ROS subscription to /cmd_vel topic. Callback called on every message.
         self.sub = self.create_subscription(Twist, "/cmd_vel", self.on_cmd_vel, 10)
 
         # Periodic timers:

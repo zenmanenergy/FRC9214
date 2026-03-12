@@ -1,0 +1,47 @@
+services:
+  ros_nt_comms:
+    build: 
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: ros_nt_comms
+    network_mode: host
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ./ros_to_nt_config.yaml:/app/config.yaml
+    environment:
+      - DISPLAY=$DISPLAY
+      - QT_X11_NO_MITSHM=1
+    restart: unless-stopped
+    command: >
+      bash -c "
+        source /opt/ros/humble/setup.bash &&
+        source /app/install/setup.bash &&
+        # python3 -m team9214.ros_to_nt &
+        # python3 -m team9214.nt_to_ros 
+        ros2 run team9214_ros_to_nt ros_to_nt_node --ros-args --params-file /app/config.yaml
+        ros2 run team9214_nt_to_ros nt_to_ros_node --ros-args --params-file /app/config.yaml
+      "
+    # depends_on:
+    #   - nt_to_ros
+  # nt_to_ros:
+  #   build: 
+  #     context: .
+  #     dockerfile: docker/Dockerfile
+  #   container_name: nt_to_ros
+  #   network_mode: host
+  #   volumes:
+  #     - /tmp/.X11-unix:/tmp/.X11-unix:rw
+  #     - ./nt_to_ros_config.yaml:/app/config.yaml
+  #   environment:
+  #     - DISPLAY=$DISPLAY
+  #     - QT_X11_NO_MITSHM=1   
+  #   restart: unless-stopped
+  #   command: >
+  #     bash -c "
+  #       source /opt/ros/humble/setup.bash &&
+  #       source /app/install/setup.bash &&
+  #       # python3 -m team9214.nt_to_ros &&
+  #       ros2 run team9214_nt_to_ros nt_to_ros_node --ros-args --params-file /app/config.yaml
+  #     "
+  #   depends_on:
+  #     - ros_to_nt

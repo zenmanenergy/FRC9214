@@ -1,0 +1,6 @@
+build-essential
+gnupg2
+cmake
+curl
+git
+lsb_release

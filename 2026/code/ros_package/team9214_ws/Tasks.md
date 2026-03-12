@@ -21,9 +21,9 @@
 
 ## Summary of Key Config files
 - Map conventions, arena coordinate frame, tag layout
-    `arena_robot_and_maps/arena_tag_map/config/<name>_arena_tags.yaml`
+    `arena_tag_map/config/<name>_arena_tags.yaml`
 - TF 
-    `arena_robot_and_maps/arena_description/urdf/robot.urdf.xacro (multi-camera frames)`
+    `arena_description/urdf/robot.urdf.xacro (multi-camera frames)`
 - Detections to Global Pose
     `tag_pose_observer/config/observer.yaml`
 - `robot_localization` “global” filter
@@ -273,7 +273,7 @@ Why now: you need proof your coordinate math + TF is correct before you build au
 
 ## A sensible “do it in order” milestone plan
 1. Arena tag map + URDF frame tree (no vision yet)
-    - AprilTag base localization : `arena_robot_and_maps/arena_tag_map/config/arena_tags.yaml`
+    - AprilTag base localization : `arena_tag_map/config/arena_tags.yaml`
 2. One camera intrinsics + detection + RViz tag markers
 3. Camera extrinsics + convert detection → global pose observation
 4. Add wheel/IMU odom + robot_localization fusion
@@ -291,7 +291,7 @@ This is the fastest path to a working localization loop.
 
 **Goal**: you can see `base_link` and `camera_1_optical_frame` in TF, and images are publishing.
 
-- Launch `arena_robot_and_maps/arena_description/launch/description.launch.py`:
+- Launch `arena_description/launch/description.launch.py`:
     - runs `robot_state_publisher` with your URDF
     - optionally runs `joint_state_publisher_gui` (not required for fixed joints)
 

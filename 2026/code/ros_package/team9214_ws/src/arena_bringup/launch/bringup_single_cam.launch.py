@@ -164,8 +164,7 @@ def _make_nodes(context, *args, **kwargs):
     default_rviz = os.path.join(bringup_share, "config", "rviz.rviz")
     default_apriltag_params_yaml = os.path.join(arena_tag_map_share, "config", "frc2026_apriltag_ros.yaml")
     default_camera_info_url = (
-        "file:///home/robots/source_code/first_robotics_comp/frc/"
-        "team9214_ws/src/multi_cam_apriltag/config/camera_1.yaml"
+        "file:///home/robots/source_code/first_robotics_comp/frc/team9214_ws/src/multi_cam_apriltag/config/wc3.yaml"
     )
 
     bringup_config = LaunchConfiguration("bringup_config").perform(context)
@@ -189,18 +188,18 @@ def _make_nodes(context, *args, **kwargs):
         cfg,
         default_tag_map,
     )
-    # ekf_map_yaml = _resolve_value(
-    #     "ekf_map_yaml",
-    #     LaunchConfiguration("ekf_map_yaml").perform(context),
-    #     cfg,
-    #     default_ekf_map_yaml,
-    # )
-    # ekf_odom_yaml = _resolve_value(
-    #     "ekf_odom_yaml",
-    #     LaunchConfiguration("ekf_odom_yaml").perform(context),
-    #     cfg,
-    #     default_ekf_odom_yaml,
-    # )
+    ekf_map_yaml = _resolve_value(
+        "ekf_map_yaml",
+        LaunchConfiguration("ekf_map_yaml").perform(context),
+        cfg,
+        default_ekf_map_yaml,
+    )
+    ekf_odom_yaml = _resolve_value(
+        "ekf_odom_yaml",
+        LaunchConfiguration("ekf_odom_yaml").perform(context),
+        cfg,
+        default_ekf_odom_yaml,
+    )
     rviz_config = _resolve_value(
         "rviz_config",
         LaunchConfiguration("rviz_config").perform(context),
@@ -417,25 +416,25 @@ def _make_nodes(context, *args, **kwargs):
     detection_topic = f"/{camera_ns}/{detections_topic}"
     robot_description = _load_robot_description(urdf_xacro)
     apriltag_params = _load_apriltag_params(apriltag_params_yaml)
-    # # In single-filter mode (run_ekf_odom=false), keep frames unique:
-    # # map_frame=map, odom_frame=odom, base_link_frame=base_link.
-    # # Use world_frame=odom so ekf_map publishes odom->base_link directly.
-    # ekf_world_frame_override = "odom" if not run_ekf_odom else ""
-    # ekf_odom_frame_override = ""
-    # ekf_map_params_yaml = _prepare_ekf_params_yaml(
-    #     ekf_map_yaml,
-    #     "ekf_map",
-    #     use_wheel_odom=use_wheel_odom,
-    #     use_imu=use_imu,
-    #     world_frame_override=ekf_world_frame_override,
-    #     odom_frame_override=ekf_odom_frame_override,
-    # )
-    # ekf_odom_params_yaml = _prepare_ekf_params_yaml(
-    #     ekf_odom_yaml,
-    #     "ekf_odom",
-    #     use_wheel_odom=use_wheel_odom,
-    #     use_imu=use_imu,
-    # )
+    # In single-filter mode (run_ekf_odom=false), keep frames unique:
+    # map_frame=map, odom_frame=odom, base_link_frame=base_link.
+    # Use world_frame=odom so ekf_map publishes odom->base_link directly.
+    ekf_world_frame_override = "odom" if not run_ekf_odom else ""
+    ekf_odom_frame_override = ""
+    ekf_map_params_yaml = _prepare_ekf_params_yaml(
+        ekf_map_yaml,
+        "ekf_map",
+        use_wheel_odom=use_wheel_odom,
+        use_imu=use_imu,
+        world_frame_override=ekf_world_frame_override,
+        odom_frame_override=ekf_odom_frame_override,
+    )
+    ekf_odom_params_yaml = _prepare_ekf_params_yaml(
+        ekf_odom_yaml,
+        "ekf_odom",
+        use_wheel_odom=use_wheel_odom,
+        use_imu=use_imu,
+    )
 
     nodes = [
         Node(
@@ -557,26 +556,26 @@ def _make_nodes(context, *args, **kwargs):
         )
     )
 
-    # if run_ekf_odom:
-    #     nodes.append(
-    #         Node(
-    #             package="robot_localization",
-    #             executable="ekf_node",
-    #             name="ekf_odom",
-    #             output="screen",
-    #             parameters=[ekf_odom_params_yaml],
-    #         )
-    #     )
+    if run_ekf_odom:
+        nodes.append(
+            Node(
+                package="robot_localization",
+                executable="ekf_node",
+                name="ekf_odom",
+                output="screen",
+                parameters=[ekf_odom_params_yaml],
+            )
+        )
 
-    # nodes.append(
-    #     Node(
-    #         package="robot_localization",
-    #         executable="ekf_node",
-    #         name="ekf_map",
-    #         output="screen",
-    #         parameters=[ekf_map_params_yaml],
-    #     )
-    # )
+    nodes.append(
+        Node(
+            package="robot_localization",
+            executable="ekf_node",
+            name="ekf_map",
+            output="screen",
+            parameters=[ekf_map_params_yaml],
+        )
+    )
 
     if use_rviz:
         nodes.append(

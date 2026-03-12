@@ -7,7 +7,7 @@
               /camera_1/tag_detections   (tag pose in camera_1_optical_frame)
                      |
                      v
- tag_pose_observer_node
+tag_pose_observer_node
    - loads arena_tags.yaml (T_map_tag per ID)
    - reads TF (T_base_cam_1)
    - computes T_map_base observation

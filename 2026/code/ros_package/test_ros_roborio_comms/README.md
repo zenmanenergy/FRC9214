@@ -3,7 +3,7 @@
 
 ## Make sure ROS2 is installed on host OS
 
-### Additional packages that may be needed
+### Packages needed on host prior to doing venv 
 
 `sudo apt install ros-jazzy-navigation2 ros-jazzy-nav2-bringup`
 `sudo apt install ros-jazzy-nav2-*`

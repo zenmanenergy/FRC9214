@@ -8,7 +8,7 @@ This is the fastest path to a working localization loop.
 
 **Goal:** you can see `base_link` and `camera_1_optical_frame` in `TF`, and `images` are publishing.
 
-- Launch arena_robot_and_maps/arena_description/launch/description.launch.py:
+- Launch arena_description/launch/description.launch.py:
 
     `runs robot_state_publisher with your URDF`
 
@@ -101,7 +101,7 @@ Your `arena_bringup/launch/bringup_single_cam.launch.py` should start, in this o
 ```bash
 ros2 launch arena_bringup bringup_single_cam.launch.py \
   camera_ns:=camera_1 \
-  tag_map_yaml:=/home/robots/source_code/first_robotics_comp/frc/team9214_ws/src/arena_robot_and_maps/arena_tag_map/config/757-lab_arena_tags.yaml
+  tag_map_yaml:=/home/robots/source_code/first_robotics_comp/frc/team9214_ws/src/arena_tag_map/config/757-lab_arena_tags.yaml
 ```
 
 ### Multiple cameras:
@@ -109,5 +109,5 @@ ros2 launch arena_bringup bringup_single_cam.launch.py \
 ```bash
 ros2 launch arena_bringup bringup_multi_cam.launch.py \
   camera_names:=camera_1,camera_2,camera_3 \
-  tac_map_yaml:=tag_map_yaml:=/home/robots/source_code/first_robotics_comp/frc/team9214_ws/src/arena_robot_and_maps/arena_tag_map/config/757-lab_arena_tags.yaml
+  tac_map_yaml:=tag_map_yaml:=/home/robots/source_code/first_robotics_comp/frc/team9214_ws/src/arena_tag_map/config/757-lab_arena_tags.yaml
 ```

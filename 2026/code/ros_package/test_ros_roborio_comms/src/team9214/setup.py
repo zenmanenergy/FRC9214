@@ -15,7 +15,7 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='usv',
+    maintainer='robots',
     maintainer_email='you@example.com',
     description='TODO: Package description',
     license='TODO: License declaration',

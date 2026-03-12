@@ -1,0 +1,9 @@
+python3-dev
+python3-pip
+python3-catkin-tools
+python3-catkin-pkg
+python3-catkin-lint
+ros-Humble-base
+ros-jazzy-navigation2
+ros-jazzy-nav2-bringup
+ros-jazzy-nav2-*

@@ -1,0 +1,24 @@
+tags:
+  - id: 1
+    size_m: 0.1651
+    pose:
+      position: {x: 0.500, y: 0.500, z: 1.200}
+      orientation_rpy: {roll: 0.0, pitch: 0.0, yaw: 0.0}
+
+  - id: 2
+    size_m: 0.1651
+    pose:
+      position: {x: 15.960, y: 0.500, z: 1.200}
+      orientation_rpy: {roll: 0.0, pitch: 0.0, yaw: 3.14159265359}
+
+  - id: 3
+    size_m: 0.1651
+    pose:
+      position: {x: 8.230, y: 0.250, z: 1.200}
+      orientation_rpy: {roll: 0.0, pitch: 0.0, yaw: 1.57079632679}
+
+  - id: 4
+    size_m: 0.1651
+    pose:
+      position: {x: 8.230, y: 16.210, z: 1.200}
+      orientation_rpy: {roll: 0.0, pitch: 0.0, yaw: -1.57079632679}
