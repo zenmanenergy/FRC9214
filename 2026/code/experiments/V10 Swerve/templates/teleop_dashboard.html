@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Swerve Drive Teleop Dashboard</title>
+	<style>
+		* { margin: 0; padding: 0; box-sizing: border-box; }
+		
+		body {
+			font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+			background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			min-height: 100vh;
+			padding: 10px;
+		}
+		
+		.container {
+			background: white;
+			border-radius: 10px;
+			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+			padding: 20px;
+			max-width: 800px;
+			width: 100%;
+		}
+		
+		h1 {
+			text-align: center;
+			color: #333;
+			margin-bottom: 10px;
+			font-size: 24px;
+		}
+		
+		.status-bar {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 10px 0;
+			border-bottom: 2px solid #eee;
+			margin-bottom: 20px;
+			font-size: 13px;
+		}
+		
+		.status-item {
+			display: flex;
+			gap: 5px;
+			align-items: center;
+		}
+		
+		#wsStatus {
+			font-weight: bold;
+			color: #e74c3c;
+		}
+		
+		#wsStatus.connected {
+			color: #2ecc71;
+		}
+		
+		#robotStatus {
+			font-weight: bold;
+			padding: 2px 8px;
+			border-radius: 3px;
+		}
+		
+		#robotStatus.enabled {
+			background: #d4edda;
+			color: #155724;
+		}
+		
+		#robotStatus.disabled {
+			background: #f8d7da;
+			color: #721c24;
+		}
+		
+		.content {
+			display: flex;
+			justify-content: center;
+			align-items: stretch;
+		}
+		
+		.canvas-wrapper {
+			position: relative;
+			display: inline-block;
+		}
+		
+		canvas {
+			border: 2px solid #3498db;
+			border-radius: 5px;
+			background: white;
+			max-width: 100%;
+			display: block;
+		}
+		
+		.angle-display {
+			position: absolute;
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			color: white;
+			border-radius: 6px;
+			padding: 6px 10px;
+			text-align: center;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+			min-width: 50px;
+			font-size: 13px;
+			font-weight: bold;
+			user-select: none;
+		}
+		
+		#angle-fl { top: 10px; left: 10px; }
+		#angle-fr { top: 10px; right: 10px; }
+		#angle-rl { bottom: 10px; left: 10px; }
+		#angle-rr { bottom: 10px; right: 10px; }
+		
+		.side-panel {
+			margin-left: 30px;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+		}
+		
+		.info-box {
+			background: #f8f9fa;
+			border: 1px solid #ddd;
+			border-radius: 5px;
+			padding: 15px;
+			margin-bottom: 15px;
+		}
+		
+		.info-title {
+			font-weight: bold;
+			color: #2c3e50;
+			margin-bottom: 8px;
+			font-size: 14px;
+			border-bottom: 2px solid #3498db;
+			padding-bottom: 5px;
+		}
+		
+		.angle-display-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 8px;
+		}
+		
+		.angle-item {
+			background: white;
+			border-left: 3px solid #3498db;
+			padding: 8px;
+			border-radius: 3px;
+			text-align: center;
+		}
+		
+		.angle-label {
+			font-size: 11px;
+			color: #666;
+			font-weight: bold;
+			text-transform: uppercase;
+		}
+		
+		.angle-value {
+			font-size: 16px;
+			color: #2c3e50;
+			font-weight: bold;
+		}
+		
+		.power-bar-container {
+			width: 100%;
+			height: 8px;
+			background: #ecf0f1;
+			border-radius: 2px;
+			margin-top: 4px;
+			overflow: hidden;
+			position: relative;
+		}
+		
+		.power-bar {
+			height: 100%;
+			border-radius: 2px;
+			position: absolute;
+			left: 50%;
+			transform: translateX(-100%);
+		}
+		
+		.power-bar.forward {
+			background: #2ecc71;
+			transform: translateX(0);
+		}
+		
+		.power-bar.reverse {
+			background: #e74c3c;
+		}
+		
+		.power-label {
+			font-size: 9px;
+			color: #95a5a6;
+			text-align: center;
+			margin-top: 2px;
+		}
+		
+		@media (max-width: 600px) {
+			.content {
+				flex-direction: column;
+			}
+			
+			.side-panel {
+				margin-left: 0;
+				margin-top: 20px;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>🐳 Swerve Drive - Teleop</h1>
+		
+		<div class="status-bar">
+			<div class="status-item">
+				<span>WebSocket:</span>
+				<span id="wsStatus">Connecting...</span>
+			</div>
+			<div class="status-item">
+				<span>Robot:</span>
+				<span id="robotStatus" class="disabled">Disabled</span>
+			</div>
+		</div>
+		
+		<div class="content">
+			<!-- CANVAS -->
+			<div class="canvas-wrapper">
+				<canvas id="swerveCanvas" width="360" height="360"></canvas>
+				<div id="angle-fl" class="angle-display">0°</div>
+				<div id="angle-fr" class="angle-display">0°</div>
+				<div id="angle-rl" class="angle-display">0°</div>
+				<div id="angle-rr" class="angle-display">0°</div>
+			</div>
+			
+			<!-- SIDE PANEL -->
+			<div class="side-panel">
+				<div class="info-box">
+					<div class="info-title">Wheel Angles</div>
+					<div class="angle-display-grid">
+						<div class="angle-item">
+							<div class="angle-label">Front Left</div>
+							<div class="angle-value" id="fl-value">0°</div>
+							<div class="power-bar-container">
+								<div class="power-bar" id="fl-power" style="width: 0%"></div>
+							</div>
+							<div class="power-label" id="fl-power-label">0%</div>
+						</div>
+						<div class="angle-item">
+							<div class="angle-label">Front Right</div>
+							<div class="angle-value" id="fr-value">0°</div>
+							<div class="power-bar-container">
+								<div class="power-bar" id="fr-power" style="width: 0%"></div>
+							</div>
+							<div class="power-label" id="fr-power-label">0%</div>
+						</div>
+						<div class="angle-item">
+							<div class="angle-label">Rear Left</div>
+							<div class="angle-value" id="rl-value">0°</div>
+							<div class="power-bar-container">
+								<div class="power-bar" id="rl-power" style="width: 0%"></div>
+							</div>
+							<div class="power-label" id="rl-power-label">0%</div>
+						</div>
+						<div class="angle-item">
+							<div class="angle-label">Rear Right</div>
+							<div class="angle-value" id="rr-value">0°</div>
+							<div class="power-bar-container">
+								<div class="power-bar" id="rr-power" style="width: 0%"></div>
+							</div>
+							<div class="power-label" id="rr-power-label">0%</div>
+						</div>
+					</div>
+				</div>
+				
+				<div class="info-box">
+					<div class="info-title">System Status</div>
+					<div style="font-size: 12px; color: #666; line-height: 1.6;">
+						<div>Frame: <span id="frameCounter">0</span></div>
+						<div style="margin-top: 5px; padding-top: 5px; border-top: 1px solid #ddd;">Status: <span id="statusText">Connecting</span></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<script>
+		// WebSocket setup
+		let ws = null;
+		let wheelAngles = { front_left: 0, front_right: 0, rear_left: 0, rear_right: 0 };
+		let isRobotEnabled = false;
+		let frameCount = 0;
+		
+		const WS_URL = `ws://${window.location.hostname}:${window.location.port}/ws`;
+		
+		function connectWebSocket() {
+			console.log("[WS] Connecting to:", WS_URL);
+			ws = new WebSocket(WS_URL);
+			
+			ws.onopen = () => {
+				console.log("[WS] Connected!");
+				document.getElementById("wsStatus").textContent = "Connected";
+				document.getElementById("wsStatus").className = "connected";
+				document.getElementById("statusText").textContent = "Connected to robot";
+			};
+			
+			ws.onmessage = (event) => {
+				try {
+					const data = JSON.parse(event.data);
+					handleMessage(data);
+				} catch (e) {
+					console.error("[WS] Parse error:", e);
+				}
+			};
+			
+			ws.onerror = () => {
+				console.error("[WS] Error");
+				document.getElementById("wsStatus").textContent = "Error";
+				document.getElementById("wsStatus").className = "";
+			};
+			
+			ws.onclose = () => {
+				console.log("[WS] Closed, reconnecting...");
+				document.getElementById("wsStatus").textContent = "Reconnecting...";
+				document.getElementById("wsStatus").className = "";
+				setTimeout(connectWebSocket, 2000);
+			};
+		}
+		
+		function handleMessage(data) {
+			if (data.type === "state" || data.type === "telemetry") {
+				updateDisplay(data);
+			}
+		}
+		
+		function updateDisplay(data) {
+			if (data.angles) {
+				wheelAngles = data.angles;
+				
+				// Update canvas displays
+				document.getElementById("angle-fl").textContent = Math.round(data.angles.front_left) + "°";
+				document.getElementById("angle-fr").textContent = Math.round(data.angles.front_right) + "°";
+				document.getElementById("angle-rl").textContent = Math.round(data.angles.rear_left) + "°";
+				document.getElementById("angle-rr").textContent = Math.round(data.angles.rear_right) + "°";
+				
+				// Update side panel angles
+				document.getElementById("fl-value").textContent = Math.round(data.angles.front_left) + "°";
+				document.getElementById("fr-value").textContent = Math.round(data.angles.front_right) + "°";
+				document.getElementById("rl-value").textContent = Math.round(data.angles.rear_left) + "°";
+				document.getElementById("rr-value").textContent = Math.round(data.angles.rear_right) + "°";
+				
+				drawSwerve();
+			}
+			
+			if (data.power) {
+				// Update power bars
+				updatePowerBar("fl", data.power.front_left);
+				updatePowerBar("fr", data.power.front_right);
+				updatePowerBar("rl", data.power.rear_left);
+				updatePowerBar("rr", data.power.rear_right);
+			}
+			
+			if (data.counter !== undefined) {
+				frameCount = data.counter;
+				document.getElementById("frameCounter").textContent = frameCount;
+			}
+			
+			if (data.robot_enabled !== undefined) {
+				isRobotEnabled = data.robot_enabled;
+				const statusEl = document.getElementById("robotStatus");
+				if (isRobotEnabled) {
+					statusEl.textContent = "Enabled";
+					statusEl.className = "enabled";
+				} else {
+					statusEl.textContent = "Disabled";
+					statusEl.className = "disabled";
+				}
+			}
+		}
+		
+		function updatePowerBar(wheelId, power) {
+			const barEl = document.getElementById(wheelId + "-power");
+			const labelEl = document.getElementById(wheelId + "-power-label");
+			
+			// Clamp power to -1 to 1 range
+			power = Math.max(-1, Math.min(1, power));
+			
+			// Calculate percentage (0-100%)
+			const percentage = Math.abs(power) * 100;
+			barEl.style.width = percentage + "%";
+			labelEl.textContent = Math.round(percentage) + "%";
+			
+			// Set color based on direction
+			if (power > 0.01) {
+				barEl.classList.remove("reverse");
+				barEl.classList.add("forward");
+			} else if (power < -0.01) {
+				barEl.classList.remove("forward");
+				barEl.classList.add("reverse");
+			} else {
+				barEl.classList.remove("forward", "reverse");
+				barEl.style.background = "#bdc3c7";
+			}
+		}
+		
+		// Canvas drawing
+		const canvas = document.getElementById("swerveCanvas");
+		const ctx = canvas.getContext("2d");
+		const BOT_WIDTH = 180;
+		const BOT_HEIGHT = 180;
+		const WHEEL_SIZE = 14;
+		const CENTER_X = canvas.width / 2;
+		const CENTER_Y = canvas.height / 2;
+		
+		const WHEEL_POSITIONS = {
+			front_left: { x: -BOT_WIDTH / 2, y: -BOT_HEIGHT / 2, label: "FL" },
+			rear_left: { x: -BOT_WIDTH / 2, y: BOT_HEIGHT / 2, label: "RL" },
+			front_right: { x: BOT_WIDTH / 2, y: -BOT_HEIGHT / 2, label: "FR" },
+			rear_right: { x: BOT_WIDTH / 2, y: BOT_HEIGHT / 2, label: "RR" }
+		};
+		
+		function drawSwerve() {
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			
+			// Grid background
+			ctx.strokeStyle = "#e8e8e8";
+			ctx.lineWidth = 1;
+			for (let i = 0; i <= canvas.width; i += 45) {
+				ctx.beginPath();
+				ctx.moveTo(i, 0);
+				ctx.lineTo(i, canvas.height);
+				ctx.stroke();
+				ctx.beginPath();
+				ctx.moveTo(0, i);
+				ctx.lineTo(canvas.width, i);
+				ctx.stroke();
+			}
+			
+			// Robot frame
+			ctx.strokeStyle = "#2c3e50";
+			ctx.lineWidth = 3;
+			ctx.strokeRect(CENTER_X - BOT_WIDTH / 2, CENTER_Y - BOT_HEIGHT / 2, BOT_WIDTH, BOT_HEIGHT);
+			
+			// Center point
+			ctx.fillStyle = "#7f8c8d";
+			ctx.beginPath();
+			ctx.arc(CENTER_X, CENTER_Y, 5, 0, 2 * Math.PI);
+			ctx.fill();
+			
+			// Wheels
+			Object.entries(WHEEL_POSITIONS).forEach(([name, pos]) => {
+				const wheelX = CENTER_X + pos.x;
+				const wheelY = CENTER_Y + pos.y;
+				
+				// Get angle and flip for display (motors wired backward)
+				let displayAngle = wheelAngles[name] || 0;
+				displayAngle = -displayAngle;
+				const angle = displayAngle * (Math.PI / 180) - Math.PI / 2;
+				
+				// Draw wheel
+				ctx.fillStyle = "#3498db";
+				ctx.beginPath();
+				ctx.arc(wheelX, wheelY, WHEEL_SIZE, 0, 2 * Math.PI);
+				ctx.fill();
+				
+				// Direction arrow
+				ctx.strokeStyle = "white";
+				ctx.lineWidth = 2.5;
+				const arrowLen = WHEEL_SIZE * 1.6;
+				ctx.beginPath();
+				ctx.moveTo(wheelX, wheelY);
+				ctx.lineTo(wheelX + arrowLen * Math.cos(angle), wheelY + arrowLen * Math.sin(angle));
+				ctx.stroke();
+				
+				// Wheel label
+				ctx.fillStyle = "#2c3e50";
+				ctx.font = "bold 11px Arial";
+				ctx.textAlign = "center";
+				ctx.textBaseline = "top";
+				ctx.fillText(pos.label, wheelX, wheelY + WHEEL_SIZE + 16);
+			});
+		}
+		
+		// Initialize
+		window.addEventListener("load", () => {
+			drawSwerve();
+			connectWebSocket();
+		});
+	</script>
+</body>
+</html>

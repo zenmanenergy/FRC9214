@@ -6,6 +6,8 @@ import wpilib
 from wpilib import Joystick
 from constants import OIConstants
 from subsystems.drive_subsystem import DriveSubsystem
+from wpimath.geometry import Rotation2d
+from wpimath.kinematics import SwerveModuleState
 
 
 class Robot(wpilib.TimedRobot):
@@ -83,8 +85,6 @@ class Robot(wpilib.TimedRobot):
 		# self.robot_drive.set_debug_mode(True)
 		
 		# Center all wheels on enable
-		from wpimath.geometry import Rotation2d
-		from wpimath.kinematics import SwerveModuleState
 		center_state = SwerveModuleState(0, Rotation2d(0))
 		self.robot_drive.front_left.set_desired_state(center_state)
 		self.robot_drive.front_right.set_desired_state(center_state)
@@ -98,16 +98,16 @@ class Robot(wpilib.TimedRobot):
 
 	def teleopPeriodic(self):
 		"""
-		Check for START + BACK button to trigger autotune.
-		Once autotune completes, command Rear Left wheel to center (0 radians) to test the calculated gains.
+		Check for button combinations:
+		- START + BACK: trigger autotune
+		- Y + X: dump all SparkMax configs
 		"""
 		try:
-			from wpimath.geometry import Rotation2d
-			from wpimath.kinematics import SwerveModuleState
-			
 			# Check if START + BACK pressed (buttons 8 + 7 on Xbox controller)
 			button_start = self.driver_joystick.getRawButton(8)
 			button_back = self.driver_joystick.getRawButton(7)
+			button_y = self.driver_joystick.getRawButton(4)
+			button_x = self.driver_joystick.getRawButton(3)
 			
 			if button_start and button_back and not self.autotune_triggered:
 				print("\n[ROBOT] ===== START + BACK PRESSED - TRIGGERING AUTOTUNE =====")
@@ -115,6 +115,10 @@ class Robot(wpilib.TimedRobot):
 				print("[ROBOT] This will take 8 seconds - motor will oscillate during tuning\n")
 				self.robot_drive.rear_left.start_turn_autotune()
 				self.autotune_triggered = True
+			
+			# Check if Y + X pressed to dump SparkMax config
+			if button_y and button_x:
+				self.robot_drive.print_all_sparkmax_config()
 			
 			# If autotune just completed, print results once
 			if self.autotune_triggered and not self.robot_drive.rear_left.autotune_active:
@@ -131,9 +135,6 @@ class Robot(wpilib.TimedRobot):
 				print(f"[ROBOT] turn_kd  = {kd:.10f}")
 				print("="*60 + "\n")
 				
-				# Save to file for reference
-				self._save_autotune_results(kp, ki, kd)
-				
 				# Reset trigger so we don't print again
 				self.autotune_triggered = False
 			
@@ -146,28 +147,8 @@ class Robot(wpilib.TimedRobot):
 			print(f"[ERROR] teleopPeriodic: {e}")
 			import traceback
 			traceback.print_exc()
-	
-	def _save_autotune_results(self, kp: float, ki: float, kd: float):
-		"""Save autotune results to a file for reference."""
-		try:
-			import json
-			filepath = "autotune_results.json"
 			
-			data = {
-				"motor": "Rear Left Turn (ID 5)",
-				"kp": kp,
-				"ki": ki,
-				"kd": kd,
-				"method": "Ziegler-Nichols Relay Tuning"
-			}
-			
-			with open(filepath, "w") as f:
-				json.dump(data, f, indent=2)
-			
-			print(f"[ROBOT] Results saved to {filepath}")
-		except Exception as e:
-			print(f"[ROBOT] Warning: Could not save results file: {e}")
-
+		
 	def teleopExit(self):
 		"""Disable debug output when exiting teleop."""
 		self.robot_drive.set_debug_mode(False)
