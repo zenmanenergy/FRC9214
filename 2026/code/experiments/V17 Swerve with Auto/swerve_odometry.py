@@ -8,22 +8,23 @@ class SwerveOdometry:
 	For swerve drive, we average all wheel distances (they should all be similar).
 	
 	Wheel specifications:
-	- 4-inch diameter wheels
+	- 10.16 cm diameter wheels (4 inches)
 	- REV NEO 1.1 with 42 CPR (counts per revolution)
+	All measurements in metric (centimeters and meters)
 	"""
 	
-	def __init__(self, wheels_dict, wheel_diameter_inches=4.0):
+	def __init__(self, wheels_dict, wheel_diameter_cm=10.16):
 		"""
 		Initialize odometry tracker.
 		
 		Args:
 			wheels_dict: Dictionary of SwerveWheel objects keyed by name
-			wheel_diameter_inches: Wheel diameter in inches (default 4.0)
+			wheel_diameter_cm: Wheel diameter in centimeters (default 10.16 cm = 4 inches)
 		"""
 		self.wheels = wheels_dict
-		self.wheel_diameter = wheel_diameter_inches
+		self.wheel_diameter = wheel_diameter_cm
 		
-		# Track total distance in inches
+		# Track total distance in centimeters
 		self.total_distance = 0.0
 		
 		# Track previous positions to calculate delta
@@ -53,7 +54,7 @@ class SwerveOdometry:
 			# Calculate delta position in rotations
 			delta_rotations = current_pos - prev_pos
 			
-			# Convert rotations to inches
+			# Convert rotations to centimeters
 			# distance = rotations * pi * diameter
 			wheel_distance = delta_rotations * math.pi * self.wheel_diameter
 			distances.append(wheel_distance)
@@ -73,13 +74,9 @@ class SwerveOdometry:
 		return avg_distance
 	
 	def get_total_distance(self):
-		"""Get total distance traveled in inches"""
+		"""Get total distance traveled in centimeters"""
 		return self.total_distance
-	
-	def get_distance_feet(self):
-		"""Get total distance traveled in feet"""
-		return self.total_distance / 12.0
 	
 	def get_distance_meters(self):
 		"""Get total distance traveled in meters"""
-		return self.total_distance * 0.0254
+		return self.total_distance / 100.0

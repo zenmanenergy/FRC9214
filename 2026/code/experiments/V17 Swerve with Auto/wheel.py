@@ -115,12 +115,12 @@ class SwerveWheel:
 				return 0.0
 		return 0.0
 	
-	def get_drive_distance(self, wheel_diameter_inches=4.0):
-		"""Get total distance traveled in inches"""
+	def get_drive_distance(self, wheel_diameter_cm=10.16):
+		"""Get total distance traveled in centimeters (10.16 cm = 4 inch wheels)"""
 		position = self.get_drive_position()
 		# Convert rotations to distance: distance = rotations * pi * diameter
 		import math
 		# Account for front_right motor inversion in set_drive_power
 		if self.name == "front_right":
 			position = -position
-		return position * math.pi * wheel_diameter_inches
+		return position * math.pi * wheel_diameter_cm

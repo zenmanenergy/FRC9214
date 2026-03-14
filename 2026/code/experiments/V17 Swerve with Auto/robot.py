@@ -409,6 +409,11 @@ class Robot(wpilib.TimedRobot):
 		print("[TEST] === EXITING TEST MODE ===\n")
 	
 	def teleopInit(self):
+		# Stop all motors on entry for safety
+		self.drive.stop_all()
+		self.shooter.stop_all()
+		print("[TELEOP] All motors stopped at teleop entry")
+		
 		#print("[TELEOP] === ENTERING TELEOP MODE ===")
 		#print("[TELEOP] Controls:")
 		#print("[TELEOP] Left Joystick: Forward/Backward and Strafe (Left/Right)")
@@ -438,10 +443,10 @@ class Robot(wpilib.TimedRobot):
 		self.drive.update_single_wheel_alignment()
 		
 		# Debug: check if turn motors are truly at 0 power
-		self.drive._debug_print_turn_motor_powers()
+		#self.drive._debug_print_turn_motor_powers()
 		
 		# Debug: check drive motor diagnostics
-		self.drive._debug_print_drive_motor_diagnostics()
+		#self.drive._debug_print_drive_motor_diagnostics()
 		
 		# SHOOTER CONTROLS
 		self.shooter_controls.execute()

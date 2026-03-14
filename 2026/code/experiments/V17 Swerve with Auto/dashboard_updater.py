@@ -34,9 +34,8 @@ class DashboardUpdater:
 		SmartDashboard.putNumber("RL Power", self.drive.get_wheel_power("rear_left"))
 		SmartDashboard.putNumber("FL Power", self.drive.get_wheel_power("front_left"))
 		
-		# Odometry - distance traveled
-		SmartDashboard.putNumber("Distance Inches", self.drive.odometry.get_total_distance())
-		SmartDashboard.putNumber("Distance Feet", self.drive.odometry.get_distance_feet())
+		# Odometry - distance traveled (metric only)
+		SmartDashboard.putNumber("Distance Centimeters", self.drive.odometry.get_total_distance())
 		SmartDashboard.putNumber("Distance Meters", self.drive.odometry.get_distance_meters())
 		
 		# Turret angle and power (if turret is available)

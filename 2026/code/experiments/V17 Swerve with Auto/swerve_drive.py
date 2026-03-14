@@ -76,8 +76,8 @@ class SwerveDrive:
 		sys.stdout.flush()
 		
 		# Initialize odometry tracking for distance calculation
-		self.odometry = SwerveOdometry(self.wheels, wheel_diameter_inches=4.0)
-		print("[ROBOT] Odometry initialized (4-inch wheels, 42 CPR NEO 1.1)")
+		self.odometry = SwerveOdometry(self.wheels, wheel_diameter_cm=10.16)
+		print("[ROBOT] Odometry initialized (10.16 cm wheels, 42 CPR NEO 1.1)")
 		sys.stdout.flush()
 		
 		# Publish tuning history to NetworkTables on startup (for remote dashboard)
