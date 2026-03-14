@@ -535,7 +535,7 @@ class SwerveDrive:
 		import sys
 		import json
 		
-		print("[NT-PUBLISH] STARTING _publish_tuning_history_to_nt")
+		#print("[NT-PUBLISH] STARTING _publish_tuning_history_to_nt")
 		sys.stdout.flush()
 		
 		try:

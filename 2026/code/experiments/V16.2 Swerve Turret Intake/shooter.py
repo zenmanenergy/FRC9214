@@ -20,6 +20,13 @@ class ShooterSubsystem:
 			print(f"[SHOOTER] ERROR - Failed to initialize shooter motor (CAN ID {CANID.SHOOTER_SHOOTER}): {type(e).__name__}: {e}", flush=True)
 			self.shooter_motor = None
 		
+		try:
+			self.spindexer_motor = SparkMax(CANID.SHOOTER_SPINDEXER, SparkLowLevel.MotorType.kBrushless)
+			print(f"[SHOOTER] Spindexer motor initialized on CAN ID {CANID.SHOOTER_SPINDEXER}", flush=True)
+		except Exception as e:
+			print(f"[SHOOTER] ERROR - Failed to initialize spindexer motor (CAN ID {CANID.SHOOTER_SPINDEXER}): {type(e).__name__}: {e}", flush=True)
+			self.spindexer_motor = None
+		
 		# Turret reference (optional)
 		self.turret = turret
 		
@@ -27,6 +34,13 @@ class ShooterSubsystem:
 		self.target_turret_angle = None
 		self.rotating_to_angle = False
 		self.rotation_speed = 0.3
+		
+		# Spindexer state
+		self.spindexing = False
+		self.spindex_start_time = None
+		self.spindex_start_position = None
+		self.spindex_state = None  # "ROTATING" or "WAITING"
+		self.SPINDEX_ROTATION_TIME = 0.075  # Time to rotate ~90 degrees
 		
 		# PID autotune state
 		self.autotuning = False
@@ -226,16 +240,88 @@ class ShooterSubsystem:
 		if self.shooter_motor:
 			self.shooter_motor.set(speed)
 	
+	def spindex(self):
+		"""Start continuous spindexer indexing (90 deg rotations with 1 second waits)"""
+		if not self.spindexer_motor:
+			print("[SHOOTER] ERROR - Spindexer motor not initialized", flush=True)
+			return
+		
+		if self.spindexing:
+			print("[SHOOTER] Spindexer already running", flush=True)
+			return
+		
+		import time
+		print("[SHOOTER] Spindexer: Starting continuous indexing", flush=True)
+		
+		# Get encoder and RESET it to 0
+		encoder = self.spindexer_motor.getEncoder()
+		encoder.setPosition(0.0)  # Reset to 0
+		self.spindex_start_position = 0.0
+		
+		self.spindexing = True
+		self.spindex_start_time = time.time()
+		self.spindex_state = "ROTATING"
+		self.spindexer_motor.set(-0.1)
+		print(f"[SHOOTER] Spindexer: Starting rotation, encoder reset to 0", flush=True)
+	
+	def update_spindex(self):
+		"""Update spindexer indexing - track encoder and manage 90 deg rotations with waits"""
+		if not self.spindexing or not self.spindexer_motor:
+			return
+		
+		import time
+		
+		encoder = self.spindexer_motor.getEncoder()
+		current_position = encoder.getPosition()
+		rotation_delta = abs(current_position - self.spindex_start_position)
+		
+		if self.spindex_state == "ROTATING":
+			# Debug output
+			print(f"[SPINDEXER-DEBUG] Start: {self.spindex_start_position:.2f} | Current: {current_position:.2f} | Delta: {rotation_delta:.2f} | Threshold: 0.25", flush=True)
+			
+			# Check if we've rotated ~90 degrees 
+			# Threshold: 0.25 encoder revolutions ~= 90 degrees
+			if rotation_delta >= 0.25:
+				# Reached 90 degrees - stop and wait
+				self.spindexer_motor.set(0.0)
+				self.spindex_state = "WAITING"
+				self.spindex_wait_start = time.time()
+				print(f"[SHOOTER] Spindexer: Rotated {rotation_delta:.2f} ticks, stopping for 1 second", flush=True)
+		
+		elif self.spindex_state == "WAITING":
+			# Wait 1 second before rotating again
+			elapsed_wait = time.time() - self.spindex_wait_start
+			if elapsed_wait >= 1.0:
+				# Time to rotate again - reset encoder and start
+				encoder = self.spindexer_motor.getEncoder()
+				encoder.setPosition(0.0)  # Reset to 0
+				self.spindex_start_position = 0.0
+				self.spindex_state = "ROTATING"
+				self.spindexer_motor.set(-0.1)
+				print(f"[SHOOTER] Spindexer: Starting next rotation, encoder reset to 0", flush=True)
+	
+	def stop_spindex(self):
+		"""Stop the spindexer immediately"""
+		if self.spindexer_motor:
+			self.spindexer_motor.set(0.0)
+		self.spindexing = False
+		self.spindex_state = None
+		print("[SHOOTER] Spindexer: Stopped", flush=True)
+	
 	def stop_all(self):
 		"""Stop all motors"""
 		if self.uptake_motor:
 			self.uptake_motor.set(0)
 		if self.shooter_motor:
 			self.shooter_motor.set(0)
+		if self.spindexer_motor:
+			self.spindexer_motor.set(0)
 		if self.turret:
 			self.turret.stop()
 		self.rotating_to_angle = False
 		self.target_turret_angle = None
+		self.spindexing = False
+		self.spindex_state = None
 	
 	def start_pid_autotune(self, center_angle=180):
 		"""Start PID autotune using relay oscillation around a safe center point"""

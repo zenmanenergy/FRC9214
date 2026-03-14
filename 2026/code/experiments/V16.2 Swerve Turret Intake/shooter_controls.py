@@ -5,6 +5,7 @@ This file bridges CopilotJoystick and ShooterSubsystem.
 
 from copilotJoystick import CopilotJoystick
 from shooter import ShooterSubsystem
+from intake import Intake
 
 
 class ShooterControls:
@@ -24,6 +25,7 @@ class ShooterControls:
 		"""
 		self.shooter = shooter_subsystem
 		self.joystick = copilot_joystick
+		self.intake = Intake()
 		self.setup_bindings()
 	
 	def setup_bindings(self):
@@ -33,11 +35,12 @@ class ShooterControls:
 		"""
 		# Digital Buttons (triggered once when pressed)
 		button_map = {
+			"A": self.turn_on_intake,
 			"Y": self.uptake_and_shooter,
 			"B": self.uptake_and_shooter_reverse,
 			"X": self.stop_all,
 			"LEFT_BUMPER": self.rotate_to_160,
-			"RIGHT_BUMPER": self.rotate_to_195,
+			"RIGHT_BUMPER": self.turn_off_intake,
 			"START": self.start_autotune,
 		}
 		self.joystick.set_button_map(button_map)
@@ -52,6 +55,9 @@ class ShooterControls:
 		# Process continuous angle-based rotation (if active)
 		self.shooter.update_rotation()
 		
+		# Process spindexer rotation (if active)
+		self.shooter.update_spindex()
+		
 		# Process analog stick inputs
 		for axis_name, function in self.analog_map.items():
 			function()
@@ -64,23 +70,30 @@ class ShooterControls:
 		"""Y button: activate uptake and shooter"""
 		self.shooter.set_uptake(0.5)
 		self.shooter.set_shooter(1.0)
+		self.shooter.spindex()
 	
 	def uptake_and_shooter_reverse(self):
 		"""B button: reverse uptake and shooter"""
 		self.shooter.set_uptake(-0.2)
 		self.shooter.set_shooter(-0.2)
+		self.intake.turn_on(-0.5)
+	
+	def turn_on_intake(self):
+		"""A button: turn on intake"""
+		self.intake.turn_on()
+	
+	def turn_off_intake(self):
+		"""Right Bumper: turn off intake"""
+		self.intake.turn_off()
 	
 	def stop_all(self):
 		"""X button: stop all motors"""
 		self.shooter.stop_all()
+		self.intake.turn_off()
 
 	def rotate_to_160(self):
 		"""Left bumper: rotate turret to 160 degrees."""
 		self.shooter.rotate_to_angle(160, speed=self.BUMPER_ROTATION_SPEED)
-
-	def rotate_to_195(self):
-		"""Right bumper: rotate turret to 195 degrees."""
-		self.shooter.rotate_to_angle(195, speed=self.BUMPER_ROTATION_SPEED)
 	
 	def start_autotune(self):
 		"""START button - disabled"""

@@ -27,3 +27,5 @@ TURRET_TURN = 11
 SHOOTER_SPINDEXER = 8
 SHOOTER_UPTAKE = 12
 SHOOTER_SHOOTER = 16
+# ==================== INTAKE ====================
+INTAKE = 4
