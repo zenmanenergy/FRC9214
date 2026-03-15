@@ -310,7 +310,7 @@ class ShooterSubsystem:
 				encoder.setPosition(0.0)  # Reset to 0
 				self.spindex_start_position = 0.0
 				self.spindex_state = "ROTATING"
-				self.spindexer_motor.set(-0.1)
+				self.spindexer_motor.set(0.1)
 				print(f"[SHOOTER] Spindexer: Starting next rotation, encoder reset to 0", flush=True)
 	
 	def stop_spindex(self):

@@ -12,6 +12,8 @@ def set_drive_power(self, power):
     if self.name == "rear_left":
         if self.drive_motor:
             self.drive_motor.set(power)
+
+
 ```
 
 - **Input:** Power value from kinematics (-1.0 to 1.0)
@@ -113,3 +115,31 @@ The rear-left wheel maintains its angle through continuous PID feedback:
 - **No Oscillation:** Proper inversion prevents motor fighting kinematics
 - **Smooth Diagonals:** Combines forward/strafe inputs proportionally in kinematics
 - **Rotation Support:** Right stick rotation offset is added to kinematics via `rotate * wheel_pos`
+
+
+## when writing code, seperate each motor into unique if statements like the function below
+```python
+
+def set_drive_power(self, power):
+    if self.name == "rear_left":
+        if self.drive_motor:
+            self.drive_motor.set(power)
+    if self.name == "rear_right":
+        if self.drive_motor:
+            self.drive_motor.set(power)
+
+    if self.name == "front_left":
+        if self.drive_motor:
+            self.drive_motor.set(power)
+
+    if self.name == "front_right":
+        if self.drive_motor:
+            self.drive_motor.set(power)
+```
+## DO NOT combine if statements as replicated below
+```python
+def set_drive_power(self, power):
+    if self.name == ["rear_left", "rear_right"]:
+        if self.drive_motor:
+            self.drive_motor.set(power)
+```

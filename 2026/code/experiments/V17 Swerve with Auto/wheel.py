@@ -38,21 +38,38 @@ class SwerveWheel:
 		if self.name == "rear_left":
 			if self.drive_motor:
 				self.drive_motor.set(-power)
-		else:
+		if self.name == "rear_right":
 			if self.drive_motor:
-				self.drive_motor.set(0.0)
+				self.drive_motor.set(-power)
+		if self.name == "front_left":
+			if self.drive_motor:
+				self.drive_motor.set(-power)
+		if self.name == "front_right":
+			if self.drive_motor:
+				self.drive_motor.set(-power)
 	
 	def set_turn_power(self, power):
 		"""Set turn motor power (-1.0 to 1.0)"""
 		if self.name == "rear_left":
 			if self.turn_motor:
-				#self.turn.motor.set(power)
 				self.turn_motor.set(-power)  # Invert to fix direction
 			else:
 				print(f"[TURN] ERROR: {self.name} turn motor is NULL - cannot send command", flush=True)
-		else:
+		if self.name == "rear_right":
 			if self.turn_motor:
-				self.turn_motor.set(0.0)
+				self.turn_motor.set(power)  # No inversion - opposite wiring from rear_left
+			else:
+				print(f"[TURN] ERROR: {self.name} turn motor is NULL - cannot send command", flush=True)
+		if self.name == "front_left":
+			if self.turn_motor:
+				self.turn_motor.set(-power)  # No inversion - opposite wiring from rear_left
+			else:
+				print(f"[TURN] ERROR: {self.name} turn motor is NULL - cannot send command", flush=True)
+		if self.name == "front_right":
+			if self.turn_motor:
+				self.turn_motor.set(-power)  # Same inversion as rear_left
+			else:
+				print(f"[TURN] ERROR: {self.name} turn motor is NULL - cannot send command", flush=True)
 	
 	def stop(self):
 		"""Stop both motors"""
