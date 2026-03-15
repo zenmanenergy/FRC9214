@@ -85,6 +85,8 @@ class EncoderCalibration:
 			with open(path, "w") as f:
 				json.dump(self.full_data, f, indent=2)
 			print(f"[SAVE] Saved calibration to: {path}")
+			print(f"[SAVE] File contents being written:")
+			print(json.dumps(self.full_data, indent=2))
 			print(f"       Offsets: {self.offsets}")
 			print(f"       PID: KP={self.pid_gains['kp']:.6f}, KI={self.pid_gains['ki']:.6f}, KD={self.pid_gains['kd']:.6f}")
 			print(f"       Tuning history: {len(self.pid_tuning_history)} entries")
@@ -280,6 +282,7 @@ class EncoderCalibration:
 	
 	def clear_tuning_history(self):
 		"""Clear all tuning history and revert to defaults"""
+		print("[CLEAR] clear_tuning_history() called!")
 		self.pid_tuning_history = []
 		if hasattr(self, 'pid_regression'):
 			delattr(self, 'pid_regression')
@@ -289,5 +292,6 @@ class EncoderCalibration:
 			"ki": 0.005,
 			"kd": 0.0001
 		}
+		print("[CLEAR] About to call save_calibration()...")
 		self.save_calibration()
 		print("[CLEAR] Tuning history cleared, reverted to defaults")

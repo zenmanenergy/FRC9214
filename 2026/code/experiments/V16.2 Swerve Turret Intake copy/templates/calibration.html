@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Wheel Calibration Wizard - Team 9214</title>
+	<style>
+		* { margin: 0; padding: 0; box-sizing: border-box; }
+		
+		body {
+			font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+			background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			min-height: 100vh;
+			padding: 10px;
+		}
+		
+		.container {
+			background: white;
+			border-radius: 15px;
+			box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+			padding: 20px;
+			max-width: 900px;
+			width: 100%;
+		}
+		
+		h1 {
+			text-align: center;
+			color: #333;
+			margin-bottom: 10px;
+			font-size: 28px;
+		}
+		
+		.step-counter {
+			text-align: center;
+			color: #999;
+			margin-bottom: 20px;
+			font-size: 14px;
+		}
+		
+		.content {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 30px;
+			margin-bottom: 20px;
+		}
+		
+		.canvas-section {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: #f8f9fa;
+			border-radius: 10px;
+			padding: 15px;
+			border: 2px solid #ddd;
+		}
+		
+		.canvas-wrapper {
+			position: relative;
+			display: inline-block;
+		}
+		
+		canvas {
+			border-radius: 5px;
+			background: white;
+			border: 1px solid #ccc;
+			max-width: 100%;
+			display: block;
+		}
+		
+		.canvas-angle-box {
+			position: absolute;
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			color: white;
+			border-radius: 8px;
+			padding: 6px 10px;
+			text-align: center;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+			min-width: 45px;
+			font-size: 12px;
+			font-weight: bold;
+		}
+		
+		.canvas-angle-box.value {
+			font-size: 16px;
+			font-weight: bold;
+		}
+		
+		#cal-canvas-fr-angle { top: 5px; right: 5px; }
+		#cal-canvas-rr-angle { bottom: 5px; right: 5px; }
+		#cal-canvas-rl-angle { bottom: 5px; left: 5px; }
+		#cal-canvas-fl-angle { top: 5px; left: 5px; }
+		
+		.instructions-section {
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+		}
+		
+		.instruction-box {
+			background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+			border: 2px solid #ff9800;
+			border-radius: 10px;
+			padding: 20px;
+			margin-bottom: 15px;
+		}
+		
+		.instruction-title {
+			font-size: 16px;
+			font-weight: bold;
+			color: #333;
+			margin-bottom: 10px;
+		}
+		
+		.instruction-text {
+			color: #555;
+			line-height: 1.6;
+			font-size: 13px;
+			margin-bottom: 8px;
+		}
+		
+		.current-wheel {
+			background: #f0f0f0;
+			padding: 10px;
+			border-radius: 5px;
+			margin-top: 10px;
+			font-size: 12px;
+			font-family: "Courier New", monospace;
+		}
+		
+		.wheel-list {
+			display: flex;
+			gap: 8px;
+			margin-top: 8px;
+			flex-wrap: wrap;
+		}
+		
+		.wheel-tag {
+			background: #3498db;
+			color: white;
+			padding: 6px 12px;
+			border-radius: 20px;
+			font-size: 11px;
+			font-weight: bold;
+		}
+		
+		.wheel-tag.focused {
+			background: #2ecc71;
+			box-shadow: 0 0 8px rgba(46, 204, 113, 0.5);
+		}
+		
+		.buttons {
+			display: flex;
+			gap: 10px;
+			margin-top: 20px;
+		}
+		
+		.button {
+			flex: 1;
+			padding: 12px 20px;
+			border: none;
+			border-radius: 6px;
+			font-size: 13px;
+			font-weight: bold;
+			cursor: pointer;
+			transition: all 0.3s;
+		}
+		
+		.button:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+		}
+		
+		.button:disabled {
+			opacity: 0.6;
+			cursor: not-allowed;
+		}
+		
+		.btn-save {
+			background: #27ae60;
+			color: white;
+		}
+		
+		.btn-save:hover:not(:disabled) {
+			background: #229954;
+		}
+		
+		.btn-back {
+			background: #3498db;
+			color: white;
+		}
+		
+		.btn-back:hover:not(:disabled) {
+			background: #2980b9;
+		}
+		
+		.btn-exit {
+			background: #e74c3c;
+			color: white;
+		}
+		
+		.btn-exit:hover:not(:disabled) {
+			background: #c0392b;
+		}
+		
+		.error-display {
+			background: #fff3cd;
+			border: 1px solid #ffc107;
+			color: #856404;
+			padding: 12px;
+			border-radius: 5px;
+			margin-bottom: 15px;
+			font-size: 12px;
+			max-height: 150px;
+			overflow-y: auto;
+			display: none;
+		}
+		
+		.error-display.show {
+			display: block;
+		}
+		
+		.status-item {
+			font-size: 12px;
+			color: #666;
+			margin-top: 10px;
+			padding: 8px;
+			background: #f0f0f0;
+			border-radius: 3px;
+		}
+		
+		@media (max-width: 700px) {
+			.content {
+				grid-template-columns: 1fr;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>🔧 Wheel Alignment Wizard</h1>
+		<div class="step-counter">
+			<span id="stepInfo">Step 1 of 4</span>
+		</div>
+		
+		<div id="errorDisplay" class="error-display"></div>
+		
+		<div class="content">
+			<div class="canvas-section">
+				<div class="canvas-wrapper">
+					<canvas id="wizardCanvas" width="350" height="350"></canvas>
+					<div id="cal-canvas-fl-angle" class="canvas-angle-box value">0°</div>
+					<div id="cal-canvas-fr-angle" class="canvas-angle-box value">0°</div>
+					<div id="cal-canvas-rl-angle" class="canvas-angle-box value">0°</div>
+					<div id="cal-canvas-rr-angle" class="canvas-angle-box value">0°</div>
+				</div>
+			</div>
+			
+			<div class="instructions-section">
+				<div class="instruction-box">
+					<div class="instruction-title" id="stepTitle">STEP 1: Align LEFT Side</div>
+					<div class="instruction-text" id="instructions">
+						<p>Place a level on the LEFT side of the robot alongside both left wheels.</p>
+						<p>Rotate each wheel individually until th wheel is parallel to the level.</p>
+						<p>When both wheels are perfectly aligned, click "Confirm Alignment".</p>
+					</div>
+					
+					<div class="current-wheel">
+						<strong>Wheels to align:</strong>
+						<div class="wheel-list" id="wheelList">
+							<span class="wheel-tag">FRONT LEFT</span>
+							<span class="wheel-tag">REAR LEFT</span>
+						</div>
+					</div>
+					
+					<div class="status-item">
+						<strong>Target angle:</strong> <span id="targetAngle">0°</span>
+					</div>
+					<div class="status-item">
+						<strong>Currently focused:</strong> <span id="focusedWheelInfo">Click a wheel on diagram</span>
+					</div>
+				</div>
+				
+				<div class="buttons">
+				<button class="button btn-save" onclick="if(botEnabled) confirmAlignment(); else showError('Bot must be enabled to calibrate')">✓ Confirm Alignment</button>
+					<button class="button btn-exit" onclick="exitWizard()">✕ Exit</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<script>
+		let ws = null;
+		let wheelAngles = { front_left: 0, front_right: 0, rear_left: 0, rear_right: 0 };
+		let focusedWheel = null;
+		let currentStep = 0;
+		let botEnabled = false;
+		
+		const STEPS = [
+			{
+				name: "LEFT",
+				wheels: ["front_left", "rear_left"],
+				targetAngle: 0,
+				instruction: "Place a level on the LEFT side of the robot alongside both left wheels. Rotate each wheel individually until the wheel is parallel to the level. When both wheels are perfectly aligned, click 'Confirm Alignment'."
+			},
+			{
+				name: "RIGHT",
+				wheels: ["front_right", "rear_right"],
+				targetAngle: 0,
+				instruction: "Rotate wheels back to point straight. Place a level on the RIGHT side of the robot. Align each wheel individually. Click 'Confirm Alignment' when done."
+			},
+			{
+				name: "FRONT",
+				wheels: ["front_left", "front_right"],
+				targetAngle: 90,
+				instruction: "Rotate wheels to point RIGHT. Place a level on the FRONT of the robot. Align each wheel individually until parallel to the level. Click 'Confirm Alignment' when done."
+			},
+			{
+				name: "BACK",
+				wheels: ["rear_left", "rear_right"],
+				targetAngle: 90,
+				instruction: "Rotate wheels to point RIGHT. Place a level on the BACK of the robot. Align each wheel individually until parallel to the level. Click 'Confirm Alignment' when done."
+			}
+		];
+		
+		const canvas = document.getElementById("wizardCanvas");
+		const ctx = canvas.getContext("2d");
+		const BOT_WIDTH = 160;
+		const BOT_HEIGHT = 160;
+		const WHEEL_SIZE = 12;
+		const CENTER_X = canvas.width / 2;
+		const CENTER_Y = canvas.height / 2;
+		
+		const WHEEL_POSITIONS = {
+			front_left: { x: -BOT_WIDTH / 2, y: -BOT_HEIGHT / 2 },
+			front_right: { x: BOT_WIDTH / 2, y: -BOT_HEIGHT / 2 },
+			rear_left: { x: -BOT_WIDTH / 2, y: BOT_HEIGHT / 2 },
+			rear_right: { x: BOT_WIDTH / 2, y: BOT_HEIGHT / 2 }
+		};
+		
+		const WS_URL = `ws://${window.location.hostname}:${window.location.port}/ws`;
+		
+		function connectWebSocket() {
+			ws = new WebSocket(WS_URL);
+			
+			ws.onopen = () => {
+				console.log("[WS] Connected");
+			};
+			
+			ws.onmessage = (event) => {
+				try {
+					const data = JSON.parse(event.data);
+					if (data.type === "angles") {
+						wheelAngles = data.angles;
+						updateDisplay();
+				} else if (data.type === "state") {
+					// Update bot enabled status from state messages
+					if (data.robot_enabled !== undefined) {
+						botEnabled = data.robot_enabled;
+					}
+				} else if (data.type === "error") {
+					showError(data.message);
+				}
+			} catch (e) {
+				console.error("[WS] Parse error:", e);
+			}
+		};
+			ws.onerror = (error) => {
+				console.error("[WS] Error:", error);
+				showError("WebSocket error");
+			};
+			
+			ws.onclose = () => {
+				setTimeout(connectWebSocket, 2000);
+			};
+		}
+		
+		function sendCommand(cmd, value) {
+			if (!botEnabled) {
+				showError("Bot must be enabled to send commands");
+				return;
+			}
+			if (!ws || ws.readyState !== WebSocket.OPEN) {
+				showError("WebSocket not connected");
+				return;
+			}
+			console.log(`[WS] Sending: cmd=${cmd}, value=`, value);
+			if (cmd === "focus") {
+				focusedWheel = value;
+				drawSwerve();
+			}
+			ws.send(JSON.stringify({ cmd, value }));
+		}
+		
+		function drawSwerve() {
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			
+			// Grid
+			ctx.strokeStyle = "#e0e0e0";
+			ctx.lineWidth = 1;
+			for (let i = 0; i <= canvas.width; i += 50) {
+				ctx.beginPath();
+				ctx.moveTo(i, 0);
+				ctx.lineTo(i, canvas.height);
+				ctx.stroke();
+			}
+			
+			// Robot frame
+			ctx.strokeStyle = "#333";
+			ctx.lineWidth = 2;
+			ctx.strokeRect(CENTER_X - BOT_WIDTH / 2, CENTER_Y - BOT_HEIGHT / 2, BOT_WIDTH, BOT_HEIGHT);
+			
+			// Center point
+			ctx.fillStyle = "#666";
+			ctx.beginPath();
+			ctx.arc(CENTER_X, CENTER_Y, 3, 0, 2 * Math.PI);
+			ctx.fill();
+			
+			// Wheels
+			Object.entries(WHEEL_POSITIONS).forEach(([name, pos]) => {
+				const angle = (wheelAngles[name] || 0) * (Math.PI / 180) - Math.PI / 2;
+				const wheelX = CENTER_X + pos.x;
+				const wheelY = CENTER_Y + pos.y;
+				const step = STEPS[currentStep];
+				const isInStep = step.wheels.includes(name);
+				const isFocused = name === focusedWheel;
+				
+				// Draw wheel
+				if (isFocused) {
+					ctx.fillStyle = "#2ecc71";
+					ctx.shadowColor = "rgba(46, 204, 113, 0.5)";
+					ctx.shadowBlur = 10;
+				} else if (isInStep) {
+					ctx.fillStyle = "#f39c12";
+				} else {
+					ctx.fillStyle = "#bdc3c7";
+				}
+				
+				ctx.beginPath();
+				ctx.arc(wheelX, wheelY, WHEEL_SIZE, 0, 2 * Math.PI);
+				ctx.fill();
+				ctx.shadowColor = "transparent";
+				
+				// Arrow
+				ctx.strokeStyle = "white";
+				ctx.lineWidth = 2;
+				const arrowLen = WHEEL_SIZE * 1.3;
+				ctx.beginPath();
+				ctx.moveTo(wheelX, wheelY);
+				ctx.lineTo(wheelX + arrowLen * Math.cos(angle), wheelY + arrowLen * Math.sin(angle));
+				ctx.stroke();
+				
+				// Label
+				ctx.fillStyle = "#333";
+				ctx.font = "9px Arial";
+				ctx.textAlign = "center";
+				ctx.fillText(name.toUpperCase().substring(0, 2), wheelX, wheelY + WHEEL_SIZE + 15);
+			});
+			
+			// Click handler for wheels
+			canvas.onclick = (event) => {
+				const rect = canvas.getBoundingClientRect();
+				const x = event.clientX - rect.left;
+				const y = event.clientY - rect.top;
+				
+				Object.entries(WHEEL_POSITIONS).forEach(([name, pos]) => {
+					const wheelX = CENTER_X + pos.x;
+					const wheelY = CENTER_Y + pos.y;
+					const dist = Math.sqrt((x - wheelX) ** 2 + (y - wheelY) ** 2);
+					
+					if (dist < WHEEL_SIZE * 2) {
+						focusedWheel = name;
+						sendCommand("focus", name);
+						updateDisplay();
+					}
+				});
+			};
+		}
+		
+		function updateDisplay() {
+			drawSwerve();
+			
+			// Update overlaid angle boxes
+			document.getElementById("cal-canvas-fl-angle").textContent = wheelAngles.front_left + "°";
+			document.getElementById("cal-canvas-fr-angle").textContent = wheelAngles.front_right + "°";
+			document.getElementById("cal-canvas-rl-angle").textContent = wheelAngles.rear_left + "°";
+			document.getElementById("cal-canvas-rr-angle").textContent = wheelAngles.rear_right + "°";
+			
+			const step = STEPS[currentStep];
+			document.getElementById("stepInfo").textContent = `Step ${currentStep + 1} of ${STEPS.length}`;
+			document.getElementById("stepTitle").textContent = `STEP ${currentStep + 1}: Align ${step.name} Side`;
+			document.getElementById("instructions").innerHTML = `<p>${step.instruction}</p>`;
+			document.getElementById("targetAngle").textContent = step.targetAngle + "°";
+			
+			if (focusedWheel && wheelAngles[focusedWheel] !== undefined) {
+				document.getElementById("focusedWheelInfo").innerHTML = 
+					`<strong>${focusedWheel.toUpperCase()}</strong> (${wheelAngles[focusedWheel].toFixed(0)}°)`;
+			} else {
+				document.getElementById("focusedWheelInfo").textContent = "Click a wheel on diagram";
+			}
+		}
+		
+		async function confirmAlignment() {
+			if (!botEnabled) {
+				showError("Bot must be enabled to calibrate");
+				return;
+			}
+			const step = STEPS[currentStep];
+			console.log(`Calibrating: ${step.wheels.join(", ")} to ${step.targetAngle}°`);
+			
+			for (let i = 0; i < step.wheels.length; i++) {
+				const wheel = step.wheels[i];
+				sendCommand("calibrate", { wheel: wheel, angle: step.targetAngle });
+				if (i < step.wheels.length - 1) {
+					await new Promise(resolve => setTimeout(resolve, 500));
+				}
+			}
+			
+			showSuccess(`✓ ${step.name} side calibrated!`);
+			
+			if (currentStep < STEPS.length - 1) {
+				currentStep++;
+				focusedWheel = null;
+				await new Promise(resolve => setTimeout(resolve, 500));
+				updateDisplay();
+			} else {
+				showSuccess("✓ All wheels calibrated! Returning to dashboard...");
+				setTimeout(() => {
+					window.location.href = "/";
+				}, 2000);
+			}
+		}
+		
+		function exitWizard() {
+			if (confirm("Exit calibration wizard?")) {
+				sendCommand("focus", "");
+				window.location.href = "/";
+			}
+		}
+		
+		function showError(message) {
+			const display = document.getElementById("errorDisplay");
+			const msg = document.createElement("div");
+			msg.textContent = message;
+			display.appendChild(msg);
+			display.classList.add("show");
+			if (display.children.length > 5) {
+				display.removeChild(display.firstChild);
+			}
+		}
+		
+		function showSuccess(message) {
+			const display = document.getElementById("errorDisplay");
+			const msg = document.createElement("div");
+			msg.style.cssText = "color: #155724; background: #d4edda;";
+			msg.textContent = message;
+			display.appendChild(msg);
+			display.classList.add("show");
+			setTimeout(() => msg.remove(), 3000);
+		}
+		
+		connectWebSocket();
+		updateDisplay();
+	</script>
+</body>
+</html>

@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Tuning History - Team 9214</title>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<style>
+		* { margin: 0; padding: 0; box-sizing: border-box; }
+		
+		body {
+			font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+			background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			min-height: 100vh;
+			padding: 10px;
+		}
+		
+		.container {
+			background: white;
+			border-radius: 10px;
+			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+			padding: 20px;
+			max-width: 1400px;
+			width: 100%;
+		}
+		
+		.header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+			padding-bottom: 15px;
+			border-bottom: 2px solid #eee;
+		}
+		
+		h1 {
+			color: #333;
+			font-size: 24px;
+		}
+		
+		.header-buttons {
+			display: flex;
+			gap: 10px;
+		}
+		
+		.button {
+			padding: 10px 15px;
+			border: none;
+			border-radius: 5px;
+			font-size: 12px;
+			font-weight: bold;
+			cursor: pointer;
+			color: white;
+			transition: all 0.3s;
+		}
+		
+		.button:hover {
+			opacity: 0.9;
+			transform: translateY(-2px);
+		}
+		
+		.button:disabled {
+			opacity: 0.6;
+			cursor: not-allowed;
+		}
+		
+		.btn-primary { background: #3498db; }
+		.btn-danger { background: #e74c3c; }
+		.btn-secondary { background: #95a5a6; }
+		
+		.status-bar {
+			display: flex;
+			gap: 15px;
+			margin-bottom: 20px;
+			font-size: 13px;
+		}
+		
+		.status-item {
+			display: flex;
+			gap: 5px;
+			align-items: center;
+		}
+		
+		#wsStatus {
+			font-weight: bold;
+			color: #e74c3c;
+		}
+		
+		#wsStatus.connected {
+			color: #2ecc71;
+		}
+		
+		.content {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 20px;
+			margin-bottom: 20px;
+		}
+		
+		.panel {
+			background: #f8f9fa;
+			border: 1px solid #ddd;
+			border-radius: 5px;
+			padding: 15px;
+		}
+		
+		.panel-title {
+			font-weight: bold;
+			color: #2c3e50;
+			margin-bottom: 12px;
+			font-size: 14px;
+			border-bottom: 2px solid #3498db;
+			padding-bottom: 8px;
+		}
+		
+		.history-table {
+			width: 100%;
+			border-collapse: collapse;
+			font-size: 12px;
+		}
+		
+		.history-table th {
+			background: #3498db;
+			color: white;
+			padding: 8px;
+			text-align: left;
+			font-weight: bold;
+		}
+		
+		.history-table td {
+			padding: 8px;
+			border-bottom: 1px solid #ddd;
+		}
+		
+		.history-table tr:nth-child(even) {
+			background: white;
+		}
+		
+		.history-table tr:nth-child(odd) {
+			background: #f0f0f0;
+		}
+		
+		.history-table tr:hover {
+			background: #e3f2fd;
+		}
+		
+		.voltage-badge {
+			background: #fff3cd;
+			color: #856404;
+			padding: 3px 6px;
+			border-radius: 3px;
+			font-weight: bold;
+		}
+		
+		.gains-value {
+			font-family: "Courier New", monospace;
+			color: #2c3e50;
+		}
+		
+		.regression-box {
+			background: white;
+			border: 1px solid #ddd;
+			border-radius: 5px;
+			padding: 12px;
+			margin-top: 10px;
+		}
+		
+		.regression-header {
+			font-weight: bold;
+			color: #2c3e50;
+			margin-bottom: 8px;
+			border-bottom: 1px solid #ddd;
+			padding-bottom: 5px;
+		}
+		
+		.regression-item {
+			display: grid;
+			grid-template-columns: 60px 1fr;
+			gap: 8px;
+			margin-bottom: 6px;
+			font-size: 11px;
+			font-family: "Courier New", monospace;
+		}
+		
+		.regression-label {
+			font-weight: bold;
+			color: #555;
+		}
+		
+		.regression-formula {
+			color: #2c3e50;
+			background: #f0f0f0;
+			padding: 3px 6px;
+			border-radius: 3px;
+			overflow-x: auto;
+		}
+		
+		.chart-container {
+			position: relative;
+			height: 300px;
+			margin-bottom: 15px;
+		}
+		
+		.empty-state {
+			text-align: center;
+			color: #999;
+			padding: 40px 20px;
+		}
+		
+		.error-display {
+			background: #fff3cd;
+			border: 1px solid #ffc107;
+			color: #856404;
+			padding: 12px;
+			border-radius: 5px;
+			margin-bottom: 15px;
+			font-size: 12px;
+			display: none;
+		}
+		
+		.error-display.show {
+			display: block;
+		}
+		
+		.success-message {
+			background: #d4edda;
+			color: #155724;
+			padding: 8px 12px;
+			margin-bottom: 4px;
+			border-radius: 4px;
+			border-left: 4px solid #28a745;
+			font-size: 12px;
+		}
+		
+		@media (max-width: 1000px) {
+			.content {
+				grid-template-columns: 1fr;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="header">
+			<h1>📊 Tuning History</h1>
+			<div class="header-buttons">
+				<button class="button btn-secondary" onclick="goBack()">← Dashboard</button>
+				<button class="button btn-danger" onclick="clearHistory()">🗑️ Clear All</button>
+			</div>
+		</div>
+		
+		<div class="status-bar">
+			<div class="status-item">
+				<span>WebSocket:</span>
+				<span id="wsStatus">Connecting...</span>
+			</div>
+			<div class="status-item">
+				<span>Entries:</span>
+				<span id="entryCount">0</span>
+			</div>
+		</div>
+		
+		<div id="errorDisplay" class="error-display"></div>
+		
+		<div class="content">
+			<!-- Left: Tuning History Table -->
+			<div class="panel">
+				<div class="panel-title">All Tuning Runs</div>
+				<div id="historyTableContainer">
+					<div class="empty-state">No tuning history yet</div>
+				</div>
+			</div>
+			
+			<!-- Right: Analysis & Charts -->
+			<div class="panel">
+				<div class="panel-title">Trend Analysis</div>
+				
+				<div class="chart-container">
+					<canvas id="kpChart"></canvas>
+				</div>
+				
+				<div class="chart-container">
+					<canvas id="kiChart"></canvas>
+				</div>
+				
+				<div class="chart-container">
+					<canvas id="kdChart"></canvas>
+				</div>
+				
+				<div id="regressionContainer"></div>
+			</div>
+		</div>
+	</div>
+	
+	<script>
+		let ws = null;
+		let historyData = [];
+		let regressionData = null;
+		let charts = {};
+		let botEnabled = false;
+		
+		const WS_URL = `ws://${window.location.hostname}:${window.location.port}/ws`;
+		
+		function connectWebSocket() {
+			console.log("[WS] Connecting to:", WS_URL);
+			ws = new WebSocket(WS_URL);
+			
+			ws.onopen = () => {
+				console.log("[WS] Connected!");
+				document.getElementById("wsStatus").textContent = "Connected";
+				document.getElementById("wsStatus").className = "connected";
+				// Request tuning history
+				sendCommand("tuning_history_command", true);
+			};
+			
+			ws.onmessage = (event) => {
+				try {
+					const data = JSON.parse(event.data);
+					handleWebSocketMessage(data);
+				} catch (e) {
+					console.error("[WS] Parse error:", e);
+					showError("WebSocket parse error: " + e.message);
+				}
+			};
+			
+			ws.onerror = (error) => {
+				console.error("[WS] Error:", error);
+				document.getElementById("wsStatus").textContent = "Error";
+				document.getElementById("wsStatus").className = "";
+				showError("WebSocket error");
+			};
+			
+			ws.onclose = () => {
+				console.log("[WS] Closed, reconnecting...");
+				document.getElementById("wsStatus").textContent = "Reconnecting...";
+				document.getElementById("wsStatus").className = "";
+				setTimeout(connectWebSocket, 2000);
+			};
+		}
+		
+		function sendCommand(cmd, value) {
+			if (!ws || ws.readyState !== WebSocket.OPEN) {
+				showError("WebSocket not connected");
+				return;
+			}
+			console.log(`[WS] Sending: cmd=${cmd}`);
+			ws.send(JSON.stringify({ cmd, value }));
+		}
+		
+		function handleWebSocketMessage(data) {
+			const type = data.type;
+			console.log(`[WS] Received: type=${type}`, data);
+			
+			if (type === "tuning_history") {
+				displayHistory(data);
+			} else if (type === "state" || type === "angles") {
+				// Update bot enabled status from state/angles messages
+				if (data.robot_enabled !== undefined) {
+					botEnabled = data.robot_enabled;
+				}
+			} else if (type === "error") {
+				showError(data.message);
+			}
+		}
+		
+		function displayHistory(data) {
+			historyData = data.history || [];
+			regressionData = data.regression;
+			
+			document.getElementById("entryCount").textContent = historyData.length;
+			
+			if (historyData.length === 0) {
+				document.getElementById("historyTableContainer").innerHTML = 
+					'<div class="empty-state">No tuning history yet</div>';
+				document.getElementById("regressionContainer").innerHTML = '';
+				return;
+			}
+			
+			// Check if we have per-wheel data (new format)
+			const hasPerWheel = historyData[0].wheel_gains !== undefined;
+			
+			if (hasPerWheel) {
+				displayHistoryPerWheel();
+			} else {
+				displayHistoryUniform();
+			}
+			
+			// Display regression if available
+			displayRegression();
+			
+			// Update charts
+			updateCharts();
+		}
+		
+		function displayHistoryUniform() {
+			// Old format: single KP/KI/KD per entry
+			let html = `
+				<table class="history-table">
+					<thead>
+						<tr>
+							<th>Date</th>
+							<th>Voltage</th>
+							<th>KP</th>
+							<th>KI</th>
+							<th>KD</th>
+						</tr>
+					</thead>
+					<tbody>
+			`;
+			
+			historyData.forEach(entry => {
+				const date = new Date(entry.timestamp).toLocaleString();
+				html += `
+					<tr>
+						<td>${date}</td>
+						<td><span class="voltage-badge">${entry.battery_voltage.toFixed(2)}V</span></td>
+						<td><span class="gains-value">${entry.kp.toFixed(6)}</span></td>
+						<td><span class="gains-value">${entry.ki.toFixed(6)}</span></td>
+						<td><span class="gains-value">${entry.kd.toFixed(6)}</span></td>
+					</tr>
+				`;
+			});
+			
+			html += `</tbody></table>`;
+			document.getElementById("historyTableContainer").innerHTML = html;
+		}
+		
+		function displayHistoryPerWheel() {
+			// New format: per-wheel KP/KI/KD
+			let html = `
+				<table class="history-table">
+					<thead>
+						<tr>
+							<th>Date</th>
+							<th>Voltage</th>
+							<th colspan="3">Front Left</th>
+							<th colspan="3">Front Right</th>
+							<th colspan="3">Rear Left</th>
+							<th colspan="3">Rear Right</th>
+						</tr>
+						<tr>
+							<th colspan="2"></th>
+							<th>KP</th><th>KI</th><th>KD</th>
+							<th>KP</th><th>KI</th><th>KD</th>
+							<th>KP</th><th>KI</th><th>KD</th>
+							<th>KP</th><th>KI</th><th>KD</th>
+						</tr>
+					</thead>
+					<tbody>
+			`;
+			
+			const wheelNames = ["front_left", "front_right", "rear_left", "rear_right"];
+			
+			historyData.forEach(entry => {
+				const date = new Date(entry.timestamp).toLocaleString();
+				html += `<tr><td>${date}</td>`;
+				html += `<td><span class="voltage-badge">${entry.battery_voltage.toFixed(2)}V</span></td>`;
+				
+				if (entry.wheel_gains) {
+					wheelNames.forEach(wheel => {
+						const gains = entry.wheel_gains[wheel];
+						if (gains) {
+							html += `<td><span class="gains-value">${gains.kp.toFixed(6)}</span></td>`;
+							html += `<td><span class="gains-value">${gains.ki.toFixed(6)}</span></td>`;
+							html += `<td><span class="gains-value">${gains.kd.toFixed(6)}</span></td>`;
+						} else {
+							html += `<td>-</td><td>-</td><td>-</td>`;
+						}
+					});
+				} else {
+					wheelNames.forEach(() => html += `<td>-</td><td>-</td><td>-</td>`);
+				}
+				
+				html += `</tr>`;
+			});
+			
+			html += `</tbody></table>`;
+			document.getElementById("historyTableContainer").innerHTML = html;
+		}
+		
+		function displayRegression() {
+			if (!regressionData) {
+				document.getElementById("regressionContainer").innerHTML = '';
+				return;
+			}
+			
+			const wheelNames = ["front_left", "front_right", "rear_left", "rear_right"];
+			const hasPerWheel = wheelNames.some(wheel => regressionData[wheel] !== undefined);
+			
+			let html = `<div class="regression-box"><div class="regression-header">📈 Voltage-Based Regression</div>`;
+			
+			if (hasPerWheel) {
+				// Per-wheel regression
+				wheelNames.forEach(wheel => {
+					if (regressionData[wheel]) {
+						const reg = regressionData[wheel];
+						html += `
+							<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #ccc;">
+								<strong>${wheel.replace('_', ' ').toUpperCase()}</strong>
+								<div class="regression-item">
+									<div class="regression-label">KP:</div>
+									<div class="regression-formula">${reg.kp.m.toFixed(8)}×V + ${reg.kp.b.toFixed(6)}</div>
+								</div>
+								<div class="regression-item">
+									<div class="regression-label">KI:</div>
+									<div class="regression-formula">${reg.ki.m.toFixed(8)}×V + ${reg.ki.b.toFixed(6)}</div>
+								</div>
+								<div class="regression-item">
+									<div class="regression-label">KD:</div>
+									<div class="regression-formula">${reg.kd.m.toFixed(8)}×V + ${reg.kd.b.toFixed(6)}</div>
+								</div>
+							</div>
+						`;
+					}
+				});
+			} else {
+				// Uniform regression (old format)
+				if (regressionData.kp) {
+					const reg = regressionData;
+					html += `
+						<div class="regression-item">
+							<div class="regression-label">KP:</div>
+							<div class="regression-formula">${reg.kp.m.toFixed(8)}×V + ${reg.kp.b.toFixed(6)}</div>
+						</div>
+						<div class="regression-item">
+							<div class="regression-label">KI:</div>
+							<div class="regression-formula">${reg.ki.m.toFixed(8)}×V + ${reg.ki.b.toFixed(6)}</div>
+						</div>
+						<div class="regression-item">
+							<div class="regression-label">KD:</div>
+							<div class="regression-formula">${reg.kd.m.toFixed(8)}×V + ${reg.kd.b.toFixed(6)}</div>
+						</div>
+					`;
+				}
+			}
+			
+			html += `</div>`;
+			document.getElementById("regressionContainer").innerHTML = html;
+		}
+		
+		function updateCharts() {
+			if (historyData.length === 0) return;
+			
+			const voltages = historyData.map(e => e.battery_voltage.toFixed(2));
+			const wheelNames = ["front_left", "front_right", "rear_left", "rear_right"];
+			const wheelColors = {
+				front_left: '#3498db',
+				front_right: '#2ecc71',
+				rear_left: '#f39c12',
+				rear_right: '#e74c3c'
+			};
+			const hasPerWheel = historyData.length > 0 && historyData[0].wheel_gains !== undefined;
+			
+			const chartConfig = {
+				type: 'line',
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: { display: true }
+					},
+					scales: {
+						y: { beginAtZero: true }
+					}
+				}
+			};
+			
+			if (hasPerWheel) {
+				// Per-wheel charts - 4 datasets per chart
+				const kpDatasets = [];
+				const kiDatasets = [];
+				const kdDatasets = [];
+				
+				wheelNames.forEach(wheel => {
+					const kpValues = historyData.map(e => e.wheel_gains[wheel]?.kp || 0);
+					const kiValues = historyData.map(e => e.wheel_gains[wheel]?.ki || 0);
+					const kdValues = historyData.map(e => e.wheel_gains[wheel]?.kd || 0);
+					
+					const color = wheelColors[wheel];
+					
+					kpDatasets.push({
+						label: wheel.replace('_', ' ').toUpperCase(),
+						data: kpValues,
+						borderColor: color,
+						backgroundColor: color + '20',
+						borderWidth: 2,
+						tension: 0.1
+					});
+					
+					kiDatasets.push({
+						label: wheel.replace('_', ' ').toUpperCase(),
+						data: kiValues,
+						borderColor: color,
+						backgroundColor: color + '20',
+						borderWidth: 2,
+						tension: 0.1
+					});
+					
+					kdDatasets.push({
+						label: wheel.replace('_', ' ').toUpperCase(),
+						data: kdValues,
+						borderColor: color,
+						backgroundColor: color + '20',
+						borderWidth: 2,
+						tension: 0.1
+					});
+				});
+				
+				// KP Chart
+				if (charts.kp) charts.kp.destroy();
+				charts.kp = new Chart(document.getElementById('kpChart'), {
+					...chartConfig,
+					data: {
+						labels: voltages,
+						datasets: kpDatasets
+					}
+				});
+				
+				// KI Chart
+				if (charts.ki) charts.ki.destroy();
+				charts.ki = new Chart(document.getElementById('kiChart'), {
+					...chartConfig,
+					data: {
+						labels: voltages,
+						datasets: kiDatasets
+					}
+				});
+				
+				// KD Chart
+				if (charts.kd) charts.kd.destroy();
+				charts.kd = new Chart(document.getElementById('kdChart'), {
+					...chartConfig,
+					data: {
+						labels: voltages,
+						datasets: kdDatasets
+					}
+				});
+			} else {
+				// Uniform charts - single dataset (old format)
+				const kpValues = historyData.map(e => e.kp);
+				const kiValues = historyData.map(e => e.ki);
+				const kdValues = historyData.map(e => e.kd);
+				
+				chartConfig.options.plugins.legend.display = false;
+				
+				// KP Chart
+				if (charts.kp) charts.kp.destroy();
+				charts.kp = new Chart(document.getElementById('kpChart'), {
+					...chartConfig,
+					data: {
+						labels: voltages,
+						datasets: [{
+							label: 'KP',
+							data: kpValues,
+							borderColor: '#3498db',
+							backgroundColor: 'rgba(52, 152, 219, 0.1)',
+							borderWidth: 2,
+							tension: 0.1
+						}]
+					}
+				});
+				
+				// KI Chart
+				if (charts.ki) charts.ki.destroy();
+				charts.ki = new Chart(document.getElementById('kiChart'), {
+					...chartConfig,
+					data: {
+						labels: voltages,
+						datasets: [{
+							label: 'KI',
+							data: kiValues,
+							borderColor: '#2ecc71',
+							backgroundColor: 'rgba(46, 204, 113, 0.1)',
+							borderWidth: 2,
+							tension: 0.1
+						}]
+					}
+				});
+				
+				// KD Chart
+				if (charts.kd) charts.kd.destroy();
+				charts.kd = new Chart(document.getElementById('kdChart'), {
+					...chartConfig,
+					data: {
+						labels: voltages,
+						datasets: [{
+							label: 'KD',
+							data: kdValues,
+							borderColor: '#e74c3c',
+							backgroundColor: 'rgba(231, 76, 60, 0.1)',
+							borderWidth: 2,
+							tension: 0.1
+						}]
+					}
+				});
+			}
+		}
+		
+		function clearHistory() {
+			if (!botEnabled) {
+				showError("Bot must be enabled to clear history");
+				return;
+			}
+			if (!confirm("Clear ALL tuning history? Cannot be undone.")) return;
+			sendCommand("clear_tuning", true);
+			showSuccess("Tuning history cleared");
+		}
+		
+		function goBack() {
+			if (!botEnabled) {
+				showError("Bot must be enabled to navigate");
+				return;
+			}
+			window.location.href = "/";
+		}
+		
+		function showError(message) {
+			console.error("[ERROR]", message);
+			const display = document.getElementById("errorDisplay");
+			const msg = document.createElement("div");
+			msg.textContent = message;
+			display.appendChild(msg);
+			display.classList.add("show");
+			if (display.children.length > 5) {
+				display.removeChild(display.firstChild);
+			}
+		}
+		
+		function showSuccess(message) {
+			console.log("[SUCCESS]", message);
+			const display = document.getElementById("errorDisplay");
+			const msg = document.createElement("div");
+			msg.className = "success-message";
+			msg.textContent = message;
+			display.appendChild(msg);
+			display.classList.add("show");
+			setTimeout(() => msg.remove(), 3000);
+		}
+		
+		window.addEventListener("load", () => {
+			connectWebSocket();
+		});
+	</script>
+</body>
+</html>

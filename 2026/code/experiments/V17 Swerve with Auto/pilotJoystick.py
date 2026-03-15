@@ -48,7 +48,7 @@ class PilotJoystick:
 	
 	def get_left_x(self):
 		"""Get left X axis with deadband (strafe left/right)"""
-		raw_value = -self.joystick.getRawAxis(0)  # Negate for correct direction
+		raw_value = self.joystick.getRawAxis(0)
 		return self.apply_deadband(raw_value)
 	
 	def get_right_x(self):

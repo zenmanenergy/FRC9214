@@ -2,7 +2,7 @@
 import wpilib
 from wpilib import SmartDashboard, DriverStation
 from swerve_drive import SwerveDrive
-from turret import Turret
+# from turret import Turret
 from shooter import ShooterSubsystem
 from copilotJoystick import CopilotJoystick
 from shooter_controls import ShooterControls
@@ -17,32 +17,24 @@ import CANID
 class Robot(wpilib.TimedRobot):
 	def robotInit(self):
 		import sys
-		print("\n[ROBOT-INIT] Starting robot initialization...", flush=True)
-		sys.stdout.flush()
 		
 		self.drive = SwerveDrive()
 		
-		print("[ROBOT-INIT] SwerveDrive created successfully", flush=True)
-		sys.stdout.flush()
+		# self.turret = Turret(turn_canid=CANID.TURRET_TURN, encoder_dio=4)
+		self.turret = None  # Turret disabled
 		
-		self.turret = Turret(turn_canid=CANID.TURRET_TURN, encoder_dio=4)
-		print("[ROBOT-INIT] Turret created successfully", flush=True)
-		sys.stdout.flush()
-		
-		self.shooter = ShooterSubsystem(turret=self.turret)
-		print("[ROBOT-INIT] Shooter created successfully", flush=True)
-		sys.stdout.flush()
+		self.shooter = ShooterSubsystem(turret=None)
+
 		
 		# Load calibration for both swerve and turret
 		self.calibration = EncoderCalibration()
-		turret_offset = self.calibration.get_offset("turret")
-		self.turret.set_zero_offset(turret_offset)
-		turret_left_limit = self.calibration.get_offset("turret_left_limit")
-		turret_right_limit = self.calibration.get_offset("turret_right_limit")
-		self.turret.set_left_limit(turret_left_limit)
-		self.turret.set_right_limit(turret_right_limit)
-		print(f"[ROBOT-INIT] Loaded turret offset: {turret_offset:.1f}, left_limit: {turret_left_limit:.1f}, right_limit: {turret_right_limit:.1f}", flush=True)
-		sys.stdout.flush()
+		# turret_offset = self.calibration.get_offset("turret")
+		# self.turret.set_zero_offset(turret_offset)
+		# turret_left_limit = self.calibration.get_offset("turret_left_limit")
+		# turret_right_limit = self.calibration.get_offset("turret_right_limit")
+		# self.turret.set_left_limit(turret_left_limit)
+		# self.turret.set_right_limit(turret_right_limit)
+
 		
 		self.pilot_joystick = PilotJoystick(port=0, deadband=0.1)
 		self.pilot_controls = PilotControls(self.drive, self.pilot_joystick)
@@ -50,7 +42,7 @@ class Robot(wpilib.TimedRobot):
 		self.copilot_joystick = CopilotJoystick(port=1, deadband=0.1)
 		self.shooter_controls = ShooterControls(self.shooter, self.copilot_joystick)
 		
-		self.dashboard = DashboardUpdater(self.drive, self.turret)
+		self.dashboard = DashboardUpdater(self.drive, None)
 		
 		# Test state for web dashboard integration
 		self.last_focused_wheel = None
@@ -75,46 +67,23 @@ class Robot(wpilib.TimedRobot):
 		SmartDashboard.putBoolean("turret_set_left_limit_command", False)
 		SmartDashboard.putBoolean("turret_set_right_limit_command", False)
 		
-		print("[ROBOT] Ready. Press A/B/X/Y to focus on wheels.\n")
+
 	
 	def testInit(self):
-		print("[TEST] === ENTERING TEST MODE ===")
-		print("[TEST] Controls:")
-		print("[TEST] A/B/X/Y = Focus on rear_left/rear_right/front_left/front_right")
-		print("[TEST] Left thumb up/down = Drive motor (forward/back)")
-		print("[TEST] Right thumb left/right = Turn motor (rotation)")
-		print("[TEST] RB = Save current position as 0°")
-		print("[TEST] LB = Save current position as 90°")
-		print("[TEST] BACK = Save current position as 180°")
-		print("[TEST] START = Align all wheels to 0°")
-		print("[TEST]")
-		print("[TEST] LEVEL-BASED CALIBRATION PROCESS:")
-		print("[TEST] 1. Put level on FL & RL wheels (parallel), press RB twice to save as 0°")
-		print("[TEST] 2. Put level on FR & RR wheels (parallel), press RB twice to save as 0°")
-		print("[TEST] 3. Rotate wheels 90°, put level on FL & FR (parallel), press LB twice to save as 90°")
-		print("[TEST] 4. Put level on RL & RR (parallel), press LB twice to save as 90°")
-		print("[TEST] This gives 4 calibration points per wheel for better alignment!\n")
-		
 		# Publish mode to NetworkTables so dashboard auto-detects
-		SmartDashboard.putString("robot_mode", "Test")
-		print("[MODE] Published robot_mode = Test to NetworkTables\n")
-	
+		# SmartDashboard.putString("robot_mode", "Test")
+		pass
 	def autonomousInit(self):
 		"""Initialize autonomous mode - drive forward then shoot"""
-		print("[AUTO] === ENTERING AUTONOMOUS MODE ===")
-		print(f"[AUTO] Mission: Drive forward {self.auto_target_distance_meters}m, shoot for {self.auto_shoot_duration}s, then stop")
-		
 		# Reset odometry to zero
 		self.drive.odometry.reset()
-		print("[AUTO] Odometry reset to 0 meters")
 		
 		# Start in DRIVE_FORWARD state
 		self.auto_state = 0  # DRIVE_FORWARD
 		self.auto_state_timer = wpilib.Timer.getFPGATimestamp()
 		
 		# Publish mode to NetworkTables
-		SmartDashboard.putString("robot_mode", "Autonomous")
-		print("[MODE] Published robot_mode = Autonomous to NetworkTables\n")
+		# SmartDashboard.putString("robot_mode", "Autonomous")
 	
 	def autonomousPeriodic(self):
 		"""Execute autonomous sequence - drive forward, then shoot, then stop"""
@@ -132,9 +101,6 @@ class Robot(wpilib.TimedRobot):
 			
 			# Check if we've reached target distance
 			if distance_meters >= self.auto_target_distance_meters:
-				print(f"[AUTO-STATE] Reached target distance: {distance_meters:.2f}m >= {self.auto_target_distance_meters}m")
-				print(f"[AUTO-STATE] Transitioning to SHOOTING state")
-				
 				# Stop driving
 				self.drive.stop_all()
 				
@@ -148,9 +114,6 @@ class Robot(wpilib.TimedRobot):
 			
 			# Check if we've shot long enough
 			if elapsed_time >= self.auto_shoot_duration:
-				print(f"[AUTO-STATE] Shooter ran for {elapsed_time:.1f}s >= {self.auto_shoot_duration}s")
-				print(f"[AUTO-STATE] Transitioning to STOP_ALL state")
-				
 				# Transition to STOP_ALL state
 				self.auto_state = 2  # STOP_ALL
 				self.auto_state_timer = wpilib.Timer.getFPGATimestamp()
@@ -161,7 +124,6 @@ class Robot(wpilib.TimedRobot):
 			self.drive.stop_all()
 			
 			# Mission complete
-			print(f"[AUTO-STATE] Mission complete! Entering IDLE state")
 			self.auto_state = 3  # IDLE
 		
 		# else IDLE - do nothing
@@ -188,27 +150,10 @@ class Robot(wpilib.TimedRobot):
 		set_wheels_direction_str = SmartDashboard.getString("set_wheels_direction", "")
 		autotune_command = SmartDashboard.getBoolean("autotune_command", False)
 		tuning_history_command = SmartDashboard.getBoolean("tuning_history_command", False)
-		clear_tuning_command = SmartDashboard.getBoolean("clear_tuning_command", False)
+		clear_tuning_command = SmartDashboard.getBoolean("clear_tuning_history_command", False)
 		
-		# DEBUG: Always print autotune_command value
-		if autotune_command:
-			print(f"[BROWSER CMD] autotune_command: {autotune_command}", flush=True)
-		
-		# Print commands received from browser
-		if focused_wheel != self.last_focused_wheel:
-			print(f"[BROWSER CMD] focused_wheel: {focused_wheel}")
-		if align_command:
-			print(f"[BROWSER CMD] align_command: True")
-		if save_zero_command:
-			print(f"[BROWSER CMD] save_zero_command: True")
-		if calibrate_wheel:
-			print(f"[BROWSER CMD] calibrate_wheel: {calibrate_wheel} at {calibrate_angle}°")
-		if set_wheels_direction_str:
-			print(f"[BROWSER CMD] set_wheels_direction: {set_wheels_direction_str}")
-		if tuning_history_command:
-			print(f"[BROWSER CMD] tuning_history_command: True")
 		if clear_tuning_command:
-			print(f"[BROWSER CMD] clear_tuning_command: True")
+			print("[CLEAR-NOW] EXECUTING CLEAR HANDLER!")
 		
 		# Handle set_wheels_direction command
 		if set_wheels_direction_str:
@@ -219,11 +164,9 @@ class Robot(wpilib.TimedRobot):
 			if focused_wheel_preset and focused_wheel_preset in angles_dict:
 				target_angle = angles_dict[focused_wheel_preset]
 				self.drive.drive_wheel_to_angle(focused_wheel_preset, target_angle)
-				print(f"[DIRECTION] Rotating {focused_wheel_preset} to {target_angle}° using interpolated gains")
 			else:
 				target_angle = list(angles_dict.values())[0] if angles_dict else 0
 				self.drive.rotate_to_angle(target_angle)
-				print(f"[DIRECTION] Rotating all wheels to {target_angle}°")
 			
 			SmartDashboard.putString("set_wheels_direction", "")
 			SmartDashboard.putString("focused_wheel_preset", "")
@@ -235,7 +178,6 @@ class Robot(wpilib.TimedRobot):
 			# If browser clears focus (empty string), clear pilot focus too
 			if not focused_wheel:
 				self.pilot_controls.focused = None
-				print("[FOCUS] Cleared focus from browser")
 		
 		# Handle align command
 		if align_command:
@@ -251,13 +193,11 @@ class Robot(wpilib.TimedRobot):
 		if tuning_history_command:
 			self.drive._publish_tuning_history_to_nt()
 			SmartDashboard.putBoolean("tuning_history_command", False)
-			print(f"[ROBOT] Published tuning history to NetworkTables\n")
 		
 		# Handle clear tuning command
 		if clear_tuning_command:
 			self.drive.calibration.clear_tuning_history()
-			SmartDashboard.putBoolean("clear_tuning_command", False)
-			print(f"[ROBOT] Cleared tuning history\n")
+			SmartDashboard.putBoolean("clear_tuning_history_command", False)
 		
 		# Update alignment if active
 		self.drive.update_alignment()
@@ -274,32 +214,21 @@ class Robot(wpilib.TimedRobot):
 		
 		# Handle calibration command - only on change of calibrate_wheel
 		if calibrate_wheel and calibrate_wheel != self.last_calibrate_wheel:
-			print(f"\n[ROBOT-CHG] Detected calibrate_wheel change to: '{calibrate_wheel}'")
 			self.last_calibrate_wheel = calibrate_wheel
 			calibrate_angle = SmartDashboard.getNumber("calibrate_angle", -999)
-			print(f"[ROBOT-READ] Read calibrate_angle from NetworkTables: {calibrate_angle}")
 			if calibrate_angle >= 0:
-				print(f"[ROBOT-CAL] Calling set_wheel_angle('{calibrate_wheel}', {int(calibrate_angle)})")
 				self.drive.set_wheel_angle(calibrate_wheel, int(calibrate_angle))
-				print(f"[ROBOT-DONE] Calibration saved for {calibrate_wheel}\n")
-			else:
-				print(f"[ROBOT-ERR] Invalid angle {calibrate_angle}, skipping\n")
 			SmartDashboard.putString("calibrate_wheel", "")
 		elif not calibrate_wheel:
 			self.last_calibrate_wheel = None
 		
 		# Handle set_wheel_angle command from dashboard buttons
 		if set_wheel_angle_name and set_wheel_angle_name != self.last_set_wheel_angle_name:
-			print(f"\n[DASH-CHG] Detected set_wheel_angle change to: '{set_wheel_angle_name}'")
 			self.last_set_wheel_angle_name = set_wheel_angle_name
 			set_wheel_angle_value = SmartDashboard.getNumber("set_wheel_angle_value", -1)
-			print(f"[DASH-READ] Read set_wheel_angle_value from NetworkTables: {set_wheel_angle_value}")
 			if set_wheel_angle_value >= 0 and set_wheel_angle_value < 360:
-				print(f"[DASH-SET] Starting drive to {set_wheel_angle_value}° for {set_wheel_angle_name}")
 				self.driving_wheel_to_angle = set_wheel_angle_name
 				self.driving_wheel_target_angle = int(set_wheel_angle_value)
-			else:
-				print(f"[DASH-ERR] Invalid angle {set_wheel_angle_value}, skipping\n")
 			SmartDashboard.putString("set_wheel_angle_name", "")
 		elif not set_wheel_angle_name:
 			self.last_set_wheel_angle_name = None
@@ -311,88 +240,61 @@ class Robot(wpilib.TimedRobot):
 			SmartDashboard.putBoolean("save_zero_command", False)
 			SmartDashboard.putString("focused_wheel", "")
 			self.last_focused_wheel = None
-			print(f"[ZEROING] Saved zero for {focused_wheel}\n")
 		
 		# Handle turret set zero command
-		turret_set_zero_command = SmartDashboard.getBoolean("turret_set_zero_command", False)
+		# turret_set_zero_command = SmartDashboard.getBoolean("turret_set_zero_command", False)
+		turret_set_zero_command = False
 		if turret_set_zero_command:
-			print(f"[TURRET-DEBUG] turret_set_zero_command received!")
 			raw_encoder_degrees = self.turret.get_raw_encoder_degrees()
 			# Shift zero point by 180 degrees in angle space
 			offset_adjusted = raw_encoder_degrees - (180 * self.turret.GEAR_RATIO)
-			print(f"[TURRET-DEBUG] Raw encoder angle: {raw_encoder_degrees:.1f}°, setting zero offset to: {offset_adjusted:.1f}°")
 			self.turret.set_zero_offset(offset_adjusted)
 			self.calibration.set_offset("turret", offset_adjusted)
-			print(f"[TURRET-DEBUG] Saving to file...")
 			self.calibration.save_calibration()
 			self.turret.stop()
-			SmartDashboard.putBoolean("turret_set_zero_command", False)
-			print(f"[TURRET-ZEROING] Saved turret zero at encoder angle: {raw_encoder_degrees:.1f}\n")
+			# SmartDashboard.putBoolean("turret_set_zero_command", False)
 		
 		# Handle turret set left limit command
-		turret_set_left_limit_command = SmartDashboard.getBoolean("turret_set_left_limit_command", False)
+		# turret_set_left_limit_command = SmartDashboard.getBoolean("turret_set_left_limit_command", False)
+		turret_set_left_limit_command = False
 		if turret_set_left_limit_command:
-			print(f"[TURRET-DEBUG] turret_set_left_limit_command received!")
 			turret_angle = self.turret.get_angle()
-			print(f"[TURRET-DEBUG] Current turret angle: {turret_angle}°")
 			self.turret.set_left_limit(turret_angle)
 			self.calibration.set_offset("turret_left_limit", turret_angle)
-			print(f"[TURRET-DEBUG] Saving to file...")
 			self.calibration.save_calibration()
 			self.turret.stop()
-			SmartDashboard.putBoolean("turret_set_left_limit_command", False)
-			print(f"[TURRET-LIMIT] Saved turret left limit at: {turret_angle}°\n")
+			# SmartDashboard.putBoolean("turret_set_left_limit_command", False)
 		
 		# Handle turret set right limit command
-		turret_set_right_limit_command = SmartDashboard.getBoolean("turret_set_right_limit_command", False)
+		# turret_set_right_limit_command = SmartDashboard.getBoolean("turret_set_right_limit_command", False)
+		turret_set_right_limit_command = False
 		if turret_set_right_limit_command:
-			print(f"[TURRET-DEBUG] turret_set_right_limit_command received!")
 			turret_angle = self.turret.get_angle()
-			print(f"[TURRET-DEBUG] Current turret angle: {turret_angle}°")
 			self.turret.set_right_limit(turret_angle)
 			self.calibration.set_offset("turret_right_limit", turret_angle)
-			print(f"[TURRET-DEBUG] Saving to file...")
 			self.calibration.save_calibration()
 			self.turret.stop()
-			SmartDashboard.putBoolean("turret_set_right_limit_command", False)
-			print(f"[TURRET-LIMIT] Saved turret right limit at: {turret_angle}°\n")
+			# SmartDashboard.putBoolean("turret_set_right_limit_command", False)
 		
 		# Update continuous wheel drive (from dashboard arrow buttons)
 		if self.driving_wheel_to_angle:
-			print(f"\n[DASH-LOOP] ========== DASHBOARD MOTOR UPDATE LOOP ==========")
-			print(f"[DASH-LOOP] Wheel: {self.driving_wheel_to_angle}")
-			print(f"[DASH-LOOP] Target angle: {self.driving_wheel_target_angle}°")
-			
 			current_angle = self.drive.get_wheel_angle(self.driving_wheel_to_angle)
-			print(f"[DASH-LOOP] Current angle from encoder: {current_angle}° (type: {type(current_angle).__name__})")
-			
 			raw_error = self.driving_wheel_target_angle - current_angle
-			print(f"[DASH-LOOP] Raw error: {self.driving_wheel_target_angle}° - {current_angle}° = {raw_error}°")
 			
 			error = raw_error
 			if error > 180:
 				error -= 360
-				print(f"[DASH-LOOP] Error > 180, normalized: {raw_error}° - 360° = {error}°")
 			elif error < -180:
 				error += 360
-				print(f"[DASH-LOOP] Error < -180, normalized: {raw_error}° + 360° = {error}°")
-			else:
-				print(f"[DASH-LOOP] Error in range [-180, 180]: {error}°")
 			
 			DASHBOARD_TOLERANCE = 1.5
 			abs_error = abs(error)
-			print(f"[DASH-LOOP] Abs(error)={abs_error:.2f}° vs tolerance={DASHBOARD_TOLERANCE}°")
 			
 			if abs_error < DASHBOARD_TOLERANCE:
-				print(f"[DASH-LOOP] STOP CONDITION MET: abs({abs_error:.2f}) < {DASHBOARD_TOLERANCE}")
-				print(f"[DASH-DONE] Wheel {self.driving_wheel_to_angle} reached target {self.driving_wheel_target_angle}°")
 				self.drive.stop_all()
 				self.driving_wheel_to_angle = None
 				self.driving_wheel_target_angle = None
-				print(f"[DASH-LOOP] Motor stopped, state cleared\n")
 			else:
-				print(f"[DASH-LOOP] CONTINUE CONDITION: abs({abs_error:.2f}) >= {DASHBOARD_TOLERANCE}")
-				print(f"[DASH-LOOP] Calling drive_wheel_to_angle('{self.driving_wheel_to_angle}', {self.driving_wheel_target_angle})")
 				self.drive.drive_wheel_to_angle(self.driving_wheel_to_angle, self.driving_wheel_target_angle)
 		
 		# Execute joystick-based control (pass focused_wheel from web dashboard to pilot_controls)
@@ -406,24 +308,18 @@ class Robot(wpilib.TimedRobot):
 	
 	def testExit(self):
 		self.drive.stop_all()
-		print("[TEST] === EXITING TEST MODE ===\n")
 	
 	def teleopInit(self):
 		# Stop all motors on entry for safety
 		self.drive.stop_all()
 		self.shooter.stop_all()
-		print("[TELEOP] All motors stopped at teleop entry")
 		
-		#print("[TELEOP] === ENTERING TELEOP MODE ===")
-		#print("[TELEOP] Controls:")
-		#print("[TELEOP] Left Joystick: Forward/Backward and Strafe (Left/Right)")
-		#print("[TELEOP] Right Joystick X: Rotate Left/Right")
-		#print("[TELEOP] The robot will automatically orient wheels for swerve drive")
-		#print("[TELEOP] Release joystick to center wheels to 0°\n")
+		# Reset swerve wheel alignment state from autonomous
+		self.drive.aligning = False
+		self.drive.wheel_alignment_state.clear()
 		
 		# Publish mode to NetworkTables so dashboard auto-detects
-		SmartDashboard.putString("robot_mode", "Teleop")
-		#print("[MODE] Published robot_mode = Teleop to NetworkTables\n")
+		# SmartDashboard.putString("robot_mode", "Teleop")
 		
 		# Track if robot had input in previous loop
 		self.had_teleop_input = False
@@ -431,7 +327,7 @@ class Robot(wpilib.TimedRobot):
 	def teleopPeriodic(self):
 		"""Teleop control for swerve drive"""
 		# Ensure robot_mode stays set to Teleop
-		SmartDashboard.putString("robot_mode", "Teleop")
+		# SmartDashboard.putString("robot_mode", "Teleop")
 		
 		# Execute joystick control logic
 		self.pilot_controls.execute_teleop()
@@ -448,13 +344,13 @@ class Robot(wpilib.TimedRobot):
 		# Debug: check drive motor diagnostics
 		#self.drive._debug_print_drive_motor_diagnostics()
 		
+
 		# SHOOTER CONTROLS
 		self.shooter_controls.execute()
 	
 	def teleopExit(self):
 		self.drive.stop_all()
 		self.shooter.stop_all()
-		print("[TELEOP] === EXITING TELEOP MODE ===\n")
 
 
 if __name__ == "__main__":

@@ -35,13 +35,13 @@ class Turret:
 		# Global debugging - print when motor power changes
 		if abs(power - self._prev_motor_power) > 0.01:  # Only log significant changes
 			import time
-			print(f"[TURRET-MOTOR] Power: {self._prev_motor_power:.3f} -> {power:.3f} (angle: {self.get_angle()}°)", flush=True)
+			#print(f"[TURRET-MOTOR] Power: {self._prev_motor_power:.3f} -> {power:.3f} (angle: {self.get_angle()}°)", flush=True)
 			self._prev_motor_power = power
 		
 		# Global debugging - print when encoder significantly changes
 		raw_encoder = self.get_raw_encoder_degrees()
 		if abs(raw_encoder - self._prev_encoder_angle) > 1.0:
-			print(f"[TURRET-ENCODER] Raw: {self._prev_encoder_angle:.1f}° -> {raw_encoder:.1f}° (Motor power: {power:.3f})", flush=True)
+			#print(f"[TURRET-ENCODER] Raw: {self._prev_encoder_angle:.1f}° -> {raw_encoder:.1f}° (Motor power: {power:.3f})", flush=True)
 			self._prev_encoder_angle = raw_encoder
 		
 		self.turn_motor.set(power)
@@ -80,7 +80,6 @@ class Turret:
 		# Global debugging - print when encoder significantly changes (called every cycle from dashboard)
 		turret_angle = int(round(self.continuous_angle)) % 360
 		if abs(turret_angle - self._prev_turret_angle) > 1:
-			print(f"[TURRET-ENCODER] Angle: {self._prev_turret_angle}° -> {turret_angle}° (Motor power: {self.current_turn_power:.3f})", flush=True)
 			self._prev_turret_angle = turret_angle
 		
 		return self.continuous_angle

@@ -14,6 +14,7 @@ class ShooterControls:
 	# Motor speed settings
 	BUMPER_ROTATION_SPEED = 0.08  # Speed for bumper-triggered rotations (0.0 to 1.0)
 	MANUAL_ROTATION_SPEED = 0.08  # Max speed for manual stick rotation (0.0 to 1.0)
+	CLIMBER_SPEED = 0.05  # Speed for climber motor (5% as requested)
 	
 	def __init__(self, shooter_subsystem, copilot_joystick):
 		"""
@@ -61,6 +62,20 @@ class ShooterControls:
 		# Process analog stick inputs
 		for axis_name, function in self.analog_map.items():
 			function()
+		
+		# Process climber control from triggers
+		left_trigger = self.joystick.get_left_trigger()
+		right_trigger = self.joystick.get_right_trigger()
+		
+		if left_trigger > 0.1:
+			# Left trigger - climber up
+			self.shooter.set_climber(self.CLIMBER_SPEED)
+		elif right_trigger > 0.1:
+			# Right trigger - climber down
+			self.shooter.set_climber(-self.CLIMBER_SPEED)
+		else:
+			# No trigger input - stop climber
+			self.shooter.set_climber(0.0)
 		
 		# Process all button presses
 		self.joystick.process_buttons()
