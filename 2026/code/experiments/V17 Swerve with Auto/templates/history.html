@@ -313,7 +313,7 @@
 				document.getElementById("wsStatus").textContent = "Connected";
 				document.getElementById("wsStatus").className = "connected";
 				// Request tuning history
-				sendCommand("tuning_history_command", true);
+				sendCommand("tuning_history", true);
 			};
 			
 			ws.onmessage = (event) => {
@@ -352,16 +352,24 @@
 		
 		function handleWebSocketMessage(data) {
 			const type = data.type;
-			console.log(`[WS] Received: type=${type}`, data);
 			
 			if (type === "tuning_history") {
+				console.log(`[WS] Received: type=${type}`, data);
 				displayHistory(data);
 			} else if (type === "state" || type === "angles") {
-				// Update bot enabled status from state/angles messages
+				// Update bot enabled status from state/angles messages (don't spam console)
 				if (data.robot_enabled !== undefined) {
 					botEnabled = data.robot_enabled;
 				}
+			} else if (type === "success") {
+				console.log(`[WS] Received: type=${type}`, data);
+				showSuccess(data.message);
+				// Refresh history after clear
+				if (data.message.includes("cleared")) {
+					setTimeout(() => sendCommand("tuning_history", true), 500);
+				}
 			} else if (type === "error") {
+				console.log(`[WS] Received: type=${type}`, data);
 				showError(data.message);
 			}
 		}
@@ -700,21 +708,18 @@
 		}
 		
 		function clearHistory() {
-			if (!botEnabled) {
-				showError("Bot must be enabled to clear history");
+			if (!confirm("Clear ALL tuning history? Cannot be undone.")) return;
+			
+			if (!ws || ws.readyState !== WebSocket.OPEN) {
+				showError("WebSocket not connected");
 				return;
 			}
-			if (!confirm("Clear ALL tuning history? Cannot be undone.")) return;
+			
 			sendCommand("clear_tuning", true);
-			showSuccess("Tuning history cleared");
 		}
 		
 		function goBack() {
-			if (!botEnabled) {
-				showError("Bot must be enabled to navigate");
-				return;
-			}
-			window.location.href = "/";
+			window.location.href = "/?mode=test";
 		}
 		
 		function showError(message) {

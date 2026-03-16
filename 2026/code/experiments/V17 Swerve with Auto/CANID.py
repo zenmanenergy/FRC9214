@@ -21,7 +21,7 @@ SWERVE_REAR_RIGHT_DRIVE = 6
 SWERVE_REAR_RIGHT_TURN = 5
 
 # ==================== TURRET ====================
-TURRET_TURN = 11
+TURRET_TURN = 20
 
 # ==================== SHOOTER ====================
 SHOOTER_SPINDEXER = 8
@@ -29,3 +29,5 @@ SHOOTER_UPTAKE = 12
 SHOOTER_SHOOTER = 16
 # ==================== INTAKE ====================
 INTAKE = 4
+
+CLIMBER = 11

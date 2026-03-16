@@ -401,8 +401,8 @@ class SwerveDrive:
 			
 			if at_target:
 				# Aligned! Stop only the TURN motor and RESET ITS PID (kill residual power/integral)
-				if wheel_name == "front_right":
-					print(f"[FR] *** REACHED TOLERANCE *** Stopping turn motor. Final angle: {current_angle:.1f}°", flush=True)
+				#if wheel_name == "front_right":
+				#	print(f"[FR] *** REACHED TOLERANCE *** Stopping turn motor. Final angle: {current_angle:.1f}°", flush=True)
 				wheel.turn_motor.set(0.0)
 				pid.reset()  # Reset PID to clear integral and derivative terms
 				wheels_to_remove.append(wheel_name)

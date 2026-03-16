@@ -158,7 +158,7 @@ class SwerveDrive:
 	def drive_wheel_to_angle(self, wheel_name, target_angle):
 		"""Start aligning a single wheel to target angle using PID control"""
 		if wheel_name not in self.wheels:
-			print(f"[DRIVE-WHEEL] Unknown wheel: {wheel_name}")
+			#print(f"[DRIVE-WHEEL] Unknown wheel: {wheel_name}")
 			return
 		
 		# Set up continuous alignment for this wheel
@@ -166,7 +166,7 @@ class SwerveDrive:
 		self.single_wheel_name = wheel_name
 		self.single_wheel_target_angle = target_angle
 		self.single_wheel_start_time = wpilib.Timer.getFPGATimestamp()
-		print(f"[DRIVE-WHEEL] Starting alignment of {wheel_name} to {target_angle}°")
+		#print(f"[DRIVE-WHEEL] Starting alignment of {wheel_name} to {target_angle}°")
 	
 	def start_alignment(self, target_angle=0):
 		"""Start aligning all wheels to target angle"""

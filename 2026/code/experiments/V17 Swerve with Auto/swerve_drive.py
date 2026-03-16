@@ -12,7 +12,6 @@ class SwerveDrive:
 	"""Main swerve drive controller"""
 	
 	def __init__(self):
-		print("[ROBOT] Initializing swerve drive with 4 wheels...")
 		
 		# Create all wheels
 		self.wheels = {}
@@ -32,7 +31,7 @@ class SwerveDrive:
 			if wheel_name in self.wheels:
 				self.wheels[wheel_name].offset = offset
 		
-		print("[ROBOT] Initialized 4 wheels with offsets")
+
 		
 		# Alignment state
 		self.aligning = False
@@ -45,10 +44,6 @@ class SwerveDrive:
 		pid_gains = self.calibration.get_interpolated_gains(battery_voltage)
 		
 		import sys
-		print(f"\n{'='*60}")
-		print(f"[ROBOT] LOADING PID GAINS")
-		print(f"[ROBOT] Battery voltage: {battery_voltage:.2f}V")
-		sys.stdout.flush()
 		
 		# Create PID controllers for each wheel with per-wheel gains if available
 		self.pid_controllers = {}
@@ -58,13 +53,11 @@ class SwerveDrive:
 				kp = pid_gains[wheel_name]["kp"]
 				ki = pid_gains[wheel_name]["ki"]
 				kd = pid_gains[wheel_name]["kd"]
-				print(f"[ROBOT] {wheel_name:12}: KP={kp:.6f}, KI={ki:.6f}, KD={kd:.6f}")
 			else:
 				# Fallback to uniform gains
 				kp = pid_gains.get("kp", 0.003)
 				ki = pid_gains.get("ki", 0.005)
 				kd = pid_gains.get("kd", 0.0001)
-				print(f"[ROBOT] {wheel_name:12}: KP={kp:.6f}, KI={ki:.6f}, KD={kd:.6f} (uniform)")
 			
 			self.pid_controllers[wheel_name] = PIDController(
 				kp=kp,
@@ -72,20 +65,12 @@ class SwerveDrive:
 				kd=kd,
 				name=f"Wheel_{wheel_name}"
 			)
-		print(f"{'-'*60}\n")
-		sys.stdout.flush()
 		
 		# Initialize odometry tracking for distance calculation
 		self.odometry = SwerveOdometry(self.wheels, wheel_diameter_cm=10.16)
-		print("[ROBOT] Odometry initialized (10.16 cm wheels, 42 CPR NEO 1.1)")
-		sys.stdout.flush()
 		
 		# Publish tuning history to NetworkTables on startup (for remote dashboard)
-		print("[ROBOT] About to call _publish_tuning_history_to_nt()...")
-		import sys
-		sys.stdout.flush()
 		self._publish_tuning_history_to_nt()
-		sys.stdout.flush()
 		
 		# Autotune state
 		self.autotuning = False
@@ -117,11 +102,13 @@ class SwerveDrive:
 		"""
 		import math
 		import time
+		forward *= -1
+		strafe *= -1
 		
 		# Debug input values only when non-zero
 		if (forward != 0 or strafe != 0 or rotate != 0):
 			if not hasattr(self, '_last_input') or self._last_input != (forward, strafe, rotate):
-				print(f"[DRIVE] Input: forward={forward:.3f}, strafe={strafe:.3f}, rotate={rotate:.3f}", flush=True)
+				#print(f"[DRIVE] Input: forward={forward:.3f}, strafe={strafe:.3f}, rotate={rotate:.3f}", flush=True)
 				self._last_input = (forward, strafe, rotate)
 		
 		# Calculate wheel vectors using swerve kinematics
@@ -131,7 +118,7 @@ class SwerveDrive:
 		for wheel_name, wheel_pos in config.WHEEL_POSITIONS.items():
 			# Swerve kinematics: combine forward/strafe with rotation offset
 			# Rotation contributes perpendicular to the position vector
-			vx = forward - rotate * wheel_pos["y"]
+			vx = -forward - rotate * wheel_pos["y"]
 			vy = strafe + rotate * wheel_pos["x"]
 			
 			# Calculate speed and angle
@@ -143,6 +130,8 @@ class SwerveDrive:
 			# Normalize angle to 0-360
 			if angle < 0:
 				angle += 360
+			
+			angle = (angle + 180) % 360  # Invert all inputs globally
 			
 			wheel_vectors[wheel_name] = {"speed": speed, "angle": angle}
 			max_speed = max(max_speed, speed)
@@ -157,13 +146,14 @@ class SwerveDrive:
 		# Debug: show angles only when they change
 		angle_hash = tuple(sorted([(name, round(data['angle'], 1)) for name, data in wheel_vectors.items()]))
 		if not hasattr(self, '_last_angle_hash') or self._last_angle_hash != angle_hash:
-			print(f"[DRIVE] Target angles: {dict(angle_hash)}", flush=True)
+			#print(f"[DRIVE] Target angles: {dict(angle_hash)}", flush=True)
 			self._last_angle_hash = angle_hash
 		
 		# Apply to wheels - drive and turn simultaneously
 		for wheel_name, wheel_data in wheel_vectors.items():
 			wheel = self.wheels[wheel_name]
 			target_angle = wheel_data["angle"]
+			target_angle = (target_angle + 180) % 360  # Flip 0° and 180° positions
 			target_speed = wheel_data["speed"]
 			
 			# Get current angle for debugging
@@ -173,7 +163,7 @@ class SwerveDrive:
 				angle_error = 360 - angle_error
 			
 			# Apply drive power - don't wait for turn motor to align
-			drive_power = target_speed * config.MOTOR_SCALE_TELEOP
+			drive_power = -target_speed * config.MOTOR_SCALE_TELEOP
 			wheel.set_drive_power(drive_power)
 			
 			# Debug front_right every cycle to see if power is changing
@@ -181,7 +171,7 @@ class SwerveDrive:
 				if not hasattr(self, '_fr_drive_debug'):
 					self._fr_drive_debug = None
 				if self._fr_drive_debug != drive_power:
-					print(f"[FR-DRIVE] Power changed to: {drive_power:.3f}", flush=True)
+					#print(f"[FR-DRIVE] Power changed to: {drive_power:.3f}", flush=True)
 					self._fr_drive_debug = drive_power
 			
 			# Debug front_right wheel (every 10 loops to avoid spam)
@@ -196,10 +186,10 @@ class SwerveDrive:
 					drive_pos = drive_encoder.getPosition() if wheel.drive_motor else 0
 					drive_vel = drive_encoder.getVelocity() if wheel.drive_motor else 0
 					timestamp = wpilib.Timer.getFPGATimestamp()
-					print(f"[{timestamp:.2f}s] [FR] Heading: {current_angle:.0f}° | Power: {drive_power:.2f} | Pos: {drive_pos:.1f} | Vel: {drive_vel:.1f}", flush=True)
+					#print(f"[{timestamp:.2f}s] [FR] Heading: {current_angle:.0f}° | Power: {drive_power:.2f} | Pos: {drive_pos:.1f} | Vel: {drive_vel:.1f}", flush=True)
 			
-			# Store target angle for alignment ONLY if it changed (don't re-add every cycle)
-			if wheel_name not in self.previous_target_angles or self.previous_target_angles[wheel_name] != target_angle:
+			# Store target angle for alignment ONLY if there's movement and angle changed
+			if target_speed > 0.01 and (wheel_name not in self.previous_target_angles or self.previous_target_angles[wheel_name] != target_angle):
 				self.wheel_alignment_state[wheel_name] = {
 					"target_angle": target_angle,
 					"start_time": wpilib.Timer.getFPGATimestamp()
@@ -240,7 +230,6 @@ class SwerveDrive:
 			wheel.set_zero_offset(wheel.get_raw_angle())
 			self.calibration.set_offset(wheel_name, wheel.offset)
 			self.calibration.save_offsets()
-			print(f"[ZEROING] Saved offset for {wheel_name}: {wheel.offset:.1f} (0 degrees)")
 	
 	def set_wheel_angle(self, wheel_name, target_angle):
 		"""Save current position as a specific angle (0, 90, 180, 270)"""
@@ -250,31 +239,19 @@ class SwerveDrive:
 			# Calculate offset: offset = raw - target
 			calculated_offset = (raw - target_angle) % 360
 			
-			print(f"\n[SETANGLE] === Calibrating {wheel_name} to {target_angle} deg ===")
-			print(f"[SETANGLE] Step 1: Read encoder")
-			print(f"           raw = {raw:.1f} deg")
-			print(f"[SETANGLE] Step 2: Calculate offset")
-			print(f"           offset = ({raw:.1f} - {target_angle}) % 360 = {calculated_offset:.1f} deg")
-			
 			wheel.offset = calculated_offset
 			self.calibration.set_offset(wheel_name, calculated_offset)
-			print(f"[SETANGLE] Step 3: Save to file")
 			self.calibration.save_offsets()
 			
-			print(f"[SETANGLE] Step 4: Reload all offsets from file")
 			for name, offset in self.calibration.offsets.items():
 				self.wheels[name].offset = offset
-				print(f"           {name}: offset={offset:.1f} deg")
 			
-			print(f"[SETANGLE] Step 5: Verify calculation")
 			verify_angle = (raw - wheel.offset) % 360
-			print(f"           ({raw:.1f} - {wheel.offset:.1f}) % 360 = {verify_angle:.1f} deg")
-			print(f"[SETANGLE] === Complete ===\n")
 	
 	def drive_wheel_to_angle(self, wheel_name, target_angle):
 		"""Start aligning a single wheel to target angle using PID control"""
 		if wheel_name not in self.wheels:
-			print(f"[DRIVE-WHEEL] Unknown wheel: {wheel_name}")
+			#print(f"[DRIVE-WHEEL] Unknown wheel: {wheel_name}")
 			return
 		
 		# Set up continuous alignment for this wheel (only if not already aligning to same angle)
@@ -293,9 +270,6 @@ class SwerveDrive:
 		self.aligning = True
 		self.align_start_time = wpilib.Timer.getFPGATimestamp()
 		self.target_align_angle = target_angle
-		print(f"[ALIGN] Starting alignment to {target_angle} deg for all wheels...")
-		for wheel_name in self.wheels.keys():
-			print(f"  {wheel_name}: moving to {target_angle} deg")
 	
 	def update_alignment(self):
 		"""Update alignment routine (call every loop)"""
@@ -349,14 +323,12 @@ class SwerveDrive:
 			self.align_debug_counter += 1
 			
 			if all_aligned:
-				print(f"[ALIGN] All wheels aligned to {self.target_align_angle} deg!")
 				self.aligning = False
 				# Reset PID controllers for next alignment
 				for pid in self.pid_controllers.values():
 					pid.reset()
 				self.align_debug_counter = 0
 		else:
-			print("[ALIGN] Alignment timeout!")
 			self.stop_all()
 			self.aligning = False
 			# Reset PID controllers
@@ -377,7 +349,6 @@ class SwerveDrive:
 			elapsed = wpilib.Timer.getFPGATimestamp() - align_info["start_time"]
 			
 			if wheel_name not in self.wheels:
-				print(f"[ALIGN] ERROR: Unknown wheel: {wheel_name}, stopping")
 				wheels_to_remove.append(wheel_name)
 				continue
 			
@@ -401,14 +372,14 @@ class SwerveDrive:
 			# Get PID controller for this wheel
 			pid = self.pid_controllers[wheel_name]
 			
-			# Check if we're close enough (within 2 degrees)
-			tolerance = 2.0
+			# Check if we're close enough (within tolerance - prevents oscillation)
+			tolerance = config.ALIGN_TOLERANCE
 			at_target = abs(error) < tolerance
 			
 			if at_target:
 				# Aligned! Stop only the TURN motor and RESET ITS PID (kill residual power/integral)
-				if wheel_name == "front_right":
-					print(f"[FR] *** REACHED TOLERANCE *** Stopping turn motor. Final angle: {current_angle:.1f}°", flush=True)
+				#if wheel_name == "front_right":
+				#	print(f"[FR] *** REACHED TOLERANCE *** Stopping turn motor. Final angle: {current_angle:.1f}°", flush=True)
 				wheel.turn_motor.set(0.0)
 				pid.reset()  # Reset PID to clear integral and derivative terms
 				wheels_to_remove.append(wheel_name)
@@ -429,10 +400,6 @@ class SwerveDrive:
 			speed = max(-config.MOTOR_SCALE_ALIGN, min(config.MOTOR_SCALE_ALIGN, pid_output))
 			
 			wheel.set_turn_power(speed)
-			
-			# Debug front_right turn motor
-			if wheel_name == "front_right":
-				print(f"[FR-TURN] Err={error:+.2f}° | PID={pid_output:+.5f} | Speed={speed:+.4f}", flush=True)
 		
 		# Clean up finished wheels
 		for wheel_name in wheels_to_remove:
@@ -454,8 +421,8 @@ class SwerveDrive:
 			
 			self._fr_turn_power_debug += 1
 			if turn_power != 0.0 or self._fr_turn_power_debug >= 20:
-				if turn_power != 0.0:
-					print(f"[FR-TURN-CHECK] Motor power: {turn_power:.4f} (SHOULD BE 0!)", flush=True)
+				#if turn_power != 0.0:
+				#	print(f"[FR-TURN-CHECK] Motor power: {turn_power:.4f} (SHOULD BE 0!)", flush=True)
 				self._fr_turn_power_debug = 0
 	
 	def _debug_print_drive_motor_diagnostics(self):
@@ -497,14 +464,12 @@ class SwerveDrive:
 			self._fr_drive_diag_counter += 1
 			if self._fr_drive_diag_counter >= 20 and wheel.current_drive_power > 0.9:
 				self._fr_drive_diag_counter = 0
-				print(f"[FR-DIAG] Power(set={drive_power_set:.3f}, actual={drive_power_actual:.3f}) | Vel={drive_velocity:.2f} RPM | Current={motor_current:.1f}A | Temp={motor_temp:.1f}C | Turn_Motor={turn_power:.4f}", flush=True)
 		except Exception as e:
 			pass  # Ignore errors
 	
 	def start_autotune(self):
 		"""Start oscillation-based autotune at 4 angles for all 4 wheels"""
 		self.autotuning = True
-		print(f"[AUTOTUNE] Starting multi-angle oscillation autotune on all 4 wheels...", flush=True)
 		self.autotune_gains = {
 			"wheels": ["front_left", "front_right", "rear_left", "rear_right"],
 			"current_index": 0,
@@ -537,7 +502,6 @@ class SwerveDrive:
 		
 		# Timeout: 30 seconds per wheel (6 sec x 4 angles + buffer)
 		if wheel_elapsed > 30:
-			print(f"[AUTOTUNE] {wheel_name}: Wheel timeout!")
 			self._finalize_wheel_autotune()
 			return
 		
@@ -548,7 +512,6 @@ class SwerveDrive:
 		# Timeout for each angle: 6 seconds
 		angle_elapsed = wpilib.Timer.getFPGATimestamp() - current["angle_start_time"]
 		if angle_elapsed > 6:
-			print(f"[AUTOTUNE] {wheel_name}: Angle {target_angle} deg timeout!")
 			# Move to next angle without finding Kc (use None as marker)
 			current["kc_list"].append(None)
 			current["tc_list"].append(None)
@@ -578,14 +541,12 @@ class SwerveDrive:
 			current["step"] = step
 			old_kp = current["kp"]
 			current["kp"] *= 1.5
-			print(f"[AUTOTUNE] {wheel_name} @ {target_angle} deg: KP {old_kp:.6f} -> {current['kp']:.6f}, oscillations={current['sign_changes']}")
 		
 		# When we detect oscillation (8+ sign changes), record Kc
 		if current["sign_changes"] >= 8 and len(current["kc_list"]) == angle_index:
 			kc = current["kp"]
 			current["kc_list"].append(kc)
 			current["osc_start"] = wpilib.Timer.getFPGATimestamp()
-			print(f"[AUTOTUNE] {wheel_name} @ {target_angle} deg: Found Kc={kc:.6f}, measuring period...")
 			current["sign_changes"] = 0  # Reset for period measurement
 		
 		# Measure period: wait for 8 MORE sign changes after finding Kc
@@ -594,7 +555,6 @@ class SwerveDrive:
 				period_time = wpilib.Timer.getFPGATimestamp() - current["osc_start"]
 				tc = period_time / 4.0
 				current["tc_list"].append(tc)
-				print(f"[AUTOTUNE] {wheel_name} @ {target_angle} deg: Tc={tc:.3f}s")
 				# Move to next angle
 				self._next_angle_or_finalize()
 	
@@ -609,7 +569,6 @@ class SwerveDrive:
 		
 		if current["angle_index"] < len(current["angles"]):
 			# More angles to test
-			print(f"[AUTOTUNE] {wheel_name}: Moving to {current['angles'][current['angle_index']]} deg...\n")
 			current["angle_start_time"] = wpilib.Timer.getFPGATimestamp()
 			current["kp"] = 0.009  # Reset KP for next angle
 			current["sign_changes"] = 0
@@ -640,21 +599,15 @@ class SwerveDrive:
 			kp = 0.6 * avg_kc
 			ki = 0.8 * avg_kc / avg_tc if avg_tc > 0 else 0
 			kd = 0.075 * avg_kc * avg_tc
-			
-			print(f"[AUTOTUNE] {wheel_name}: {len(valid_kc)} angles succeeded")
-			print(f"           avg Kc={avg_kc:.6f}, avg Tc={avg_tc:.3f}s")
-			print(f"           -> KP={kp:.6f}, KI={ki:.6f}, KD={kd:.6f}")
 		else:
 			# Failed to find oscillation at any angle
 			kp, ki, kd = 0.01, 0.002, 0.0001
-			print(f"[AUTOTUNE] {wheel_name}: No oscillation detected. Using safe defaults.")
 		
 		gains["results"].append({"wheel": wheel_name, "kp": kp, "ki": ki, "kd": kd})
 		
 		# Move to next wheel or finalize
 		current_idx += 1
 		if current_idx < len(gains["wheels"]):
-			print(f"\n[AUTOTUNE] === Moving to {gains['wheels'][current_idx]} ===\n")
 			gains["current_index"] = current_idx
 			gains["wheel_start_time"] = wpilib.Timer.getFPGATimestamp()
 			gains["current"] = {
@@ -676,10 +629,6 @@ class SwerveDrive:
 		gains = self.autotune_gains
 		results = gains["results"]
 		
-		print(f"\n[AUTOTUNE] === ALL WHEELS TUNED ===")
-		for r in results:
-			print(f"[AUTOTUNE] {r['wheel']:12}: KP={r['kp']:.6f}, KI={r['ki']:.6f}, KD={r['kd']:.6f}")
-		
 		# Store per-wheel gains (don't average)
 		wheel_gains = {}
 		for r in results:
@@ -696,9 +645,7 @@ class SwerveDrive:
 				pid.set_gains(g['kp'], g['ki'], g['kd'])
 		
 		# Save with battery voltage for interpolation
-		print(f"\n[AUTOTUNE] Saving to calibration file...")
 		battery_voltage = RobotController.getBatteryVoltage()
-		print(f"[AUTOTUNE] Battery voltage at tuning: {battery_voltage:.2f}V")
 		
 		# Add as tuning result with per-wheel data
 		self.calibration.add_tuning_result(battery_voltage, wheel_gains)
@@ -717,45 +664,28 @@ class SwerveDrive:
 		
 		self.autotuning = False
 		self.autotune_gains = None
-		print(f"[AUTOTUNE] Complete! Settings applied to all wheels and saved to file.\n")
 	
 	def _publish_tuning_history_to_nt(self):
 		"""Publish tuning history and regression to NetworkTables for remote dashboard access"""
 		import sys
 		import json
 		
-		print("[NT-PUBLISH] STARTING _publish_tuning_history_to_nt")
-		sys.stdout.flush()
-		
 		try:
 			# Get tuning history
 			history = self.calibration.pid_tuning_history
-			print(f"[NT-PUBLISH] Got history: {len(history)} entries")
-			sys.stdout.flush()
 			
 			# Serialize and publish
 			history_json = json.dumps(history)
-			print(f"[NT-PUBLISH] JSON serialized: {history_json[:100]}...")
-			sys.stdout.flush()
 			
 			SmartDashboard.putString("autotune_history_json", history_json)
-			print(f"[NT-PUBLISH] Published {len(history)} entries to NetworkTables")
-			sys.stdout.flush()
 			
 			# Also publish regression if available
 			if hasattr(self.calibration, 'pid_regression') and self.calibration.pid_regression:
 				regression_json = json.dumps(self.calibration.pid_regression)
 				SmartDashboard.putString("autotune_regression_json", regression_json)
-				print(f"[NT-PUBLISH] Published regression")
-				sys.stdout.flush()
-			else:
-				print(f"[NT-PUBLISH] No regression data available")
-				sys.stdout.flush()
 				
 		except Exception as e:
 			import traceback
-			print(f"[NT-PUBLISH] ERROR: {e}")
 			traceback.print_exc()
-			sys.stdout.flush()
 
 

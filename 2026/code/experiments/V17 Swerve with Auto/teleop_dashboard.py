@@ -1,4 +1,4 @@
-"""Swerve Drive Dashboard - WebSocket Version (v9.9 pattern)"""
+"""Swerve Drive Teleop Dashboard - WebSocket Server (Match Mode Only)"""
 from flask import Flask, render_template, request
 import ntcore
 import threading
@@ -44,10 +44,10 @@ class DashboardServer:
 		"""Start listening to NetworkTables"""
 		try:
 			inst = ntcore.NetworkTableInstance.getDefault()
-			inst.startClient4("WebDashboard")
+			inst.startClient4("TeleopDashboard")
 			inst.setServerTeam(9214)
 			self.table = inst.getTable("SmartDashboard")
-			print("[NT] Connecting to NetworkTables team 9214...")
+			print("[NT] TELEOP: Connecting to NetworkTables team 9214...")
 		except Exception as e:
 			print(f"[NT] Error initializing: {e}")
 			self.table = None
@@ -137,16 +137,16 @@ class DashboardServer:
 						self.counter = new_counter
 						self.robot_enabled = new_robot_enabled
 						self.robot_mode = new_robot_mode
-						
-						self._broadcast_to_all({
-							"type": "state",
-							"angles": self.wheel_angles,
-							"power": self.wheel_power,
-							"turret_angle": self.turret_angle,
-							"turret_power": self.turret_power,
-							"turret_left_limit": self.turret_left_limit,
-							"turret_right_limit": self.turret_right_limit,
-						})
+					
+					self._broadcast_to_all({
+						"type": "state",
+						"angles": self.wheel_angles,
+						"power": self.wheel_power,
+						"turret_angle": self.turret_angle,
+						"turret_power": self.turret_power,
+						"turret_left_limit": self.turret_left_limit,
+						"turret_right_limit": self.turret_right_limit,
+					})
 					
 					if first_read and self.counter > 0:
 						print(f"[NT] Connected to NetworkTables - broadcasting updates")
@@ -157,21 +157,19 @@ class DashboardServer:
 			
 			time.sleep(0.05)
 
-dashboard = DashboardServer()
-
 @app.route("/")
-def index():
-	"""Serve appropriate dashboard based on robot_mode"""
-	mode = request.args.get('mode', 'teleop')  # Default to teleop
+def serve_dashboard():
+	"""Serve the dashboard - teleop or test mode"""
+	mode = request.args.get("mode", "teleop")
 	if mode == 'test':
 		return render_template("test_dashboard.html")
 	else:
 		return render_template("teleop_dashboard.html")
 
-@app.route("/calibration")
-def calibration():
-	"""Serve calibration wizard"""
-	return render_template("calibration.html")
+@app.route("/history")
+def history():
+	"""Serve tuning history page"""
+	return render_template("history.html")
 
 if HAS_FLASK_SOCK:
 	@sock.route("/ws")
@@ -225,16 +223,39 @@ if HAS_FLASK_SOCK:
 						dashboard.table.putString("set_wheel_angle_name", wheel)
 						dashboard.table.putNumber("set_wheel_angle_value", angle)
 					elif cmd == "autotune":
-						# Autotune only allowed in TEST mode
+						# Autotune only in TEST mode
 						robot_mode = dashboard.table.getString("robot_mode", "Unknown")
 						if robot_mode == "Test":
 							dashboard.table.putBoolean("autotune_command", True)
-							print(f"[WS-SET] NetworkTables.autotune_command = true (TEST MODE)")
+							print(f"[WS] autotune_command = true (TEST MODE)")
 						else:
-							print(f"[WS-SET] Autotune rejected - robot in {robot_mode} mode, requires TEST mode")
+							ws.send(json.dumps({"type": "error", "message": "Autotune only allowed in TEST mode"}))
 					elif cmd == "tuning_history":
-						dashboard.table.putBoolean("tuning_history_command", True)
-						print(f"[WS-SET] NetworkTables.tuning_history_command = true")
+						# Read tuning history from NetworkTables and send to client
+						try:
+							history_json_str = dashboard.table.getString("autotune_history_json", "[]")
+							regression_json_str = dashboard.table.getString("autotune_regression_json", "{}")
+							history = json.loads(history_json_str)
+							regression = json.loads(regression_json_str)
+							ws.send(json.dumps({
+								"type": "tuning_history",
+								"history": history,
+								"regression": regression
+							}))
+						except Exception as e:
+							ws.send(json.dumps({"type": "error", "message": f"Failed to load tuning history: {str(e)}"}))
+					elif cmd == "clear_tuning":
+						# Clear tuning history - only in TEST mode
+						robot_mode = dashboard.table.getString("robot_mode", "Unknown")
+						if robot_mode == "Test":
+							try:
+								dashboard.table.putString("autotune_history_json", "[]")
+								dashboard.table.putString("autotune_regression_json", "{}")
+								ws.send(json.dumps({"type": "success", "message": "Tuning history cleared"}))
+							except Exception as e:
+								ws.send(json.dumps({"type": "error", "message": f"Failed to clear history: {str(e)}"}))
+						else:
+							ws.send(json.dumps({"type": "error", "message": "Clear history only allowed in TEST mode"}))
 				
 				except json.JSONDecodeError:
 					ws.send(json.dumps({"type": "error", "message": "Invalid JSON"}))
@@ -246,11 +267,15 @@ if HAS_FLASK_SOCK:
 		finally:
 			dashboard.unregister_ws_client(ws)
 
-print("[WEB] Starting Swerve Drive Dashboard...")
+# Create dashboard instance
+dashboard = DashboardServer()
+
+print("[WEB] Starting TELEOP Dashboard...")
 dashboard.start_nt_listener()
 
 if __name__ == "__main__":
-	print("[WEB] Starting Flask server on http://localhost:5000")
+	print("[WEB] Dashboard on http://localhost:5000")
 	print("[WEB] Teleop: http://localhost:5000/")
 	print("[WEB] Test: http://localhost:5000/?mode=test")
+	print("[WEB] History: http://localhost:5000/history")
 	app.run(host="0.0.0.0", port=5000, debug=True)

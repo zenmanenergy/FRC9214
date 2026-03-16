@@ -40,8 +40,8 @@ WHEELS = {
 
 # Motor control scaling
 MOTOR_SCALE_MANUAL = 0.05  # 5% max speed for manual control
-MOTOR_SCALE_ALIGN = 0.25    # 25% max speed for alignment (fast enough to track changing commands)
-MOTOR_SCALE_TELEOP = 1.0   # 100% max speed for teleop drive
+MOTOR_SCALE_ALIGN = 0.15    # 15% max speed for alignment - reduced for better damping
+MOTOR_SCALE_TELEOP = 1   # 100% max speed for teleop drive
 
 # Wheel positions relative to center (in arbitrary units, ratios matter)
 # Positive X = right, Positive Y = forward
@@ -53,15 +53,15 @@ WHEEL_POSITIONS = {
 }
 
 # Alignment parameters
-ALIGN_TOLERANCE = 2.0      # degrees
+ALIGN_TOLERANCE = 5.0     # degrees - increased to prevent oscillation
 ALIGN_TIMEOUT = 5.0        # seconds
 
 # PID controller gains for wheel alignment
 # KP: proportional gain (main response to error)
 # KI: integral gain (eliminates steady-state error)
 # KD: derivative gain (dampens oscillation) - VERY SMALL to avoid spikes
-ALIGN_KP = 0.003           # proportional gain - reduced to prevent overshoot
-ALIGN_KI = 0.005           # integral gain - increased for fine-tuning
+ALIGN_KP = 0.001           # proportional gain - reduced to prevent overshoot
+ALIGN_KI = 0.0005          # integral gain - reduced to prevent integral wind-up
 ALIGN_KD = 0.0001          # derivative gain - nearly zero, was causing oscillation spikes
 
 # Offset file location

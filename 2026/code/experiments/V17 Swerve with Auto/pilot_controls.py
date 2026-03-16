@@ -64,18 +64,23 @@ class PilotControls:
 		left_y = self.joystick.get_left_y()  # Drive motor
 		right_x = self.joystick.get_right_x()  # Turn motor
 		
+
 		if wheel_to_control:
 			# FOCUS MODE: Individual wheel control for calibration
 			if left_y != 0:
 				self.drive.set_wheel_drive_power(wheel_to_control, left_y * config.MOTOR_SCALE_MANUAL)
+			else:
+				self.drive.set_wheel_drive_power(wheel_to_control, 0.0)
 			
 			if right_x != 0:
 				self.drive.set_wheel_turn_power(wheel_to_control, right_x * config.MOTOR_SCALE_MANUAL)
-				# Print angle only on change
-				angle = self.drive.get_wheel_angle(wheel_to_control)
-				if angle != self.last_printed_angle:
-					print(f"{angle}")
-					self.last_printed_angle = angle
+			else:
+				self.drive.set_wheel_turn_power(wheel_to_control, 0.0)
+			
+			# Track angle changes (for potential future use)
+			angle = self.drive.get_wheel_angle(wheel_to_control)
+			if angle != self.last_printed_angle:
+				self.last_printed_angle = angle
 		else:
 			# No focus - allow swerve teleoperation
 			strafe = self.joystick.get_left_x()
@@ -103,7 +108,7 @@ class PilotControls:
 		else:
 			# Joystick released - stop updating wheel angles
 			if self.had_teleop_input:
-				print(f"[PILOT] JOYSTICK RELEASED - Stopping all drive motors", flush=True)
+				#print(f"[PILOT] JOYSTICK RELEASED - Stopping all drive motors", flush=True)
 				# Stop drive motors
 				for wheel_name in self.drive.wheels.keys():
 					self.drive.set_wheel_drive_power(wheel_name, 0)
