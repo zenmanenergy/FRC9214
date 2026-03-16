@@ -1,0 +1,61 @@
+def drive_simple(self, x, y, joystick_id):
+    """
+    Simple drive: wheel angle follows joystick angle (snapped to 0/90/180/270),
+    drive power comes directly from joystick magnitude.
+    Only runs if joystick_id == 2.
+
+    Args:
+        x: Horizontal input (-1.0 to 1.0)
+        y: Vertical input (-1.0 to 1.0)
+        joystick_id: Which joystick is being used (must be 2 to activate)
+    """
+    import math
+
+#The x direction of the joystick controls power and the angle to the right or left is directly proportional to the angle the wheels are to an optimized angle for rotation (ie: joystick x=1 and angle =0 it is full power of themotors and full
+
+
+
+
+
+
+
+
+
+    if joystick_id == 2: #I didn't know which joystick it was so I just put it in as 2 for now
+
+        # Deadzone
+        if abs(x) < 0.05 and abs(y) < 0.05:
+            self.stop_all()
+            return
+
+        # --- IDENTIFY WHEELS ---
+        front_left  = self.wheels["front_left"]
+        front_right = self.wheels["front_right"]
+        rear_left   = self.wheels["rear_left"]
+        rear_right  = self.wheels["rear_right"]
+
+        # --- ANGLE ---
+        # atan2 gives joystick direction, snapped to nearest 0/90/180/270
+        raw_angle = math.degrees(math.atan2(x, y)) % 360
+        snap_angles = [0, 90, 180, 270]  # removed 360 since 0 and 360 are the same
+        target_angle = min(snap_angles, key=lambda a: abs(a - raw_angle))  # no % 360 needed now
+
+        # Apply 90° offset (needed if wheels are physically mounted 90° off)
+        offset_angle = (target_angle + 90) % 360
+
+        # --- POWER ---
+        magnitude = math.sqrt(x**2 + y**2)
+        drive_power = min(magnitude, 1.0) * config.MOTOR_SCALE_TELEOP
+
+        # --- APPLY ---
+        self.drive_wheel_to_angle("front_left",  offset_angle)
+        self.drive_wheel_to_angle("front_right", offset_angle)
+        self.drive_wheel_to_angle("rear_left",   offset_angle)
+        self.drive_wheel_to_angle("rear_right",  offset_angle)
+
+        front_left.set_drive_power(drive_power)
+        front_right.set_drive_power(drive_power)
+        rear_left.set_drive_power(drive_power)
+        rear_right.set_drive_power(drive_power)
+
+        self.update_single_wheel_alignment()
