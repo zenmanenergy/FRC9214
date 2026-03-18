@@ -5,6 +5,7 @@ All swerve drive control logic is independent of joystick hardware.
 """
 
 import swerve_config as config
+from swerve_spin import drive_simple
 
 
 class PilotControls:
@@ -71,12 +72,11 @@ class PilotControls:
 				self.drive.set_wheel_drive_power(wheel_to_control, left_y * config.MOTOR_SCALE_MANUAL)
 			else:
 				self.drive.set_wheel_drive_power(wheel_to_control, 0.0)
-			
+
 			if right_x != 0:
 				self.drive.set_wheel_turn_power(wheel_to_control, right_x * config.MOTOR_SCALE_MANUAL)
 			else:
 				self.drive.set_wheel_turn_power(wheel_to_control, 0.0)
-			
 			# Track angle changes (for potential future use)
 			angle = self.drive.get_wheel_angle(wheel_to_control)
 			if angle != self.last_printed_angle:
@@ -94,28 +94,30 @@ class PilotControls:
 		# Get joystick inputs
 		left_y = self.joystick.get_left_y()  # Forward/backward
 		left_x = self.joystick.get_left_x()  # Strafe left/right
-		right_x = self.joystick.get_right_x()  # Rotation left/right
+		right_x = self.joystick.get_right_x()  # Right stick X
+		right_y = self.joystick.get_right_y()  # Right stick Y
 		
-		# Check if we have input
-		has_input = abs(left_y) > 0.1 or abs(left_x) > 0.1 or abs(right_x) > 0.1
+		# Detect active stick regions
+		left_stick_active = abs(left_y) > 0.1 or abs(left_x) > 0.1
+		right_stick_active = abs(right_x) > 0.1 or abs(right_y) > 0.1
 		
-		if has_input:
-			# Apply swerve kinematics - this calculates target angles and speeds
-			self.drive.drive_swerve(left_y, left_x, right_x)
+		if right_stick_active:
+			# Right stick controls swerve_spin (360° rotation mode)
+			drive_simple(self.drive, self.joystick)
 			self.had_teleop_input = True
-			# Align wheels continuously while driving
+		
+		elif left_stick_active:
+			# Left stick controls normal swerve drive
+			self.drive.drive_swerve(left_y, left_x, 0)  # rotation=0 (no right stick)
+			self.had_teleop_input = True
 			self.drive.update_single_wheel_alignment()
 		else:
-			# Joystick released - stop updating wheel angles
+			# No input - stop motors
 			if self.had_teleop_input:
-				#print(f"[PILOT] JOYSTICK RELEASED - Stopping all drive motors", flush=True)
-				# Stop drive motors
 				for wheel_name in self.drive.wheels.keys():
 					self.drive.set_wheel_drive_power(wheel_name, 0)
 				self.had_teleop_input = False
-				# Keep alignment running to settle wheels
 			
-			# Update alignment
 			self.drive.update_single_wheel_alignment()
 	
 	# ==================== WHEEL FOCUS FUNCTIONS ====================
