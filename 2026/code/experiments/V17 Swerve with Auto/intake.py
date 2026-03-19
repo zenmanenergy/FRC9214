@@ -15,7 +15,7 @@ class Intake:
 		self.motor = SparkMax(INTAKE, SparkLowLevel.MotorType.kBrushless)
 		self.speed = 0.0
 	
-	def turn_on(self, speed=1.0):
+	def turn_on(self, speed=-1.0):
 		"""
 		Turn on the intake motor.
 		
