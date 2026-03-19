@@ -7,11 +7,12 @@ All swerve drive control logic is independent of joystick hardware.
 import swerve_config as config
 from swerve_spin import drive_simple
 
-
 class PilotControls:
 	"""Maps pilot joystick inputs to swerve drive actions"""
 	
-	def __init__(self, swerve_drive, pilot_joystick):
+	CLIMBER_SPEED = 0.3  # Speed for climber motor (5% as requested)
+
+	def __init__(self, swerve_drive, pilot_joystick, climber):
 		"""
 		Initialize control bindings.
 		
@@ -21,6 +22,7 @@ class PilotControls:
 		"""
 		self.drive = swerve_drive
 		self.joystick = pilot_joystick
+		self.climber = climber
 		
 		# Test mode state
 		self.focused = None  # Tracks joystick-selected focus
@@ -47,6 +49,11 @@ class PilotControls:
 			"BACK": lambda: self.save_wheel_angle(180),
 		}
 		self.joystick.set_button_map(button_map)
+
+		self.analog_map = {
+			"LEFT_TRIGGER": self.climber_down,
+			"RIGHT_TRIGGER": self.climber_up
+		}
 	
 	def execute_test(self, active_wheel=None):
 		"""
@@ -92,6 +99,8 @@ class PilotControls:
 	def execute_teleop(self):
 		"""Execute control logic for teleop mode - call every cycle"""
 		# Get joystick inputs
+		for axis_name, function in self.analog_map.items():
+			function()
 		left_y = self.joystick.get_left_y()  # Forward/backward
 		left_x = self.joystick.get_left_x()  # Strafe left/right
 		right_x = self.joystick.get_right_x()  # Right stick X
@@ -155,3 +164,24 @@ class PilotControls:
 	def get_focused_wheel(self):
 		"""Get the currently focused wheel from joystick"""
 		return self.focused
+	
+	#======================== CLIMBER FUNCTIONS ====================
+
+	def climber_up(self):
+		right_speed = self.joystick.get_right_trigger()*self.CLIMBER_SPEED
+		left_speed = -self.joystick.get_left_trigger()*self.CLIMBER_SPEED
+		#print("climber speed", climber_speed)
+		if abs(right_speed) > 0.1:
+			self.climber.set_climber(right_speed)
+		if abs(left_speed) < 0.1 and abs(right_speed) < 0.1:
+			self.climber.set_climber(0)
+
+
+	def climber_down(self):
+		right_speed = self.joystick.get_right_trigger()*self.CLIMBER_SPEED
+		left_speed = -self.joystick.get_left_trigger()*self.CLIMBER_SPEED
+		#print("climber down", climber_speed)
+		if abs(left_speed) > 0.1 and abs(right_speed) <0.1:
+			self.climber.set_climber(left_speed)
+
+	
