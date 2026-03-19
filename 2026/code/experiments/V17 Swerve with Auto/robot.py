@@ -4,6 +4,7 @@ from wpilib import SmartDashboard, DriverStation
 from swerve_drive import SwerveDrive
 # from turret import Turret
 from shooter import ShooterSubsystem
+from climber import Climber
 from copilotJoystick import CopilotJoystick
 from shooter_controls import ShooterControls
 from pilotJoystick import PilotJoystick
@@ -24,6 +25,7 @@ class Robot(wpilib.TimedRobot):
 		self.turret = None  # Turret disabled
 		
 		self.shooter = ShooterSubsystem(turret=None)
+		self.climber = Climber()
 
 		
 		# Load calibration for both swerve and turret
@@ -37,7 +39,7 @@ class Robot(wpilib.TimedRobot):
 
 		
 		self.pilot_joystick = PilotJoystick(port=0, deadband=0.1)
-		self.pilot_controls = PilotControls(self.drive, self.pilot_joystick)
+		self.pilot_controls = PilotControls(self.drive, self.pilot_joystick, self.climber)
 		
 		self.copilot_joystick = CopilotJoystick(port=1, deadband=0.1)
 		self.shooter_controls = ShooterControls(self.shooter, self.copilot_joystick)

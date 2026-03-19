@@ -27,13 +27,6 @@ class ShooterSubsystem:
 			print(f"[SHOOTER] ERROR - Failed to initialize spindexer motor (CAN ID {CANID.SHOOTER_SPINDEXER}): {type(e).__name__}: {e}", flush=True)
 			self.spindexer_motor = None
 		
-		try:
-			self.climber_motor = SparkMax(CANID.CLIMBER, SparkLowLevel.MotorType.kBrushless)
-			self.climber_motor.setSmartCurrentLimit(40)  # Set current limit to 40A for climber
-			print(f"[SHOOTER] Climber motor initialized on CAN ID {CANID.CLIMBER}", flush=True)
-		except Exception as e:
-			print(f"[SHOOTER] ERROR - Failed to initialize climber motor (CAN ID {CANID.CLIMBER}): {type(e).__name__}: {e}", flush=True)
-			self.climber_motor = None
 		
 		# Turret reference (optional)
 		self.turret = turret
@@ -57,11 +50,6 @@ class ShooterSubsystem:
 		"""Set uptake motor speed"""
 		if self.uptake_motor:
 			self.uptake_motor.set(-speed)
-	
-	def set_climber(self, speed):
-		"""Set climber motor speed (very slow - 5% max recommended)"""
-		if self.climber_motor:
-			self.climber_motor.set(speed)
 	
 	def set_turret(self, speed):
 		"""Simple turret speed control with hard limits."""
@@ -253,7 +241,8 @@ class ShooterSubsystem:
 		if self.shooter_motor:
 			self.shooter_motor.set(speed)
 	
-	def spindex(self):
+	def spindex(self, spindexErection):
+		self.spindexErection = spindexErection
 		"""Start continuous spindexer indexing (90 deg rotations with 1 second waits)"""
 		if not self.spindexer_motor:
 			print("[SHOOTER] ERROR - Spindexer motor not initialized", flush=True)
@@ -304,13 +293,13 @@ class ShooterSubsystem:
 		elif self.spindex_state == "WAITING":
 			# Wait 1 second before rotating again
 			elapsed_wait = time.time() - self.spindex_wait_start
-			if elapsed_wait >= 1.0:
+			if elapsed_wait >= 0.5:
 				# Time to rotate again - reset encoder and start
 				encoder = self.spindexer_motor.getEncoder()
 				encoder.setPosition(0.0)  # Reset to 0
 				self.spindex_start_position = 0.0
 				self.spindex_state = "ROTATING"
-				self.spindexer_motor.set(0.1)
+				self.spindexer_motor.set(0.1*self.spindexErection)
 				print(f"[SHOOTER] Spindexer: Starting next rotation, encoder reset to 0", flush=True)
 	
 	def stop_spindex(self):
@@ -329,8 +318,6 @@ class ShooterSubsystem:
 			self.shooter_motor.set(0)
 		if self.spindexer_motor:
 			self.spindexer_motor.set(0)
-		if self.climber_motor:
-			self.climber_motor.set(0)
 		if self.turret:
 			self.turret.stop()
 		self.rotating_to_angle = False

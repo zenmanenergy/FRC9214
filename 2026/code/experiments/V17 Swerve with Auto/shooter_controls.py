@@ -14,7 +14,6 @@ class ShooterControls:
 	# Motor speed settings
 	BUMPER_ROTATION_SPEED = 0.08  # Speed for bumper-triggered rotations (0.0 to 1.0)
 	MANUAL_ROTATION_SPEED = 0.08  # Max speed for manual stick rotation (0.0 to 1.0)
-	CLIMBER_SPEED = 0.05  # Speed for climber motor (5% as requested)
 	
 	def __init__(self, shooter_subsystem, copilot_joystick):
 		"""
@@ -63,19 +62,6 @@ class ShooterControls:
 		for axis_name, function in self.analog_map.items():
 			function()
 		
-		# Process climber control from triggers
-		left_trigger = self.joystick.get_left_trigger()
-		right_trigger = self.joystick.get_right_trigger()
-		
-		if left_trigger > 0.1:
-			# Left trigger - climber up
-			self.shooter.set_climber(self.CLIMBER_SPEED)
-		elif right_trigger > 0.1:
-			# Right trigger - climber down
-			self.shooter.set_climber(-self.CLIMBER_SPEED)
-		else:
-			# No trigger input - stop climber
-			self.shooter.set_climber(0.0)
 		
 		# Process all button presses
 		self.joystick.process_buttons()
@@ -85,21 +71,23 @@ class ShooterControls:
 		"""Y button: activate uptake and shooter"""
 		self.shooter.set_uptake(0.5)
 		self.shooter.set_shooter(1.0)
-		self.shooter.spindex()
+		self.shooter.spindex(1.0)
 	
 	def uptake_and_shooter_reverse(self):
 		"""B button: reverse uptake and shooter"""
 		self.shooter.set_uptake(-0.2)
 		self.shooter.set_shooter(-0.2)
-		self.intake.turn_on(-0.5)
 	
 	def turn_on_intake(self):
 		"""A button: turn on intake"""
-		self.intake.turn_on()
+		self.intake.turn_on(-1.0)
+		self.shooter.spindex(-1.0)
+
 	
 	def turn_off_intake(self):
 		"""Right Bumper: turn off intake"""
 		self.intake.turn_off()
+		self.shooter.stop_spindex()
 	
 	def stop_all(self):
 		"""X button: stop all motors"""
