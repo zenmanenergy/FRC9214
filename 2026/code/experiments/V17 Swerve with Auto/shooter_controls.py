@@ -81,13 +81,10 @@ class ShooterControls:
 	def turn_on_intake(self):
 		"""A button: turn on intake"""
 		self.intake.turn_on(-1.0)
-		self.shooter.spindex(-1.0)
-
 	
 	def turn_off_intake(self):
 		"""Right Bumper: turn off intake"""
 		self.intake.turn_off()
-		self.shooter.stop_spindex()
 	
 	def stop_all(self):
 		"""X button: stop all motors"""

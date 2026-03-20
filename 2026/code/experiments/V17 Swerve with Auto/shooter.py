@@ -243,7 +243,7 @@ class ShooterSubsystem:
 	
 	def spindex(self, spindexErection):
 		self.spindexErection = spindexErection
-		"""Start continuous spindexer indexing (90 deg rotations with 1 second waits)"""
+		"""Start continuous spindexer spinning"""
 		if not self.spindexer_motor:
 			print("[SHOOTER] ERROR - Spindexer motor not initialized", flush=True)
 			return
@@ -252,55 +252,51 @@ class ShooterSubsystem:
 			print("[SHOOTER] Spindexer already running", flush=True)
 			return
 		
-		import time
-		print("[SHOOTER] Spindexer: Starting continuous indexing", flush=True)
-		
-		# Get encoder and RESET it to 0
-		encoder = self.spindexer_motor.getEncoder()
-		encoder.setPosition(0.0)  # Reset to 0
-		self.spindex_start_position = 0.0
+		print("[SHOOTER] Spindexer: Starting continuous spinning", flush=True)
 		
 		self.spindexing = True
-		self.spindex_start_time = time.time()
-		self.spindex_state = "ROTATING"
-		self.spindexer_motor.set(-0.1)
-		print(f"[SHOOTER] Spindexer: Starting rotation, encoder reset to 0", flush=True)
+		self.spindexer_motor.set(0.1 * self.spindexErection)
+		print(f"[SHOOTER] Spindexer: Spinning continuously", flush=True)
 	
 	def update_spindex(self):
-		"""Update spindexer indexing - track encoder and manage 90 deg rotations with waits"""
-		if not self.spindexing or not self.spindexer_motor:
-			return
-		
-		import time
-		
-		encoder = self.spindexer_motor.getEncoder()
-		current_position = encoder.getPosition()
-		rotation_delta = abs(current_position - self.spindex_start_position)
-		
-		if self.spindex_state == "ROTATING":
-			# Debug output
-			print(f"[SPINDEXER-DEBUG] Start: {self.spindex_start_position:.2f} | Current: {current_position:.2f} | Delta: {rotation_delta:.2f} | Threshold: 0.25", flush=True)
-			
-			# Check if we've rotated ~90 degrees 
-			# Threshold: 0.25 encoder revolutions ~= 90 degrees
-			if rotation_delta >= 0.25:
-				# Reached 90 degrees - stop and wait
-				self.spindexer_motor.set(0.0)
-				self.spindex_state = "WAITING"
-				self.spindex_wait_start = time.time()
-				print(f"[SHOOTER] Spindexer: Rotated {rotation_delta:.2f} ticks, stopping for 1 second", flush=True)
-		
-		elif self.spindex_state == "WAITING":
-			# Wait 1 second before rotating again
-			elapsed_wait = time.time() - self.spindex_wait_start
-			if elapsed_wait >= 0.5:
-				# Time to rotate again - reset encoder and start
-				encoder = self.spindexer_motor.getEncoder()
-				encoder.setPosition(0.0)  # Reset to 0
-				self.spindex_start_position = 0.0
-				self.spindex_state = "ROTATING"
-				self.spindexer_motor.set(0.1*self.spindexErection)
-				print(f"[SHOOTER] Spindexer: Starting next rotation, encoder reset to 0", flush=True)
+		"""Update spindexer - spins continuously (OLD PERIODIC 90-DEG CODE COMMENTED OUT)"""
+		# Spindexer now spins continuously, no periodic rotation management needed
+		# OLD CODE COMMENTED OUT BELOW:
+		#
+		# if not self.spindexing or not self.spindexer_motor:
+		#	return
+		#
+		# import time
+		#
+		# encoder = self.spindexer_motor.getEncoder()
+		# current_position = encoder.getPosition()
+		# rotation_delta = abs(current_position - self.spindex_start_position)
+		#
+		# if self.spindex_state == "ROTATING":
+		#	# Debug output
+		#	print(f"[SPINDEXER-DEBUG] Start: {self.spindex_start_position:.2f} | Current: {current_position:.2f} | Delta: {rotation_delta:.2f} | Threshold: 0.25", flush=True)
+		#	
+		#	# Check if we've rotated ~90 degrees 
+		#	# Threshold: 0.25 encoder revolutions ~= 90 degrees
+		#	if rotation_delta >= 0.25:
+		#		# Reached 90 degrees - stop and wait
+		#		self.spindexer_motor.set(0.0)
+		#		self.spindex_state = "WAITING"
+		#		self.spindex_wait_start = time.time()
+		#		print(f"[SHOOTER] Spindexer: Rotated {rotation_delta:.2f} ticks, stopping for 1 second", flush=True)
+		#
+		# elif self.spindex_state == "WAITING":
+		#	# Wait 1 second before rotating again
+		#	elapsed_wait = time.time() - self.spindex_wait_start
+		#	if elapsed_wait >= 0.5:
+		#		# Time to rotate again - reset encoder and start
+		#		encoder = self.spindexer_motor.getEncoder()
+		#		encoder.setPosition(0.0)  # Reset to 0
+		#		self.spindex_start_position = 0.0
+		#		self.spindex_state = "ROTATING"
+		#		self.spindexer_motor.set(0.2*self.spindexErection)
+		#		print(f"[SHOOTER] Spindexer: Starting next rotation, encoder reset to 0", flush=True)
+		pass  # Continuous spinning - no update logic needed
 	
 	def stop_spindex(self):
 		"""Stop the spindexer immediately"""
