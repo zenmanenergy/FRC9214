@@ -40,7 +40,7 @@ WHEELS = {
 
 # Motor control scaling
 MOTOR_SCALE_MANUAL = 0.05  # 5% max speed for manual control
-MOTOR_SCALE_ALIGN = 0.15    # 15% max speed for alignment - reduced for better damping
+MOTOR_SCALE_ALIGN = 0.3    # 15% max speed for alignment - reduced for better damping
 MOTOR_SCALE_TELEOP = 0.75   # 100% max speed for teleop drive
 
 # Wheel positions relative to center (in arbitrary units, ratios matter)
