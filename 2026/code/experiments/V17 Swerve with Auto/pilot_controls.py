@@ -74,20 +74,21 @@ class PilotControls:
 		
 
 		if wheel_to_control:
-			# FOCUS MODE: Individual wheel control for calibration
-			if left_y != 0:
-				self.drive.set_wheel_drive_power(wheel_to_control, left_y * config.MOTOR_SCALE_MANUAL)
-			else:
-				self.drive.set_wheel_drive_power(wheel_to_control, 0.0)
+			# # FOCUS MODE: Individual wheel control for calibration
+			# if left_y != 0:
+			# 	self.drive.set_wheel_drive_power(wheel_to_control, left_y * config.MOTOR_SCALE_MANUAL)
+			# else:
+			# 	self.drive.set_wheel_drive_power(wheel_to_control, 0.0)
 
-			if right_x != 0:
-				self.drive.set_wheel_turn_power(wheel_to_control, right_x * config.MOTOR_SCALE_MANUAL)
-			else:
-				self.drive.set_wheel_turn_power(wheel_to_control, 0.0)
-			# Track angle changes (for potential future use)
-			angle = self.drive.get_wheel_angle(wheel_to_control)
-			if angle != self.last_printed_angle:
-				self.last_printed_angle = angle
+			# if right_x != 0:
+			# 	self.drive.set_wheel_turn_power(wheel_to_control, right_x * config.MOTOR_SCALE_MANUAL)
+			# else:
+			# 	self.drive.set_wheel_turn_power(wheel_to_control, 0.0)
+			# # Track angle changes (for potential future use)
+			# angle = self.drive.get_wheel_angle(wheel_to_control)
+			# if angle != self.last_printed_angle:
+			# 	self.last_printed_angle = angle
+			pass
 		else:
 			# No focus - allow swerve teleoperation
 			strafe = self.joystick.get_left_x()
@@ -110,16 +111,17 @@ class PilotControls:
 		left_stick_active = abs(left_y) > 0.1 or abs(left_x) > 0.1
 		right_stick_active = abs(right_x) > 0.1 or abs(right_y) > 0.1
 		
-		if right_stick_active:
-			# Right stick controls swerve_spin (360° rotation mode)
-			drive_simple(self.drive, self.joystick)
-			self.had_teleop_input = True
-		
-		elif left_stick_active:
+		if left_stick_active:
 			# Left stick controls normal swerve drive
 			self.drive.drive_swerve(left_y, left_x, 0)  # rotation=0 (no right stick)
 			self.had_teleop_input = True
 			self.drive.update_single_wheel_alignment()
+
+		elif right_stick_active:
+			# Right stick controls swerve_spin (360° rotation mode)
+			drive_simple(self.drive, self.joystick)
+			self.had_teleop_input = True
+   
 		else:
 			# No input - stop motors
 			if self.had_teleop_input:
