@@ -39,15 +39,14 @@ class ShooterControls:
 			"Y": self.uptake_and_shooter,
 			"B": self.uptake_and_shooter_reverse,
 			"X": self.stop_all,
-			"LEFT_BUMPER": self.rotate_to_160,
-			"RIGHT_BUMPER": self.turn_off_intake,
+			"LEFT_BUMPER": self.turn_off_intake,
 			"START": self.start_autotune,
 		}
 		self.joystick.set_button_map(button_map)
 		
 		# Analog axes (continuous input)
 		self.analog_map = {
-			"LEFT_X": self.update_turret,
+			# "LEFT_X": self.update_turret,
 		}
 	
 	def execute(self):

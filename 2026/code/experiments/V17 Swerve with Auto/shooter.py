@@ -241,6 +241,11 @@ class ShooterSubsystem:
 		if self.shooter_motor:
 			self.shooter_motor.set(speed)
 	
+	def startspindex(self,speed):
+		"""Start spindexer spinning continuously"""
+		if self.spindexer_motor:
+			self.spindexer_motor.set(speed)
+			self.spindexing = True
 	def spindex(self, spindexErection):
 		self.spindexErection = spindexErection
 		"""Start continuous spindexer spinning"""
