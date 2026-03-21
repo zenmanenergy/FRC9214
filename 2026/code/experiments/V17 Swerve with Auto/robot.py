@@ -57,9 +57,9 @@ class Robot(wpilib.TimedRobot):
 		# States: 0=DRIVE_FORWARD, 1=SHOOTING, 2=STOP_ALL, 3=IDLE
 		self.auto_state = 0  # Start in IDLE
 		self.auto_state_timer = None  # Timer for current state
-		self.auto_target_distance_meters = -2.0  # Drive 2 meters forward
+		self.auto_target_distance_meters = -9.25  # Drive 2 meters forward
 		self.auto_shoot_duration = 10.0  # Shoot for 10 seconds
-		
+  
 		# Initialize NetworkTables values with valid defaults for synchronization
 		SmartDashboard.putString("calibrate_wheel", "")
 		SmartDashboard.putNumber("calibrate_angle", 0)
@@ -118,16 +118,16 @@ class Robot(wpilib.TimedRobot):
 			self.shooter_controls.stop_all()
 			
 			
-		# Drive at 50% power straight BACKWARD
-			# self.drive.drive_swerve(forward=-0.5, strafe=0, rotate=0)
+		#Drive at 50% power straight BACKWARD
+			self.drive.drive_swerve(forward=-0.5, strafe=0, rotate=69 )
 			
 			# Check if we've reached target distance
-			#if distance_meters >= self.auto_target_distance_meters:
+			if distance_meters >= self.auto_target_distance_meters:
 				# Stop driving
-				#self.drive.stop_all()
+				self.drive.stop_all()
 
 				# Transition to SHOOTING state
-				#self.auto_state_timer = wpilib.Timer.getFPGATimestamp()
+				self.auto_state_timer = wpilib.Timer.getFPGATimestamp()
 
 		# else IDLE - do nothing
 	
