@@ -23,7 +23,7 @@ class Intake:
 			speed: Motor speed from -1.0 to 1.0 (default: 1.0)
 		"""
 		self.speed = speed
-		self.motor.set(speed)
+		self.motor.set(-speed)
 	
 	def turn_off(self):
 		"""Turn off the intake motor"""

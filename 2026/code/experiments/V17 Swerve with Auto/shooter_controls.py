@@ -39,15 +39,14 @@ class ShooterControls:
 			"Y": self.uptake_and_shooter,
 			"B": self.uptake_and_shooter_reverse,
 			"X": self.stop_all,
-			"LEFT_BUMPER": self.rotate_to_160,
-			"RIGHT_BUMPER": self.turn_off_intake,
+			"LEFT_BUMPER": self.turn_off_intake,
 			"START": self.start_autotune,
 		}
 		self.joystick.set_button_map(button_map)
 		
 		# Analog axes (continuous input)
 		self.analog_map = {
-			"LEFT_X": self.update_turret,
+			# "LEFT_X": self.update_turret,
 		}
 	
 	def execute(self):
@@ -81,13 +80,10 @@ class ShooterControls:
 	def turn_on_intake(self):
 		"""A button: turn on intake"""
 		self.intake.turn_on(-1.0)
-		self.shooter.spindex(-1.0)
-
 	
 	def turn_off_intake(self):
 		"""Right Bumper: turn off intake"""
 		self.intake.turn_off()
-		self.shooter.stop_spindex()
 	
 	def stop_all(self):
 		"""X button: stop all motors"""

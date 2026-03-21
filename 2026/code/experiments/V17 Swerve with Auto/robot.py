@@ -55,9 +55,9 @@ class Robot(wpilib.TimedRobot):
 		
 		# Autonomous mode state machine
 		# States: 0=DRIVE_FORWARD, 1=SHOOTING, 2=STOP_ALL, 3=IDLE
-		self.auto_state = 3  # Start in IDLE
+		self.auto_state = 0  # Start in IDLE
 		self.auto_state_timer = None  # Timer for current state
-		self.auto_target_distance_meters = 2.0  # Drive 2 meters forward
+		self.auto_target_distance_meters = -2.0  # Drive 2 meters forward
 		self.auto_shoot_duration = 10.0  # Shoot for 10 seconds
 		
 		# Initialize NetworkTables values with valid defaults for synchronization
@@ -97,37 +97,38 @@ class Robot(wpilib.TimedRobot):
 		elapsed_time = wpilib.Timer.getFPGATimestamp() - self.auto_state_timer
 		
 		# State machine
-		if self.auto_state == 0:  # DRIVE_FORWARD
-			# Drive at 50% power straight forward
-			self.drive.drive_swerve(forward=0.5, strafe=0, rotate=0)
-			
-			# Check if we've reached target distance
-			if distance_meters >= self.auto_target_distance_meters:
-				# Stop driving
-				self.drive.stop_all()
-				
-				# Transition to SHOOTING state
-				self.auto_state = 1  # SHOOTING
+		if self.auto_state == 0:  # DRIVE_BACKWARD
+			# Activate Shooter for a set time
+			self.shooter.set_shooter(1.0)      # Shooter at 80% speed
+			self.shooter.set_uptake(1.0)       # Uptake at 60% speed
+			self.shooter.startspindex(0.1)          # Spindexer with 1.0x multiplier
+
+			# Check if we've shot long enough
+			if elapsed_time >= self.auto_shoot_duration:
+				# Transition to STOP_ALL state
+				self.auto_state = 1  # STOP_ALL
 				self.auto_state_timer = wpilib.Timer.getFPGATimestamp()
+				# Stop all motors
+				
+			
 		
 		elif self.auto_state == 1:  # SHOOTING
 			# Run uptake and shooter
 			self.shooter_controls.uptake_and_shooter()
-			
-			# Check if we've shot long enough
-			if elapsed_time >= self.auto_shoot_duration:
-				# Transition to STOP_ALL state
-				self.auto_state = 2  # STOP_ALL
-				self.auto_state_timer = wpilib.Timer.getFPGATimestamp()
-		
-		elif self.auto_state == 2:  # STOP_ALL
-			# Stop all motors
 			self.shooter_controls.stop_all()
-			self.drive.stop_all()
 			
-			# Mission complete
-			self.auto_state = 3  # IDLE
-		
+			
+		# Drive at 50% power straight BACKWARD
+			# self.drive.drive_swerve(forward=-0.5, strafe=0, rotate=0)
+			
+			# Check if we've reached target distance
+			#if distance_meters >= self.auto_target_distance_meters:
+				# Stop driving
+				#self.drive.stop_all()
+
+				# Transition to SHOOTING state
+				#self.auto_state_timer = wpilib.Timer.getFPGATimestamp()
+
 		# else IDLE - do nothing
 	
 	def robotPeriodic(self):
