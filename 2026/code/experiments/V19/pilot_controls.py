@@ -4,7 +4,7 @@ This file bridges PilotJoystick and SwerveDrive.
 All swerve drive control logic is independent of joystick hardware.
 """
 
-import swerve_config as config
+import swerve.swerve_config as config
 
 class PilotControls:
 	"""Maps pilot joystick inputs to swerve drive actions"""
