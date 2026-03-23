@@ -332,15 +332,7 @@
 					<button class="button btn-primary" onclick="if(isRobotEnabled) window.location.href='/history'; else showError('Bot must be enabled to view history')">📊 Tuning History</button>
 				</div>
 		
-		<div class="section">
-			<div class="section-title">🐛 Debug Mode</div>
-			<button class="button" id="debugToggleBtn" onclick="toggleDebugMode()" style="background: #e74c3c; margin-bottom: 8px;">Enable Debug (Rear Right Only)</button>
-			<div id="debugStatus" style="font-size: 11px; color: #666; margin-bottom: 8px;">OFF</div>
-			<button class="button btn-primary" onclick="if(isRobotEnabled) sendCommand('set_wheels_direction', {front_left: 0, front_right: 0, rear_left: 0, rear_right: 0}); else showError('Bot must be enabled')" style="font-size: 11px; padding: 6px;">RR → 0°</button>
-			<button class="button btn-primary" onclick="if(isRobotEnabled) sendCommand('set_wheels_direction', {front_left: 0, front_right: 0, rear_left: 0, rear_right: 45}); else showError('Bot must be enabled')" style="font-size: 11px; padding: 6px;">RR → 45°</button>
-			<button class="button btn-primary" onclick="if(isRobotEnabled) sendCommand('set_wheels_direction', {front_left: 0, front_right: 0, rear_left: 0, rear_right: 90}); else showError('Bot must be enabled')" style="font-size: 11px; padding: 6px;">RR → 90°</button>
-			<button class="button btn-primary" onclick="if(isRobotEnabled) sendCommand('set_wheels_direction', {front_left: 0, front_right: 0, rear_left: 0, rear_right: 180}); else showError('Bot must be enabled')" style="font-size: 11px; padding: 6px;">RR → 180°</button>
-		</div>
+		
 	</div>
 	
 	<!-- CENTER PANEL -->

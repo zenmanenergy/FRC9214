@@ -1,0 +1,11 @@
+[robotpy_cli.2026]
+run = wpilib._impl.start:Main
+
+[pkg_config]
+wpilib_event = wpilib.event
+wpilib_interfaces = wpilib.interfaces
+wpilib = wpilib
+wpilib_counter = wpilib.counter
+wpilib_drive = wpilib.drive
+wpilib_shuffleboard = wpilib.shuffleboard
+wpilib_simulation = wpilib.simulation

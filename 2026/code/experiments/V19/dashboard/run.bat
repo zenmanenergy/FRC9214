@@ -1,7 +1,7 @@
 @echo off
 cd /d "%~dp0"
-call "../../../../../.venv/Scripts/activate.bat"
-pip install flask-sock
+call "..\.venv\Scripts\activate.bat"
+pip install flask-sock robotpy robotpy-rev
 python dashboard_server.py
 if errorlevel 1 (
     echo.

@@ -1,0 +1,18 @@
+Distributable Code for Visual Studio 2022
+-----------------------------------------
+https://learn.microsoft.com/en-us/visualstudio/releases/2022/redistribution
+
+The following section is the "REDIST list" that is referenced in the "Distributable Code" section of the Microsoft Software License Terms for Visual Studio Enterprise 2022, Visual Studio Professional 2022, Visual Studio Community 2022 ("the software"). If you have a validly licensed copy of such software, you may copy and distribute with your program the unmodified form of the files listed below, subject to the License Terms for the software.
+
+
+Visual C++ Runtime Files
+------------------------
+https://docs.microsoft.com/en-us/visualstudio/releases/2022/redistribution#visual-c-runtime-files
+
+Subject to the License Terms for the software, you may copy and distribute the following files, unmodified, as a part of the installation package of your program:
+
+[VisualStudioFolder]VC\Redist\MSVC\[version]\MergeModules\Microsoft_VC143_CRT_[arch].msm
+[VisualStudioFolder]VC\Redist\MSVC\[version]\MergeModules\Microsoft_VC143_CXXAMP_[arch].msm
+[VisualStudioFolder]VC\Redist\MSVC\[version]\MergeModules\Microsoft_VC143_MFCLOC_[arch].msm
+[VisualStudioFolder]VC\Redist\MSVC\[version]\MergeModules\Microsoft_VC143_MFC_[arch].msm
+[VisualStudioFolder]VC\Redist\MSVC\[version]\MergeModules\Microsoft_VC143_OpenMP_[arch].msm

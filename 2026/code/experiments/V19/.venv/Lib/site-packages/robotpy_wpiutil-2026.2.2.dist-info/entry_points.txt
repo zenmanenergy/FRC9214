@@ -1,0 +1,3 @@
+[pkg_config]
+wpiutil-casters = wpiutil
+wpiutil = wpiutil
