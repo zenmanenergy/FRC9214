@@ -1,3 +1,4 @@
+"""Swerve drive controller for all 4 wheels"""
 import wpilib
 from wpilib import SmartDashboard, RobotController
 from swerve_wheel import SwerveWheel
@@ -5,12 +6,10 @@ from encoder_calibration import EncoderCalibration
 from pid_controller import PIDController
 from swerve_odometry import SwerveOdometry
 import swerve_config as config
-import math
-import json
-import traceback
 
 
 class SwerveDrive:
+	"""Main swerve drive controller"""
 	
 	def __init__(self):
 		
@@ -38,6 +37,8 @@ class SwerveDrive:
 		
 		battery_voltage = RobotController.getBatteryVoltage()
 		pid_gains = self.calibration.get_interpolated_gains(battery_voltage)
+		
+		import sys
 		
 		self.pid_controllers = {}
 		for wheel_name in self.wheels.keys():
@@ -83,6 +84,7 @@ class SwerveDrive:
 		self.motor_current_alerts = {name: False for name in self.wheels.keys()}
 	
 	def stop_all(self):
+		"""Stop all motors"""
 		for wheel in self.wheels.values():
 			wheel.stop()
 		self.wheel_alignment_state.clear()
@@ -90,6 +92,7 @@ class SwerveDrive:
 		self.per_wheel_previous_power = {name: 0.0 for name in self.wheels.keys()}
 	
 	def _apply_smooth_acceleration(self, wheel_name, target_power):
+		"""Apply smooth acceleration/deceleration to wheel drive power"""
 		previous_power = self.per_wheel_previous_power.get(wheel_name, 0.0)
 		
 		power_diff = target_power - previous_power
@@ -100,15 +103,19 @@ class SwerveDrive:
 		return ramped_power
 	
 	def is_moving(self):
+		"""Returns True if robot is currently moving or aligning"""
 		return self.movement_state in ["moving", "aligning"]
 	
 	def is_aligning(self):
+		"""Returns True if wheels are currently rotating to target angles"""
 		return len(self.wheel_alignment_state) > 0
 	
 	def get_movement_state(self):
+		"""Returns current movement state: 'idle', 'moving', or 'aligning'"""
 		return self.movement_state
 	
 	def update_motor_currents(self):
+		"""Update motor current monitoring for all wheels"""
 		current_time = wpilib.Timer.getFPGATimestamp()
 		
 		for wheel_name, wheel in self.wheels.items():
@@ -146,29 +153,40 @@ class SwerveDrive:
 				SmartDashboard.putNumber(f"{wheel_name}_motor_current", motor_current)
 				SmartDashboard.putBoolean(f"{wheel_name}_current_alert", self.motor_current_alerts[wheel_name])
 				
-			except Exception:
+			except Exception as e:
 				pass
 		
 		if self.motor_current_alert_cooldown > 0:
 			self.motor_current_alert_cooldown -= 1
 	
 	def get_motor_current(self, wheel_name):
+		"""Get current motor current (amps) for a wheel"""
 		if wheel_name in self.motor_current_history and self.motor_current_history[wheel_name]:
 			return self.motor_current_history[wheel_name][-1]["current"]
 		return 0.0
 	
 	def has_current_alert(self, wheel_name=None):
+		"""Check if any wheel has current alert, or specific wheel if provided"""
 		if wheel_name:
 			return self.motor_current_alerts.get(wheel_name, False)
 		return any(self.motor_current_alerts.values())
 	
 	def drive_straight(self, speed, target_angle=0.0):
+		"""
+		Drive straight at specified speed while maintaining heading angle (autonomous)
+		Prevents sideways drift by holding wheel angles fixed.
+		
+		Args:
+			speed: Drive speed (-1.0 to 1.0), positive = forward
+			target_angle: Heading to maintain (0-360), 0 = forward
+		"""
 		if abs(speed) < 0.01:
 			for wheel_name, wheel in self.wheels.items():
 				ramped_power = self._apply_smooth_acceleration(wheel_name, 0.0)
 				wheel.set_drive_power(ramped_power)
 			return
 		
+		import math
 		for wheel_name, wheel_pos in config.WHEEL_POSITIONS.items():
 			target_wheel_angle = target_angle
 			
@@ -199,6 +217,15 @@ class SwerveDrive:
 		self.update_motor_currents()
 	
 	def drive_to_heading(self, target_angle):
+		"""
+		Rotate in place to specific heading without forward movement (autonomous)
+		
+		Args:
+			target_angle: Target heading angle (0-360)
+		
+		Returns:
+			True if aligned to within ALIGN_TOLERANCE, False if still rotating
+		"""
 		base_angles = config.ROTATION_ANGLES
 		
 		angle_diff = target_angle - 0
@@ -244,6 +271,18 @@ class SwerveDrive:
 		return all_aligned
 	
 	def drive_for_distance(self, speed, target_distance_cm, target_angle=0.0):
+		"""
+		Drive forward a specific distance at specified speed (autonomous)
+		Uses odometry to track distance.
+		
+		Args:
+			speed: Drive speed (-1.0 to 1.0)
+			target_distance_cm: Distance to travel in centimeters
+			target_angle: Heading to maintain during movement
+		
+		Returns:
+			True if distance reached, False if still moving
+		"""
 		current_distance = self.odometry.get_distance_traveled()
 		remaining_distance = target_distance_cm - current_distance
 		
@@ -261,6 +300,17 @@ class SwerveDrive:
 		return False
 	
 	def drive_speed_ramped(self, target_speed, ramp_rate=0.1):
+		"""
+		Continuously apply smooth speed ramping for stable autonomous acceleration
+		Call this repeatedly to reach target speed smoothly.
+		
+		Args:
+			target_speed: Target speed to ramp toward (-1.0 to 1.0)
+			ramp_rate: Rate of speed change per loop iteration (0.1 = 10% per call)
+		
+		Returns:
+			Current ramped speed
+		"""
 		if not hasattr(self, '_current_ramp_speed'):
 			self._current_ramp_speed = 0.0
 		
@@ -270,6 +320,21 @@ class SwerveDrive:
 		return self._current_ramp_speed
 	
 	def drive_swerve(self, forward, strafe, rotate):
+		"""
+		Drive robot using swerve kinematics
+		
+		Control logic:
+		- Rotation wheels: Always point to rotation target at 100% power
+		- Drive wheels: Move in movement direction at speed = MAX(left_stick_magnitude, right_stick_magnitude)
+		
+		Args:
+			forward: Forward speed (-1.0 to 1.0)
+			strafe: Strafe speed (-1.0 to 1.0), positive = right
+			rotate: Rotation speed (-1.0 to 1.0), positive = counter-clockwise
+		"""
+		import math
+		import time
+		
 		deadzone = 0.1
 		forward = forward if abs(forward) >= deadzone else 0.0
 		strafe = strafe if abs(strafe) >= deadzone else 0.0
@@ -360,28 +425,34 @@ class SwerveDrive:
 		self.update_motor_currents()
 	
 	def rotate_to_angle(self, angle):
+		"""Rotate all wheels to a specific angle (0-360)"""
 		if not self.aligning:
 			self.start_alignment(angle)
 	
 	def set_wheel_drive_power(self, wheel_name, power):
+		"""Set drive power for specific wheel"""
 		if wheel_name in self.wheels:
 			self.wheels[wheel_name].set_drive_power(power)
 	
 	def set_wheel_turn_power(self, wheel_name, power):
+		"""Set turn power for specific wheel"""
 		if wheel_name in self.wheels:
 			self.wheels[wheel_name].set_turn_power(power)
 	
 	def get_wheel_angle(self, wheel_name):
+		"""Get angle of specific wheel"""
 		if wheel_name in self.wheels:
 			return self.wheels[wheel_name].get_angle()
 		return -1
 	
 	def get_wheel_power(self, wheel_name):
+		"""Get drive power of specific wheel"""
 		if wheel_name in self.wheels:
 			return self.wheels[wheel_name].get_drive_power()
 		return 0.0
 	
 	def set_wheel_zero(self, wheel_name):
+		"""Save current position as zero for a wheel"""
 		if wheel_name in self.wheels:
 			wheel = self.wheels[wheel_name]
 			wheel.set_zero_offset(wheel.get_raw_angle())
@@ -389,6 +460,7 @@ class SwerveDrive:
 			self.calibration.save_offsets()
 	
 	def set_wheel_angle(self, wheel_name, target_angle):
+		"""Save current position as a specific angle (0, 90, 180, 270)"""
 		if wheel_name in self.wheels:
 			wheel = self.wheels[wheel_name]
 			raw = wheel.get_raw_angle()
@@ -400,8 +472,11 @@ class SwerveDrive:
 			
 			for name, offset in self.calibration.offsets.items():
 				self.wheels[name].offset = offset
+			
+			verify_angle = (raw - wheel.offset) % 360
 	
 	def drive_wheel_to_angle(self, wheel_name, target_angle):
+		"""Start aligning a single wheel to target angle using PID control"""
 		if wheel_name not in self.wheels:
 			return
 		
@@ -413,6 +488,7 @@ class SwerveDrive:
 	
 	
 	def start_alignment(self, target_angle=0):
+		"""Start aligning all wheels to target angle"""
 		self.wheel_alignment_state.clear()
 		
 		self.aligning = True
@@ -420,6 +496,7 @@ class SwerveDrive:
 		self.target_align_angle = target_angle
 	
 	def update_alignment(self):
+		"""Update alignment routine (call every loop)"""
 		if not self.aligning:
 			return
 		
@@ -472,6 +549,7 @@ class SwerveDrive:
 			self.align_debug_counter = 0
 	
 	def update_single_wheel_alignment(self):
+		"""Update per-wheel alignment (call every loop)"""
 		if not self.wheel_alignment_state:
 			return
 		
@@ -526,6 +604,15 @@ class SwerveDrive:
 			del self.wheel_alignment_state[wheel_name]
 	
 	def drive_rotation(self, rotation_input):
+		"""
+		Drive robot in place with 360° rotation using verified tangent wheel angles.
+		Wheels point outward at 45° angles to create circular motion.
+		
+		Args:
+			rotation_input: Right stick X value (-1.0 to 1.0)
+						   Negative = counter-clockwise (left), Positive = clockwise (right)
+						   Rotation wheels align at 100%, drive wheels move at stick magnitude
+		"""
 		if abs(rotation_input) < 0.1:
 			for wheel_name, wheel in self.wheels.items():
 				ramped_power = self._apply_smooth_acceleration(wheel_name, 0.0)
@@ -571,8 +658,63 @@ class SwerveDrive:
 		self.update_motor_currents()
 		
 		self.update_single_wheel_alignment()
+
+	def _debug_print_turn_motor_powers(self):
+		"""Print turn motor powers for all wheels (call every loop to monitor)"""
+		if "front_right" in self.wheels:
+			wheel = self.wheels["front_right"]
+			try:
+				turn_power = wheel.turn_motor.get() if wheel.turn_motor else 0.0
+			except:
+				turn_power = 0.0
+			
+			if not hasattr(self, '_fr_turn_power_debug'):
+				self._fr_turn_power_debug = 0
+			
+			self._fr_turn_power_debug += 1
+			if turn_power != 0.0 or self._fr_turn_power_debug >= 20:
+				self._fr_turn_power_debug = 0
+	
+	def _debug_print_drive_motor_diagnostics(self):
+		"""Diagnostic for FR drive motor at full power"""
+		if "front_right" not in self.wheels:
+			return
+		
+		wheel = self.wheels["front_right"]
+		if not wheel.drive_motor:
+			return
+		
+		try:
+			drive_power_set = wheel.current_drive_power
+			drive_power_actual = wheel.drive_motor.get()
+			
+			encoder = wheel.drive_motor.getEncoder()
+			drive_velocity = encoder.getVelocity() if encoder else 0
+			drive_position = encoder.getPosition() if encoder else 0
+			
+			try:
+				motor_current = wheel.drive_motor.getOutputCurrent()
+			except:
+				motor_current = 0.0
+			
+			try:
+				motor_temp = wheel.drive_motor.getMotorTemperature()
+			except:
+				motor_temp = 0.0
+			
+			turn_power = wheel.turn_motor.get() if wheel.turn_motor else 0.0
+			
+			if not hasattr(self, '_fr_drive_diag_counter'):
+				self._fr_drive_diag_counter = 0
+			
+			self._fr_drive_diag_counter += 1
+			if self._fr_drive_diag_counter >= 20 and wheel.current_drive_power > 0.9:
+				self._fr_drive_diag_counter = 0
+		except Exception as e:
+			pass
 	
 	def start_autotune(self):
+		"""Start oscillation-based autotune at 4 angles for all 4 wheels"""
 		self.autotuning = True
 		self.autotune_gains = {
 			"wheels": ["front_left", "front_right", "rear_left", "rear_right"],
@@ -593,6 +735,7 @@ class SwerveDrive:
 		}
 	
 	def update_autotune(self):
+		"""Update autotune - test oscillations at 4 angles to find Kc and Tc"""
 		if not self.autotuning:
 			return
 		
@@ -652,6 +795,7 @@ class SwerveDrive:
 				self._next_angle_or_finalize()
 	
 	def _next_angle_or_finalize(self):
+		"""Move to next angle or finalize wheel"""
 		gains = self.autotune_gains
 		current = gains["current"]
 		current_idx = gains["current_index"]
@@ -670,6 +814,7 @@ class SwerveDrive:
 
 	
 	def _finalize_wheel_autotune(self):
+		"""Finalize one wheel's autotune by averaging results from 4 angles"""
 		gains = self.autotune_gains
 		current = gains["current"]
 		current_idx = gains["current_index"]
@@ -710,6 +855,7 @@ class SwerveDrive:
 			self._compute_final_gains()
 	
 	def _compute_final_gains(self):
+		"""Store per-wheel results and apply to all wheels"""
 		gains = self.autotune_gains
 		results = gains["results"]
 		
@@ -744,6 +890,10 @@ class SwerveDrive:
 		self.autotune_gains = None
 	
 	def _publish_tuning_history_to_nt(self):
+		"""Publish tuning history and regression to NetworkTables for remote dashboard access"""
+		import sys
+		import json
+		
 		try:
 			history = self.calibration.pid_tuning_history
 			
@@ -755,4 +905,8 @@ class SwerveDrive:
 				regression_json = json.dumps(self.calibration.pid_regression)
 				SmartDashboard.putString("autotune_regression_json", regression_json)
 				
-	except Exception:
+		except Exception as e:
+			import traceback
+			traceback.print_exc()
+
+

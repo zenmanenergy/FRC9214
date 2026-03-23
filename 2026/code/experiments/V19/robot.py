@@ -7,15 +7,10 @@ from pilot_controls import PilotControls
 from dashboard.dashboard_updater import DashboardUpdater
 from dashboard.calibration_mode_handler import CalibrationModeHandler
 from swerve.encoder_calibration import EncoderCalibration
-import swerve.swerve_config as config
-from swerve import CANID
-
 
 class Robot(wpilib.TimedRobot):
 	def robotInit(self):
 		self.swervedrive = SwerveDrive()
-		
-		self.calibration = EncoderCalibration()
 		
 		self.pilot_joystick = PilotJoystick(port=0, deadband=0.1)
 		self.pilot_controls = PilotControls(self.swervedrive, self.pilot_joystick)
