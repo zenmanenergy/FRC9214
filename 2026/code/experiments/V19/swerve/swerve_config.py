@@ -13,6 +13,7 @@ WHEELS = {
 		"button": 4,  # Y
 		"manual_offset": 180.0,
 		"rotation_angle": 225,
+		"position": {"x": 0.5, "y": 0.5},
 	},
 	"rear_right": {
 		"drive_canid": CANID.SWERVE_REAR_RIGHT_DRIVE,
@@ -21,6 +22,7 @@ WHEELS = {
 		"button": 2,  # B
 		"manual_offset": 0.0,
 		"rotation_angle": 135,
+		"position": {"x": 0.5, "y": -0.5},
 	},
 	"rear_left": {
 		"drive_canid": CANID.SWERVE_REAR_LEFT_DRIVE,
@@ -29,6 +31,7 @@ WHEELS = {
 		"button": 1,  # A
 		"manual_offset": 90.0,
 		"rotation_angle": 45,
+		"position": {"x": -0.5, "y": -0.5},
 	},
 	"front_left": {
 		"drive_canid": CANID.SWERVE_FRONT_LEFT_DRIVE,
@@ -37,6 +40,7 @@ WHEELS = {
 		"button": 3,  # X
 		"manual_offset": 270.0,
 		"rotation_angle": 315,
+		"position": {"x": -0.5, "y": 0.5},
 	}
 }
 
@@ -44,17 +48,20 @@ WHEELS = {
 MOTOR_SCALE_ALIGN = 0.3    # 15% max speed for alignment - reduced for better damping
 MOTOR_SCALE_TELEOP = 0.75   # 100% max speed for teleop drive
 
-# Wheel positions relative to center (in arbitrary units, ratios matter)
-# Positive X = right, Positive Y = forward
-WHEEL_POSITIONS = {
-	"front_right": {"x": 0.5, "y": 0.5},     # Right-Front
-	"front_left": {"x": -0.5, "y": 0.5},    # Left-Front  
-	"rear_right": {"x": 0.5, "y": -0.5},    # Right-Rear
-	"rear_left": {"x": -0.5, "y": -0.5}     # Left-Rear
-}
-
 # Alignment parameters
 ALIGN_TOLERANCE = 5.0
 ALIGN_TIMEOUT = 5.0
+
+# Odometry trust decay (lower trust over time without external verification)
+# Decay per meter of distance traveled
+ODOMETRY_POSITION_DECAY_PER_METER = 0.01
+ODOMETRY_HEADING_DECAY_PER_METER = 0.02
+
+# Decay per second of elapsed time (independent of movement)
+ODOMETRY_POSITION_DECAY_PER_SECOND = 0.005
+ODOMETRY_HEADING_DECAY_PER_SECOND = 0.01
+
+# Never let trust fall below this value when decaying
+ODOMETRY_MIN_TRUST = 0.1
 
 OFFSET_FILE = "/home/lvuser/encoder_offsets.json"
