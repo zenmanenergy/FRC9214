@@ -258,7 +258,6 @@ class EncoderCalibration:
 	
 	def clear_tuning_history(self):
 		"""Clear all tuning history and revert to defaults"""
-		print("[CLEAR] clear_tuning_history() called!")
 		self.pid_tuning_history = []
 		if hasattr(self, 'pid_regression'):
 			delattr(self, 'pid_regression')
@@ -268,9 +267,7 @@ class EncoderCalibration:
 			"ki": 0.005,
 			"kd": 0.0001
 		}
-		print("[CLEAR] About to call save_calibration()...")
 		self.save_calibration()
-		print("[CLEAR] Tuning history cleared, reverted to defaults")
 	
 	def get_alignment_gains(self):
 		"""Get wheel alignment PID gains from calibration file

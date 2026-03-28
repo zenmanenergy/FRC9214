@@ -1,7 +1,7 @@
 """Swerve drive odometry tracker using drive wheel encoders and swerve kinematics"""
 import math
 import time
-import swerve_config as config
+from . import swerve_config as config
 
 
 class SwerveOdometry:

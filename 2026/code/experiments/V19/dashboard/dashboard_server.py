@@ -224,18 +224,13 @@ if HAS_FLASK_SOCK:
 							ws.send(json.dumps({"type": "error", "message": f"Failed to load tuning history: {str(e)}"}))
 					elif cmd == "clear_tuning":
 						robot_mode = dashboard.table.getString("robot_mode", "Unknown")
-						print(f"[DASH-CLEAR] Received clear_tuning command. robot_mode={robot_mode}")
 						if robot_mode == "Test":
 							try:
-								print(f"[DASH-CLEAR] Mode is Test, setting command to True...")
 								dashboard.table.putBoolean("clear_tuning_history_command", True)
-								print(f"[DASH-CLEAR] Command set successfully!")
 								ws.send(json.dumps({"type": "success", "message": "Tuning history cleared"}))
 							except Exception as e:
-								print(f"[DASH-CLEAR] ERROR: {e}")
 								ws.send(json.dumps({"type": "error", "message": f"Failed to clear history: {str(e)}"}))
 						else:
-							print(f"[DASH-CLEAR] Mode is not Test, ignoring command")
 							ws.send(json.dumps({"type": "error", "message": "Clear history only allowed in TEST mode"}))
 				
 				except json.JSONDecodeError:

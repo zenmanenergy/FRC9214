@@ -1,14 +1,12 @@
 import wpilib
 from wpilib import SmartDashboard, RobotController
-from swerve_wheel import SwerveWheel
-from encoder_calibration import EncoderCalibration
-from pid_controller import PIDController
-from swerve_odometry import SwerveOdometry
-from swerve_tune import SwerveTuner
-import swerve_config as config
+from .swerve_wheel import SwerveWheel
+from .encoder_calibration import EncoderCalibration
+from .pid_controller import PIDController
+from .swerve_odometry import SwerveOdometry
+from .swerve_tune import SwerveTuner
+from . import swerve_config as config
 import math
-import json
-import traceback
 
 
 class SwerveDrive:
@@ -22,7 +20,7 @@ class SwerveDrive:
 				pin_config["drive_canid"],
 				pin_config["turn_canid"],
 				pin_config["encoder_dio"],
-				config.MANUAL_OFFSETS[wheel_name]
+				pin_config["manual_offset"]
 			)
 		
 		self.calibration = EncoderCalibration()
@@ -35,7 +33,6 @@ class SwerveDrive:
 		self.aligning = False
 		self.align_start_time = None
 		self.target_align_angle = 0
-		self.align_debug_counter = 0
 		
 		battery_voltage = RobotController.getBatteryVoltage()
 		pid_gains = self.calibration.get_interpolated_gains(battery_voltage)
@@ -169,8 +166,7 @@ class SwerveDrive:
 			wheel_pos = wheel_data["position"]
 			target_wheel_angle = target_angle
 			
-			if wheel_name in config.MANUAL_OFFSETS:
-				target_wheel_angle = (target_wheel_angle + config.MANUAL_OFFSETS[wheel_name]) % 360
+			target_wheel_angle = (target_wheel_angle + wheel_data["manual_offset"]) % 360
 			
 			self.drive_wheel_to_angle(wheel_name, target_wheel_angle)
 			
@@ -214,8 +210,7 @@ class SwerveDrive:
 		
 		all_aligned = True
 		for wheel_name, target_wheel_angle in angles.items():
-			if wheel_name in config.MANUAL_OFFSETS:
-				target_wheel_angle = (target_wheel_angle + config.MANUAL_OFFSETS[wheel_name]) % 360
+			target_wheel_angle = (target_wheel_angle + config.WHEELS[wheel_name]["manual_offset"]) % 360
 			
 			self.drive_wheel_to_angle(wheel_name, target_wheel_angle)
 			
@@ -257,15 +252,6 @@ class SwerveDrive:
 		self.drive_straight(ramped_speed, target_angle)
 		return False
 	
-	def drive_speed_ramped(self, target_speed, ramp_rate=0.1):
-		if not hasattr(self, '_current_ramp_speed'):
-			self._current_ramp_speed = 0.0
-		
-		speed_diff = target_speed - self._current_ramp_speed
-		self._current_ramp_speed += speed_diff * ramp_rate
-		
-		return self._current_ramp_speed
-	
 	def drive_swerve(self, forward, strafe, rotate):
 		deadzone = 0.1
 		forward = forward if abs(forward) >= deadzone else 0.0
@@ -288,8 +274,7 @@ class SwerveDrive:
 		drive_multiplier = max(left_stick_magnitude, right_stick_magnitude)
 		
 		if (forward != 0 or strafe != 0 or rotate != 0):
-			if not hasattr(self, '_last_input') or self._last_input != (forward, strafe, rotate):
-				self._last_input = (forward, strafe, rotate)
+			pass
 		
 		wheel_vectors = {}
 		
@@ -304,9 +289,7 @@ class SwerveDrive:
 				angle += 360
 			
 			angle = (angle + 180) % 360
-			
-			if wheel_name in config.MANUAL_OFFSETS:
-				angle = (angle + config.MANUAL_OFFSETS[wheel_name]) % 360
+			angle = (angle + config.WHEELS[wheel_name]["manual_offset"]) % 360
 			
 			movement_speed = math.sqrt(forward*forward + strafe*strafe)
 			wheel_speed = movement_speed * drive_multiplier if drive_multiplier > 0 else 0
@@ -314,8 +297,6 @@ class SwerveDrive:
 			wheel_vectors[wheel_name] = {"speed": wheel_speed, "angle": angle}
 		
 		angle_hash = tuple(sorted([(name, round(data['angle'], 1)) for name, data in wheel_vectors.items()]))
-		if not hasattr(self, '_last_angle_hash') or self._last_angle_hash != angle_hash:
-			self._last_angle_hash = angle_hash
 		
 		max_wheel_speed = max([data['speed'] for data in wheel_vectors.values()]) if wheel_vectors else 0
 		if max_wheel_speed > 1.0:
@@ -455,19 +436,16 @@ class SwerveDrive:
 				if abs(error) > config.ALIGN_TOLERANCE:
 					all_aligned = False
 			
-			self.align_debug_counter += 1
-			
+
 			if all_aligned:
 				self.aligning = False
 				for pid in self.pid_controllers.values():
 					pid.reset()
-				self.align_debug_counter = 0
 		else:
 			self.stop_all()
 			self.aligning = False
 			for pid in self.pid_controllers.values():
 				pid.reset()
-			self.align_debug_counter = 0
 	
 	def update_single_wheel_alignment(self):
 		if not self.wheel_alignment_state:
@@ -543,8 +521,7 @@ class SwerveDrive:
 		
 		for wheel_name, target_angle in angles.items():
 			wheel_data = config.WHEELS[wheel_name]
-			if wheel_name in config.MANUAL_OFFSETS:
-				target_angle = (target_angle + config.MANUAL_OFFSETS[wheel_name]) % 360
+			target_angle = (target_angle + wheel_data["manual_offset"]) % 360
 			
 			self.drive_wheel_to_angle(wheel_name, target_angle)
 			

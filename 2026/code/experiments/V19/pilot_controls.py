@@ -22,7 +22,6 @@ class PilotControls:
 		
 		# Test mode state
 		self.focused = None  # Tracks joystick-selected focus
-		self.last_printed_angle = -999
 		
 		# Teleop state
 		self.had_teleop_input = False
@@ -101,7 +100,6 @@ class PilotControls:
 			# Focus on new wheel
 			self.drive.stop_all()
 			self.focused = wheel_name
-			self.last_printed_angle = -999
 			print(f"[FOCUS] Focused on {wheel_name}. Use left thumb up/down to drive, right thumb left/right to turn.")
 	
 	# ==================== WHEEL CALIBRATION FUNCTIONS ====================

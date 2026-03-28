@@ -31,6 +31,7 @@ class SwerveWheel:
 		self.manual_offset = manual_offset
 		self.offset = 0.0
 		self.current_drive_power = 0.0  # Track current drive power for dashboard
+		self._turn_motor_error_logged = False  # Track if we've already logged a turn motor error
 	
 	def set_drive_power(self, power):
 		"""Set drive motor power (-1.0 to 1.0)"""
@@ -50,26 +51,21 @@ class SwerveWheel:
 	
 	def set_turn_power(self, power):
 		"""Set turn motor power (-1.0 to 1.0)"""
+		if not self.turn_motor:
+			# Log error once only, don't spam every cycle
+			if not self._turn_motor_error_logged:
+				print(f"[TURN] ERROR: {self.name} turn motor is NULL - cannot send command", flush=True)
+				self._turn_motor_error_logged = True
+			return
+		
 		if self.name == "rear_left":
-			if self.turn_motor:
-				self.turn_motor.set(-power)  # Invert to fix direction
-			else:
-				print(f"[TURN] ERROR: {self.name} turn motor is NULL - cannot send command", flush=True)
-		if self.name == "rear_right":
-			if self.turn_motor:
-				self.turn_motor.set(power)  # No inversion - opposite wiring from rear_left
-			else:
-				print(f"[TURN] ERROR: {self.name} turn motor is NULL - cannot send command", flush=True)
-		if self.name == "front_left":
-			if self.turn_motor:
-				self.turn_motor.set(-power)  # No inversion - opposite wiring from rear_left
-			else:
-				print(f"[TURN] ERROR: {self.name} turn motor is NULL - cannot send command", flush=True)
-		if self.name == "front_right":
-			if self.turn_motor:
-				self.turn_motor.set(-power)  # Same inversion as rear_left
-			else:
-				print(f"[TURN] ERROR: {self.name} turn motor is NULL - cannot send command", flush=True)
+			self.turn_motor.set(-power)  # Invert to fix direction
+		elif self.name == "rear_right":
+			self.turn_motor.set(power)  # No inversion - opposite wiring from rear_left
+		elif self.name == "front_left":
+			self.turn_motor.set(-power)  # No inversion - opposite wiring from rear_left
+		elif self.name == "front_right":
+			self.turn_motor.set(-power)  # Same inversion as rear_left
 	
 	def stop(self):
 		"""Stop both motors"""
