@@ -1,5 +1,8 @@
 """Swerve drive configuration constants"""
-from ..CANID import CANID
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from CANID import CANID
 
 # Motor and encoder pin assignments with manual offsets and rotation angles
 # Manual offsets represent physical mounting rotation (added to zero calibration)
@@ -11,7 +14,7 @@ WHEELS = {
 		"turn_canid": CANID.SWERVE_FRONT_RIGHT_TURN,
 		"encoder_dio": 0,
 		"button": 4,  # Y
-		"manual_offset": 180.0,
+		"manual_offset": 0.0,
 		"rotation_angle": 225,
 		"position": {"x": 0.5, "y": 0.5},
 	},
@@ -29,7 +32,7 @@ WHEELS = {
 		"turn_canid": CANID.SWERVE_REAR_LEFT_TURN,
 		"encoder_dio": 2,
 		"button": 1,  # A
-		"manual_offset": 90.0,
+		"manual_offset": 0.0,
 		"rotation_angle": 45,
 		"position": {"x": -0.5, "y": -0.5},
 	},
@@ -38,7 +41,7 @@ WHEELS = {
 		"turn_canid": CANID.SWERVE_FRONT_LEFT_TURN,
 		"encoder_dio": 3,
 		"button": 3,  # X
-		"manual_offset": 270.0,
+		"manual_offset": 0.0,
 		"rotation_angle": 315,
 		"position": {"x": -0.5, "y": 0.5},
 	}

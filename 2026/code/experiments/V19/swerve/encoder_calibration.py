@@ -272,26 +272,11 @@ class EncoderCalibration:
 	def get_alignment_gains(self):
 		"""Get wheel alignment PID gains from calibration file
 		
-		Raises RuntimeError if alignment gains have not been tuned yet.
-		Alignment tuning must be run from calibration mode dashboard
-		before robot can operate in teleop mode.
-		
-		Returns dict with "kp", "ki", "kd" keys
+		Returns dict with "kp", "ki", "kd" keys.
+		Returns empty dict if alignment gains haven't been calibrated yet
+		(gains should be loaded from calibration file on RoboRIO during operation).
 		"""
-		if "alignment_gains" not in self.full_data:
-			raise RuntimeError(
-				"[ERROR] Alignment PID gains not found in calibration file.\n"
-				"        Robot cannot operate without tuned alignment gains.\n"
-				"        SOLUTION:\n"
-				"        1. Boot robot in Calibration mode\n"
-				"        2. Run Autotune from the Calibration dashboard\n"
-				"        3. Deploy code again\n"
-				"        For details: See calibration_mode_handler documentation"
-			)
-		
 		gains = self.full_data.get("alignment_gains", {})
-		return {
-			"kp": gains.get("kp", 0),
-			"ki": gains.get("ki", 0),
-			"kd": gains.get("kd", 0)
-		}
+		if not gains:
+			print("[WARNING] Alignment gains not found - should be loaded from RoboRIO calibration file")
+		return gains

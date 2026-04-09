@@ -59,13 +59,13 @@ class SwerveWheel:
 			return
 		
 		if self.name == "rear_left":
-			self.turn_motor.set(-power)  # Invert to fix direction
-		elif self.name == "rear_right":
-			self.turn_motor.set(power)  # No inversion - opposite wiring from rear_left
-		elif self.name == "front_left":
-			self.turn_motor.set(-power)  # No inversion - opposite wiring from rear_left
-		elif self.name == "front_right":
-			self.turn_motor.set(-power)  # Same inversion as rear_left
+			self.turn_motor.set(-power)
+		if self.name == "rear_right":
+			self.turn_motor.set(-power)
+		if self.name == "front_left":
+			self.turn_motor.set(-power)
+		if self.name == "front_right":
+			self.turn_motor.set(-power)
 	
 	def stop(self):
 		"""Stop both motors"""

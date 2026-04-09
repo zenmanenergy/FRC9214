@@ -68,7 +68,7 @@ class SwerveDrive:
 		self.per_wheel_previous_power = {name: 0.0 for name in self.wheels.keys()}
 		self.power_ramp_rate = 0.2
 		
-		self.motor_current_max = 40.0
+		self.motor_current_max = 45.0
 		self.motor_current_sustained_limit = 35.0
 		self.motor_current_history = {name: [] for name in self.wheels.keys()}
 		self.motor_current_max_history = 10
@@ -121,7 +121,7 @@ class SwerveDrive:
 				
 				if motor_current > self.motor_current_max:
 					if not self.motor_current_alerts[wheel_name]:
-						print(f"[CURRENT-ALERT] {wheel_name}: SPIKE {motor_current:.1f}A (collision/bind?)", flush=True)
+						#print(f"[CURRENT-ALERT] {wheel_name}: SPIKE {motor_current:.1f}A (collision/bind?)", flush=True)
 						self.motor_current_alerts[wheel_name] = True
 						self.motor_current_alert_cooldown = 10
 				elif motor_current > self.motor_current_sustained_limit:
@@ -133,7 +133,7 @@ class SwerveDrive:
 							self.motor_current_alert_cooldown = 10
 				else:
 					if self.motor_current_alerts[wheel_name]:
-						print(f"[CURRENT-CLEAR] {wheel_name}: Current normalized", flush=True)
+						#print(f"[CURRENT-CLEAR] {wheel_name}: Current normalized", flush=True)
 						self.motor_current_alerts[wheel_name] = False
 				
 				SmartDashboard.putNumber(f"{wheel_name}_motor_current", motor_current)
@@ -192,24 +192,23 @@ class SwerveDrive:
 		self.update_motor_currents()
 	
 	def drive_to_heading(self, target_angle):
-		base_angles = config.ROTATION_ANGLES
-		
 		angle_diff = target_angle - 0
 		if angle_diff > 180:
 			angle_diff -= 360
 		elif angle_diff < -180:
 			angle_diff += 360
 		
-		if angle_diff >= 0:
-			angles = base_angles
-		else:
-			angles = {name: (angle + 180) % 360 for name, angle in base_angles.items()}
-		
 		rotation_speed = 0.5
 		drive_power = -abs(rotation_speed) * config.MOTOR_SCALE_TELEOP
 		
 		all_aligned = True
-		for wheel_name, target_wheel_angle in angles.items():
+		for wheel_name in config.WHEELS.keys():
+			base_angle = config.WHEELS[wheel_name]["rotation_angle"]
+			if angle_diff >= 0:
+				target_wheel_angle = base_angle
+			else:
+				target_wheel_angle = (base_angle + 180) % 360
+			
 			target_wheel_angle = (target_wheel_angle + config.WHEELS[wheel_name]["manual_offset"]) % 360
 			
 			self.drive_wheel_to_angle(wheel_name, target_wheel_angle)
@@ -323,7 +322,10 @@ class SwerveDrive:
 				self.previous_target_angles[wheel_name] = target_angle
 			
 			tolerance = config.ALIGN_TOLERANCE
-			if angle_error <= tolerance:
+			# Apply drive power if:
+			# 1. Wheel is aligned to target angle, OR
+			# 2. There's a target speed to apply (don't wait for alignment if we have movement to do)
+			if angle_error <= tolerance or target_speed > 0.01:
 				drive_power = -target_speed * config.MOTOR_SCALE_TELEOP
 				ramped_power = self._apply_smooth_acceleration(wheel_name, drive_power)
 				wheel.set_drive_power(ramped_power)
@@ -510,16 +512,15 @@ class SwerveDrive:
 				self.movement_state = "idle"
 			return
 		
-		base_angles = config.ROTATION_ANGLES
-		
-		if rotation_input <= 0:
-			angles = {name: (angle + 180) % 360 for name, angle in base_angles.items()}
-		else:
-			angles = base_angles
-		
 		drive_power = -abs(rotation_input) * config.MOTOR_SCALE_TELEOP
 		
-		for wheel_name, target_angle in angles.items():
+		for wheel_name in config.WHEELS.keys():
+			base_angle = config.WHEELS[wheel_name]["rotation_angle"]
+			if rotation_input <= 0:
+				target_angle = (base_angle + 180) % 360
+			else:
+				target_angle = base_angle
+			
 			wheel_data = config.WHEELS[wheel_name]
 			target_angle = (target_angle + wheel_data["manual_offset"]) % 360
 			
