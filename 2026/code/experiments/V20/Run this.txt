@@ -1,0 +1,7 @@
+Open your terminal and run these commands:
+
+
+
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt   # or however you installed your packages
