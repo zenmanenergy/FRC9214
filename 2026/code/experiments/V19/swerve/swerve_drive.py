@@ -326,12 +326,8 @@ class SwerveDrive:
 			
 			angle_error = abs(raw_error)
 			
-			if abs(target_speed) > 0.01 and (wheel_name not in self.previous_target_angles or self.previous_target_angles[wheel_name] != target_angle):
-				self.wheel_alignment_state[wheel_name] = {
-					"target_angle": target_angle,
-					"start_time": wpilib.Timer.getFPGATimestamp()
-				}
-				self.previous_target_angles[wheel_name] = target_angle
+			# Always register the target so wheels re-align if they drift away
+			self.drive_wheel_to_angle(wheel_name, target_angle)
 			
 			if angle_error <= config.DRIVE_ANGLE_TOLERANCE:
 				drive_power = -target_speed * config.MOTOR_SCALE_TELEOP
@@ -496,7 +492,7 @@ class SwerveDrive:
 				continue
 			
 			if elapsed > 30:
-				wheel.stop()
+				wheel.turn_motor.set(0.0)
 				wheels_to_remove.append(wheel_name)
 				continue
 			
