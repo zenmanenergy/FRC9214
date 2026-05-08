@@ -1,0 +1,44 @@
+OSCILLATION VERIFICATION PLAN
+==============================
+
+TEST ONE WHEEL AT A TIME BY COMMENTING OUT THE OTHERS
+
+1. Open swerve_wheel.py
+2. In set_drive_power() and set_turn_power(), comment out 3 wheels
+3. Leave only rear_left uncommented
+4. Run the robot normally with execute_teleop()
+5. Test rear_left wheel with both joysticks
+6. Comment out rear_left, uncomment rear_right
+7. Repeat for front_left and front_right
+8. Finally, uncomment all 4 wheels and test together
+
+See wheel_TESTING_GUIDE.txt for exact lines to comment/uncomment
+
+
+CRITICAL FINDINGS:
+==================
+
+- Keep the 4 separate IF statements in set_drive_power() and set_turn_power()
+- Comment them out to test one wheel at a time
+- Never combine into a single IF statement
+- Use execute_teleop() for testing (real game mode logic)
+
+VERIFICATION STEPS:
+===================
+
+Tests use the real execute_teleop() logic (actual game mode).
+
+Test each wheel by commenting out the other 3 wheels in swerve_wheel.py.
+See wheel_TESTING_GUIDE.txt for exact lines and procedure.
+
+IMMEDIATE ACTIONS:
+==================
+
+1. [ ] Open swerve_wheel.py
+2. [ ] In set_drive_power(): comment out rear_right, front_left, front_right (leave rear_left uncommented)
+3. [ ] In set_turn_power(): comment out rear_right, front_left, front_right (leave rear_left uncommented)
+4. [ ] Run the robot with execute_teleop()
+5. [ ] Use both joysticks to test rear_left wheel
+6. [ ] Verify: smooth motion, correct directions, no oscillation, stops cleanly
+7. [ ] Go to wheel_TESTING_GUIDE.txt for next wheel
+
