@@ -310,26 +310,34 @@ class SwerveDrive:
 			target_speed = wheel_data["speed"]
 			
 			current_angle = wheel.get_angle()
-			angle_error = abs(target_angle - current_angle)
-			if angle_error > 180:
-				angle_error = 360 - angle_error
 			
-			if target_speed > 0.01 and (wheel_name not in self.previous_target_angles or self.previous_target_angles[wheel_name] != target_angle):
+			# Signed shortest-path error
+			raw_error = target_angle - current_angle
+			if raw_error > 180:
+				raw_error -= 360
+			elif raw_error < -180:
+				raw_error += 360
+			
+			# If turning more than 90 degrees, flip the wheel 180 and reverse drive instead
+			if abs(raw_error) > 90:
+				target_angle = (target_angle + 180) % 360
+				target_speed = -target_speed
+				raw_error = raw_error - 180 if raw_error > 0 else raw_error + 180
+			
+			angle_error = abs(raw_error)
+			
+			if abs(target_speed) > 0.01 and (wheel_name not in self.previous_target_angles or self.previous_target_angles[wheel_name] != target_angle):
 				self.wheel_alignment_state[wheel_name] = {
 					"target_angle": target_angle,
 					"start_time": wpilib.Timer.getFPGATimestamp()
 				}
 				self.previous_target_angles[wheel_name] = target_angle
 			
-			tolerance = config.ALIGN_TOLERANCE
-			# Apply drive power if:
-			# 1. Wheel is aligned to target angle, OR
-			# 2. There's a target speed to apply (don't wait for alignment if we have movement to do)
-			if angle_error <= tolerance or target_speed > 0.01:
+			if angle_error <= config.DRIVE_ANGLE_TOLERANCE:
 				drive_power = -target_speed * config.MOTOR_SCALE_TELEOP
 				ramped_power = self._apply_smooth_acceleration(wheel_name, drive_power)
 				wheel.set_drive_power(ramped_power)
-				if target_speed > 0.01:
+				if abs(target_speed) > 0.01:
 					self.movement_state = "moving"
 					self.last_move_time = wpilib.Timer.getFPGATimestamp()
 			else:

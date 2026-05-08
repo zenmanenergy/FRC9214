@@ -54,6 +54,7 @@ MOTOR_SCALE_TELEOP = 0.75   # 100% max speed for teleop drive
 # Alignment parameters
 ALIGN_TOLERANCE = 5.0
 ALIGN_TIMEOUT = 5.0
+DRIVE_ANGLE_TOLERANCE = 5.0
 
 # Odometry trust decay (lower trust over time without external verification)
 # Decay per meter of distance traveled
