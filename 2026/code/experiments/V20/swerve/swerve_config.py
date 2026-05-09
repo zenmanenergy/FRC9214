@@ -56,16 +56,10 @@ ALIGN_TOLERANCE = 5.0
 ALIGN_TIMEOUT = 5.0
 DRIVE_ANGLE_TOLERANCE = 5.0
 
-# Odometry trust decay (lower trust over time without external verification)
-# Decay per meter of distance traveled
-ODOMETRY_POSITION_DECAY_PER_METER = 0.01
-ODOMETRY_HEADING_DECAY_PER_METER = 0.02
-
-# Decay per second of elapsed time (independent of movement)
-ODOMETRY_POSITION_DECAY_PER_SECOND = 0.005
-ODOMETRY_HEADING_DECAY_PER_SECOND = 0.01
-
-# Never let trust fall below this value when decaying
-ODOMETRY_MIN_TRUST = 0.1
+# Odometry - physical robot measurement
+# Measure the center-to-center distance (in cm) between wheels on one axis.
+# Both wheelbase (front-to-rear) and trackwidth (left-to-right) are assumed equal here.
+# Update this once you measure the actual robot.
+ROBOT_WHEEL_SPACING_CM = 50.0
 
 OFFSET_FILE = "/home/lvuser/encoder_offsets.json"

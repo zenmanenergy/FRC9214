@@ -40,6 +40,7 @@ class Robot(wpilib.TimedRobot):
 	def teleopPeriodic(self):
 		self.pilot_controls.execute_teleop()
 		self.swervedrive.odometry.update()
+		self.swervedrive.imu.fuse_heading(self.swervedrive.odometry)
 		self.swervedrive.update_single_wheel_alignment()
 	
 	def teleopExit(self):

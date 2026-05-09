@@ -35,3 +35,9 @@ class DashboardUpdater:
 		# Odometry - distance traveled (metric only)
 		SmartDashboard.putNumber("Distance Centimeters", self.drive.odometry.get_total_distance())
 		SmartDashboard.putNumber("Distance Meters", self.drive.odometry.get_distance_meters())
+
+		# Odometry - pose
+		x, y = self.drive.odometry.get_position()
+		SmartDashboard.putNumber("Odometry X", round(x, 1))
+		SmartDashboard.putNumber("Odometry Y", round(y, 1))
+		SmartDashboard.putNumber("Odometry Heading", round(self.drive.odometry.get_heading(), 1))

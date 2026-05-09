@@ -4,6 +4,7 @@ from .swerve_wheel import SwerveWheel
 from .encoder_calibration import EncoderCalibration
 from .pid_controller import PIDController
 from .swerve_odometry import SwerveOdometry
+from .swerve_imu import SwerveIMU
 from .swerve_tune import SwerveTuner
 from . import swerve_config as config
 import math
@@ -55,7 +56,8 @@ class SwerveDrive:
 				name=f"Wheel_{wheel_name}"
 			)
 		
-		self.odometry = SwerveOdometry(self.wheels, wheel_diameter_cm=10.16)
+		self.odometry = SwerveOdometry(self.wheels)
+		self.imu = SwerveIMU()
 		self.tuner = SwerveTuner(self.wheels, self.pid_controllers, self.calibration)
 		self.tuner.publish_tuning_history()
 		
