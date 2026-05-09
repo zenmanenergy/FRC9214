@@ -268,13 +268,6 @@ class SwerveDrive:
 		forward *= -1
 		strafe *= -1
 		
-		left_stick_magnitude = math.sqrt(forward*forward + strafe*strafe)
-		right_stick_magnitude = abs(rotate)
-		drive_multiplier = max(left_stick_magnitude, right_stick_magnitude)
-		
-		if (forward != 0 or strafe != 0 or rotate != 0):
-			pass
-		
 		wheel_vectors = {}
 		
 		for wheel_name, wheel_data in config.WHEELS.items():
@@ -290,8 +283,7 @@ class SwerveDrive:
 			angle = (angle + 180) % 360
 			angle = (angle + config.WHEELS[wheel_name]["manual_offset"]) % 360
 			
-			movement_speed = math.sqrt(forward*forward + strafe*strafe)
-			wheel_speed = movement_speed * drive_multiplier if drive_multiplier > 0 else 0
+			wheel_speed = math.sqrt(vx*vx + vy*vy)
 			
 			wheel_vectors[wheel_name] = {"speed": wheel_speed, "angle": angle}
 		
