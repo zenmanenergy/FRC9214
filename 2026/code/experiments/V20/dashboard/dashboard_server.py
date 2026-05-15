@@ -33,6 +33,12 @@ class DashboardServer:
 			"rear_left": 0,
 			"front_left": 0
 		}
+		self.odometry = {
+			"x": 0.0,
+			"y": 0.0,
+			"heading": 0.0,
+			"distance": 0.0
+		}
 		self.counter = 0
 		self.robot_enabled = False
 		self.robot_mode = "Unknown"
@@ -73,6 +79,7 @@ class DashboardServer:
 				"type": "state",
 				"angles": self.wheel_angles,
 				"power": self.wheel_power,
+				"odometry": self.odometry,
 				"counter": self.counter,
 				"robot_enabled": self.robot_enabled,
 				"robot_mode": self.robot_mode
@@ -116,14 +123,22 @@ class DashboardServer:
 						"rear_left": self.table.getNumber("RL Power", 0),
 						"front_left": self.table.getNumber("FL Power", 0)
 					}
+					new_odometry = {
+						"x": self.table.getNumber("Odometry X", 0),
+						"y": self.table.getNumber("Odometry Y", 0),
+						"heading": self.table.getNumber("Odometry Heading", 0),
+						"distance": self.table.getNumber("Distance Centimeters", 0)
+					}
 					new_counter = self.table.getNumber("Counter", 0)
 					new_robot_enabled = self.table.getBoolean("Robot Enabled", False)
 					new_robot_mode = self.table.getString("robot_mode", "Unknown")
 					
-					if (new_angles != self.wheel_angles or new_power != self.wheel_power or new_counter != self.counter or 
+					if (new_angles != self.wheel_angles or new_power != self.wheel_power or 
+						new_odometry != self.odometry or new_counter != self.counter or 
 						new_robot_enabled != self.robot_enabled or new_robot_mode != self.robot_mode):
 						self.wheel_angles = new_angles
 						self.wheel_power = new_power
+						self.odometry = new_odometry
 						self.counter = new_counter
 						self.robot_enabled = new_robot_enabled
 						self.robot_mode = new_robot_mode
@@ -132,6 +147,7 @@ class DashboardServer:
 						"type": "state",
 						"angles": self.wheel_angles,
 						"power": self.wheel_power,
+						"odometry": self.odometry,
 						"counter": self.counter,
 						"robot_enabled": self.robot_enabled,
 						"robot_mode": self.robot_mode
@@ -153,7 +169,7 @@ def serve_dashboard():
 	if mode == 'test':
 		return render_template("test_dashboard.html")
 	else:
-		return render_template("teleop_dashboard.html")
+		return render_template("dashboard_ws.html")
 
 @app.route("/history")
 def history():
@@ -200,6 +216,14 @@ if HAS_FLASK_SOCK:
 						angle = value.get("angle", 0)
 						dashboard.table.putString("set_wheel_angle_name", wheel)
 						dashboard.table.putNumber("set_wheel_angle_value", angle)
+					elif cmd == "navigate_to":
+						target_x = value.get("x", 0)
+						target_y = value.get("y", 0)
+						dashboard.table.putNumber("navigation_target_x", target_x)
+						dashboard.table.putNumber("navigation_target_y", target_y)
+						dashboard.table.putBoolean("navigation_command", True)
+						print(f"[WS] Navigation target set: ({target_x:.1f}, {target_y:.1f}) cm")
+						ws.send(json.dumps({"type": "success", "message": f"Target set to ({target_x:.1f}, {target_y:.1f}) cm"}))
 					
 					# ===== TEST MODE COMMANDS (mode-gated) =====
 					elif cmd == "autotune":

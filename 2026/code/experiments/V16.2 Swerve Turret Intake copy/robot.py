@@ -9,6 +9,7 @@ from shooter_controls import ShooterControls
 from pilotJoystick import PilotJoystick
 from pilot_controls import PilotControls
 from dashboard_updater import DashboardUpdater
+from navigation import Navigation
 from encoder_calibration import EncoderCalibration
 import swerve_config as config
 import CANID
@@ -51,6 +52,12 @@ class Robot(wpilib.TimedRobot):
 		self.shooter_controls = ShooterControls(self.shooter, self.copilot_joystick)
 		
 		self.dashboard = DashboardUpdater(self.drive, self.turret)
+		
+		# Initialize navigation for X,Y positioning
+		self.navigator = Navigation(self.drive)
+		self.last_nav_target_x = 0
+		self.last_nav_target_y = 0
+		self.last_waypoints_command = False
 		
 		# Test state for web dashboard integration
 		self.last_focused_wheel = None
@@ -351,8 +358,25 @@ class Robot(wpilib.TimedRobot):
 		# Ensure robot_mode stays set to Teleop
 		SmartDashboard.putString("robot_mode", "Teleop")
 		
-		# Execute joystick control logic
-		self.pilot_controls.execute_teleop()
+		# Check for navigation commands from dashboard
+		nav_target_x = SmartDashboard.getNumber("nav_target_x", 0)
+		nav_target_y = SmartDashboard.getNumber("nav_target_y", 0)
+		nav_command = SmartDashboard.getBoolean("nav_command", False)
+		
+		# If new navigation command received
+		if nav_command and (nav_target_x != self.last_nav_target_x or nav_target_y != self.last_nav_target_y):
+			self.navigator.navigate_to(nav_target_x, nav_target_y)
+			self.last_nav_target_x = nav_target_x
+			self.last_nav_target_y = nav_target_y
+			SmartDashboard.putBoolean("nav_command", False)
+		
+		# If navigation is active, use navigator, otherwise use joystick
+		if self.navigator.is_active():
+			# Navigation is active - update it
+			self.navigator.update()
+		else:
+			# Normal joystick control
+			self.pilot_controls.execute_teleop()
 		
 		# Update single-wheel alignment (handles per-wheel centering)
 		self.drive.update_single_wheel_alignment()

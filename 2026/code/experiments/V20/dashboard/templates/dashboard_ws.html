@@ -26,6 +26,42 @@
 			width: 100%;
 		}
 		
+		.tab-bar {
+			display: flex;
+			gap: 10px;
+			margin-bottom: 20px;
+			border-bottom: 2px solid #eee;
+			padding-bottom: 10px;
+		}
+		
+		.tab-btn {
+			padding: 8px 16px;
+			background: #f0f0f0;
+			border: none;
+			border-radius: 5px 5px 0 0;
+			cursor: pointer;
+			font-weight: bold;
+			color: #666;
+			transition: all 0.2s;
+		}
+		
+		.tab-btn:hover {
+			background: #e0e0e0;
+		}
+		
+		.tab-btn.active {
+			background: #3498db;
+			color: white;
+		}
+		
+		.tab-content {
+			display: none;
+		}
+		
+		.tab-content.active {
+			display: block;
+		}
+		
 		h1 {
 			text-align: center;
 			color: #333;
@@ -316,7 +352,14 @@
 		
 		<div id="errorDisplay" class="error-display"></div>
 		
-		<div class="content">
+		<div class="tab-bar">
+			<button class="tab-btn active" onclick="switchTab('swerve')">Swerve</button>
+			<button class="tab-btn" onclick="switchTab('map')">Field Map</button>
+		</div>
+		
+		<!-- SWERVE TAB -->
+		<div id="swerve" class="tab-content active">
+			<div class="content">
 			<!-- LEFT PANEL -->
 			<div class="left-panel">
 				<div class="section">
@@ -331,12 +374,10 @@
 					<button class="button btn-danger" id="autotuneBtn" onclick="if(isRobotEnabled) startAutotune(); else showError('Bot must be enabled to autotune')">⚙️ Autotune PID</button>
 					<button class="button btn-primary" onclick="if(isRobotEnabled) window.location.href='/history'; else showError('Bot must be enabled to view history')">📊 Tuning History</button>
 				</div>
-		
-		
-	</div>
-	
-	<!-- CENTER PANEL -->
-	<div class="center-panel">
+			</div>
+			
+			<!-- CENTER PANEL -->
+			<div class="center-panel">
 		<div class="canvas-wrapper">
 			<canvas id="swerveCanvas" width="320" height="320"></canvas>
 					<div style="position: absolute; top: 0; left: 0; width: 320px; height: 320px; pointer-events: none;">
@@ -380,6 +421,38 @@
 					<button class="button btn-primary" onclick="if(isRobotEnabled && focusedWheel) applyPreset(270); else showError('Bot must be enabled and wheel must be focused')" title="Set focused wheel to 270°">→ Right (270°)</button>
 					<button class="button btn-primary" onclick="if(isRobotEnabled && focusedWheel) applyPreset(180); else showError('Bot must be enabled and wheel must be focused')" title="Set focused wheel to 180°">↓ Back (180°)</button>
 					<button class="button btn-primary" onclick="if(isRobotEnabled && focusedWheel) applyPreset(90); else showError('Bot must be enabled and wheel must be focused')" title="Set focused wheel to 90°">← Left (90°)</button>
+				</div>
+			</div>
+		</div>
+		</div>
+		
+		<!-- MAP TAB -->
+		<div id="map" class="tab-content">
+			<div style="display: flex; gap: 20px; align-items: flex-start;">
+				<div style="flex: 1;">
+					<div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+						<label for="unitSelect" style="font-weight: bold;">Units:</label>
+						<select id="unitSelect" onchange="changeUnits(this.value)" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #ccc;">
+							<option value="cm">Centimeters</option>
+							<option value="m">Meters</option>
+							<option value="in">Inches</option>
+							<option value="ft">Feet</option>
+						</select>
+						<span id="unitLabel" style="color: #666; font-size: 12px; font-weight: bold;">Field: 0 × 0 cm</span>
+					</div>
+					<canvas id="mapCanvas" width="600" height="600" style="border: 2px solid #3498db; border-radius: 5px; background: white; max-width: 100%;"></canvas>
+				</div>
+				<div style="flex: 0 0 250px; background: #f8f9fa; border-radius: 5px; padding: 15px;">
+					<div style="font-weight: bold; color: #2c3e50; margin-bottom: 15px; border-bottom: 2px solid #3498db; padding-bottom: 8px;">Robot Pose</div>
+					<div style="font-size: 12px; line-height: 1.8;">
+						<div><strong>X:</strong> <span id="poseX">0.0</span> <span id="unitX">cm</span></div>
+						<div><strong>Y:</strong> <span id="poseY">0.0</span> <span id="unitY">cm</span></div>
+						<div><strong>Heading:</strong> <span id="poseHeading">0.0</span>°</div>
+						<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+							<strong>Distance:</strong> <span id="poseDistance">0.0</span> <span id="unitDistance">cm</span>
+						</div>
+					</div>
+					<button class="button btn-warning" onclick="resetOdometry()" style="margin-top: 15px;">↻ Reset Odometry</button>
 				</div>
 			</div>
 		</div>
@@ -734,11 +807,15 @@
 		}
 		
 		// ===== Utility Functions =====
-		function showError(message) {
-			console.error("[ERROR]", message);
+		function showError(message, isError = true) {
+			if (isError) {
+				console.error("[ERROR]", message);
+			} else {
+				console.log("[INFO]", message);
+			}
 			const display = document.getElementById("errorDisplay");
 			const msg = document.createElement("div");
-			msg.className = "error-message";
+			msg.className = isError ? "error-message" : "success-message";
 			msg.textContent = new Date().toLocaleTimeString() + " - " + message;
 			display.appendChild(msg);
 			display.classList.add("show");
@@ -778,11 +855,285 @@
 			}
 		}
 		
+		// ===== Map Tab Variables =====
+		let currentUnit = 'cm';
+		let odometryData = {
+			x: 0,
+			y: 0,
+			heading: 0,
+			distance: 0
+		};
+		let navigationTarget = null;
+		
+		const unitConversions = {
+			'cm': { factor: 1, label: 'cm' },
+			'm': { factor: 0.01, label: 'm' },
+			'in': { factor: 0.3937, label: 'in' },
+			'ft': { factor: 0.0328084, label: 'ft' }
+		};
+		
+		const FIELD_WIDTH_CM = 1097; // FRC standard field width
+		const FIELD_HEIGHT_CM = 548;  // FRC standard field height
+		
+		function switchTab(tabName) {
+			// Hide all tabs
+			document.querySelectorAll('.tab-content').forEach(tab => {
+				tab.classList.remove('active');
+			});
+			document.querySelectorAll('.tab-btn').forEach(btn => {
+				btn.classList.remove('active');
+			});
+			
+			// Show selected tab
+			document.getElementById(tabName).classList.add('active');
+			event.target.classList.add('active');
+			
+			// Redraw map if switching to map tab
+			if (tabName === 'map') {
+				setTimeout(drawFieldMap, 100);
+			}
+		}
+		
+		function changeUnits(unit) {
+			currentUnit = unit;
+			updateOdometryDisplay();
+			drawFieldMap();
+		}
+		
+		function convertValue(valueCm, toUnit) {
+			return (valueCm * unitConversions[toUnit].factor).toFixed(2);
+		}
+		
+		function drawFieldMap() {
+			const canvas = document.getElementById('mapCanvas');
+			if (!canvas) return;
+			
+			const ctx = canvas.getContext('2d');
+			const width = canvas.width;
+			const height = canvas.height;
+			const padding = 40;
+			const playableWidth = width - 2 * padding;
+			const playableHeight = height - 2 * padding;
+			
+			// Scale factors to fit field on canvas
+			const scaleX = playableWidth / FIELD_WIDTH_CM;
+			const scaleY = playableHeight / FIELD_HEIGHT_CM;
+			const scale = Math.min(scaleX, scaleY);
+			
+			// Clear canvas
+			ctx.fillStyle = '#ffffff';
+			ctx.fillRect(0, 0, width, height);
+			
+			// Draw background grid
+			ctx.strokeStyle = '#e0e0e0';
+			ctx.lineWidth = 0.5;
+			const gridSpacing = 50 * scale;
+			for (let i = 0; i < width; i += gridSpacing) {
+				ctx.beginPath();
+				ctx.moveTo(i, 0);
+				ctx.lineTo(i, height);
+				ctx.stroke();
+			}
+			for (let i = 0; i < height; i += gridSpacing) {
+				ctx.beginPath();
+				ctx.moveTo(0, i);
+				ctx.lineTo(width, i);
+				ctx.stroke();
+			}
+			
+			// Draw field border
+			const fieldX = padding;
+			const fieldY = padding;
+			const fieldDrawWidth = FIELD_WIDTH_CM * scale;
+			const fieldDrawHeight = FIELD_HEIGHT_CM * scale;
+			
+			ctx.strokeStyle = '#2c3e50';
+			ctx.lineWidth = 2;
+			ctx.strokeRect(fieldX, fieldY, fieldDrawWidth, fieldDrawHeight);
+			
+			// Draw axes
+			ctx.strokeStyle = '#bdc3c7';
+			ctx.lineWidth = 1;
+			ctx.setLineDash([5, 5]);
+			// Center line
+			ctx.beginPath();
+			ctx.moveTo(fieldX + fieldDrawWidth / 2, fieldY);
+			ctx.lineTo(fieldX + fieldDrawWidth / 2, fieldY + fieldDrawHeight);
+			ctx.stroke();
+			ctx.setLineDash([]);
+			
+			// Draw navigation target if set
+			if (navigationTarget) {
+				const targetX = fieldX + (navigationTarget.x * scale);
+				const targetY = fieldY + (fieldDrawHeight) - (navigationTarget.y * scale);
+				
+				// Draw target circle
+				ctx.fillStyle = 'rgba(46, 204, 113, 0.3)';
+				ctx.beginPath();
+				ctx.arc(targetX, targetY, 20, 0, Math.PI * 2);
+				ctx.fill();
+				
+				ctx.strokeStyle = '#2ecc71';
+				ctx.lineWidth = 2;
+				ctx.beginPath();
+				ctx.arc(targetX, targetY, 20, 0, Math.PI * 2);
+				ctx.stroke();
+				
+				// Draw crosshair
+				ctx.strokeStyle = '#2ecc71';
+				ctx.lineWidth = 1;
+				ctx.beginPath();
+				ctx.moveTo(targetX - 8, targetY);
+				ctx.lineTo(targetX + 8, targetY);
+				ctx.moveTo(targetX, targetY - 8);
+				ctx.lineTo(targetX, targetY + 8);
+				ctx.stroke();
+			}
+			
+			// Draw robot at odometry position
+			const robotX = fieldX + (odometryData.x * scale);
+			const robotY = fieldY + (fieldDrawHeight) - (odometryData.y * scale);
+			const robotSize = 15;
+			
+			// Draw robot circle
+			ctx.fillStyle = '#3498db';
+			ctx.beginPath();
+			ctx.arc(robotX, robotY, robotSize, 0, Math.PI * 2);
+			ctx.fill();
+			
+			// Draw heading indicator
+			const headingRad = (odometryData.heading * Math.PI) / 180;
+			ctx.strokeStyle = '#e74c3c';
+			ctx.lineWidth = 2;
+			ctx.beginPath();
+			ctx.moveTo(robotX, robotY);
+			ctx.lineTo(
+				robotX + Math.cos(headingRad) * robotSize * 1.5,
+				robotY + Math.sin(headingRad) * robotSize * 1.5
+			);
+			ctx.stroke();
+			
+			// Draw position label
+			ctx.fillStyle = '#2c3e50';
+			ctx.font = 'bold 12px Arial';
+			ctx.textAlign = 'center';
+			ctx.fillText(`(${odometryData.x.toFixed(0)}, ${odometryData.y.toFixed(0)})`, robotX, robotY - robotSize - 5);
+			
+			// Update label
+			const fieldWidthDisplay = (FIELD_WIDTH_CM * unitConversions[currentUnit].factor).toFixed(1);
+			const fieldHeightDisplay = (FIELD_HEIGHT_CM * unitConversions[currentUnit].factor).toFixed(1);
+			document.getElementById('unitLabel').textContent = `Field: ${fieldWidthDisplay} × ${fieldHeightDisplay} ${unitConversions[currentUnit].label} | Click to set target`;
+			
+			// Store scale for click handler
+			canvas.mapScale = { scale, fieldX, fieldY, fieldDrawWidth, fieldDrawHeight };
+		}
+		
+		function updateOdometryDisplay() {
+			const convertedX = convertValue(odometryData.x, currentUnit);
+			const convertedY = convertValue(odometryData.y, currentUnit);
+			const convertedDistance = convertValue(odometryData.distance, currentUnit);
+			
+			document.getElementById('poseX').textContent = convertedX;
+			document.getElementById('poseY').textContent = convertedY;
+			document.getElementById('poseHeading').textContent = odometryData.heading.toFixed(1);
+			document.getElementById('poseDistance').textContent = convertedDistance;
+			
+			document.getElementById('unitX').textContent = unitConversions[currentUnit].label;
+			document.getElementById('unitY').textContent = unitConversions[currentUnit].label;
+			document.getElementById('unitDistance').textContent = unitConversions[currentUnit].label;
+		}
+		
+		function resetOdometry() {
+			if (!ws || ws.readyState !== WebSocket.OPEN) {
+				showError("WebSocket not connected");
+				return;
+			}
+			odometryData = { x: 0, y: 0, heading: 0, distance: 0 };
+			navigationTarget = null;
+			updateOdometryDisplay();
+			drawFieldMap();
+			sendCommand("reset_odometry", {});
+		}
+		
+		function handleMapClick(event) {
+			const canvas = document.getElementById('mapCanvas');
+			if (!canvas || !canvas.mapScale) return;
+			
+			const rect = canvas.getBoundingClientRect();
+			const clickX = event.clientX - rect.left;
+			const clickY = event.clientY - rect.top;
+			
+			const { scale, fieldX, fieldY, fieldDrawHeight } = canvas.mapScale;
+			
+			// Check if click is within field
+			const relX = clickX - fieldX;
+			const relY = clickY - fieldY;
+			
+			if (relX >= 0 && relX <= fieldDrawHeight && relY >= 0 && relY <= fieldDrawHeight) {
+				// Convert pixel coordinates to field coordinates
+				const fieldCoordsX = (relX / scale);
+				const fieldCoordsY = ((fieldDrawHeight - relY) / scale);
+				
+				navigationTarget = { x: fieldCoordsX, y: fieldCoordsY };
+				drawFieldMap();
+				
+				// Send navigation command to simulator (always send for simulator testing)
+				if (ws && ws.readyState === WebSocket.OPEN) {
+					sendCommand("navigate_to", {
+						x: fieldCoordsX,
+						y: fieldCoordsY
+					});
+					showError(`Navigation target set: (${fieldCoordsX.toFixed(0)}, ${fieldCoordsY.toFixed(0)}) cm`, false);
+				} else {
+					showError("WebSocket not connected - target marked but not sent", true);
+				}
+			}
+		}
+		
+		// Override the WebSocket message handler to include odometry data
+		const originalHandleMessage = window.handleWebSocketMessage;
+		function handleWebSocketMessage(data) {
+			const type = data.type;
+			
+			if (type === "state") {
+				updateAngles(data);
+				// Update odometry from incoming state
+				if (data.odometry) {
+					odometryData.x = parseFloat(data.odometry.x) || 0;
+					odometryData.y = parseFloat(data.odometry.y) || 0;
+					odometryData.heading = parseFloat(data.odometry.heading) || 0;
+					odometryData.distance = parseFloat(data.odometry.distance) || 0;
+					updateOdometryDisplay();
+					drawFieldMap();
+				}
+			}
+			else if (type === "angles") {
+				updateAngles(data);
+			}
+			else if (type === "autotune_complete") {
+				handleAutotuneComplete(data);
+			}
+			else if (type === "autotune_progress") {
+				document.getElementById("autotuneStatus").textContent = `Tuning ${data.wheel}...`;
+			}
+			else if (type === "error") {
+				showError(data.message);
+			}
+		}
+		
 		// ===== Initialize =====
 		window.addEventListener("load", () => {
 			drawSwerve();
+			drawFieldMap();
 			updatePresetsPanel();
 			connectWebSocket();
+			
+			// Add map canvas click handler
+			const mapCanvas = document.getElementById('mapCanvas');
+			if (mapCanvas) {
+				mapCanvas.addEventListener('click', handleMapClick);
+				mapCanvas.style.cursor = 'crosshair';
+			}
 		});
 	</script>
 </body>
