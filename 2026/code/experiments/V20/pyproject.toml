@@ -24,4 +24,5 @@ components = [
 # is equivalent to a line in requirements.txt)
 requires = [
     "robotpy-rev",
+    "robotpy-navx",
 ]
