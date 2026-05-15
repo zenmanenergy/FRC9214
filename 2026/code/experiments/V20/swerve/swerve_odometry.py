@@ -140,9 +140,9 @@ class SwerveOdometry:
 			total_abs_dist += abs(dist_cm)
 
 			# Wheel angle -> robot-frame displacement vector
-			# Angle convention: 180 = forward (+rx), 90 = right (+ry)
-			# rx = cos(180 - angle), ry = sin(180 - angle)
-			a = math.radians(180.0 - wheel.get_angle())
+			# Hardware convention: 180 = forward (+rx), 270 = right (+ry)
+			# rx = cos(angle - 180), ry = sin(angle - 180)
+			a = math.radians(wheel.get_angle() - 180.0)
 			rx = math.cos(a) * dist_cm
 			ry = math.sin(a) * dist_cm
 
