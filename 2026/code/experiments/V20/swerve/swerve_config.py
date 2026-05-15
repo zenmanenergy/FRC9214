@@ -57,9 +57,9 @@ ALIGN_TIMEOUT = 5.0
 DRIVE_ANGLE_TOLERANCE = 5.0
 
 # Odometry - physical robot measurement
-# Measure the center-to-center distance (in cm) between wheels on one axis.
-# Both wheelbase (front-to-rear) and trackwidth (left-to-right) are assumed equal here.
-# Update this once you measure the actual robot.
-ROBOT_WHEEL_SPACING_CM = 56.0
+# Trackwidth = left-to-right center-to-center wheel distance (cm)
+# Wheelbase  = front-to-rear center-to-center wheel distance (cm)
+ROBOT_TRACKWIDTH_CM = 56.0   # left <-> right
+ROBOT_WHEELBASE_CM  = 53.0   # front <-> rear
 
 OFFSET_FILE = "/home/lvuser/encoder_offsets.json"

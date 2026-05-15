@@ -116,11 +116,10 @@ class SwerveOdometry:
 
 		Returns average distance driven this loop (cm).
 		"""
-		# Half-spacing from center to wheel in cm.
-		# Config positions are normalized (+-0.5); scale by actual spacing.
-		# Measure center-to-center wheel distance on the robot and set
-		# ROBOT_WHEEL_SPACING_CM in swerve_config.py accordingly.
-		half_cm = config.ROBOT_WHEEL_SPACING_CM / 2.0
+		# Half-distances from center to wheel in cm (rectangular robot).
+		# Config positions are normalized (+-0.5); scale by actual trackwidth/wheelbase.
+		half_x_cm = config.ROBOT_TRACKWIDTH_CM / 2.0   # left <-> right axis
+		half_y_cm = config.ROBOT_WHEELBASE_CM  / 2.0   # front <-> rear axis
 
 		# Capture heading before this update for the field rotation transform
 		heading_before = self._heading
@@ -150,9 +149,9 @@ class SwerveOdometry:
 			sum_rx += rx
 			sum_ry += ry
 
-			# Wheel position in cm from robot center
-			wx = config.WHEELS[wheel_name]["position"]["x"] * half_cm
-			wy = config.WHEELS[wheel_name]["position"]["y"] * half_cm
+			# Wheel position in cm from robot center (x = left/right, y = front/rear)
+			wx = config.WHEELS[wheel_name]["position"]["x"] * half_x_cm
+			wy = config.WHEELS[wheel_name]["position"]["y"] * half_y_cm
 
 			# Heading contribution: omega = sum(wx*ry - wy*rx) / sum(|r|^2)
 			r2 = wx * wx + wy * wy
