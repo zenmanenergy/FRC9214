@@ -60,6 +60,6 @@ DRIVE_ANGLE_TOLERANCE = 5.0
 # Measure the center-to-center distance (in cm) between wheels on one axis.
 # Both wheelbase (front-to-rear) and trackwidth (left-to-right) are assumed equal here.
 # Update this once you measure the actual robot.
-ROBOT_WHEEL_SPACING_CM = 50.0
+ROBOT_WHEEL_SPACING_CM = 56.0
 
 OFFSET_FILE = "/home/lvuser/encoder_offsets.json"
