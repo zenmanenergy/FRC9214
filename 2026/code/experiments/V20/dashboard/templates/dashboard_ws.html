@@ -549,27 +549,6 @@
 			console.log(`[DEBUG] Message sent successfully`);
 		}
 		
-		function handleWebSocketMessage(data) {
-			const type = data.type;
-			
-			if (type === "state") {
-				// Initial state
-				updateAngles(data);
-			}
-			else if (type === "angles") {
-				updateAngles(data);
-			}
-			else if (type === "autotune_complete") {
-				handleAutotuneComplete(data);
-			}
-			else if (type === "autotune_progress") {
-				document.getElementById("autotuneStatus").textContent = `Tuning ${data.wheel}...`;
-			}
-			else if (type === "error") {
-				showError(data.message);
-			}
-		}
-		
 		function updateAngles(data) {
 			if (data.angles) {
 				wheelAngles = data.angles;
@@ -1090,8 +1069,6 @@
 			}
 		}
 		
-		// Override the WebSocket message handler to include odometry data
-		const originalHandleMessage = window.handleWebSocketMessage;
 		function handleWebSocketMessage(data) {
 			const type = data.type;
 			

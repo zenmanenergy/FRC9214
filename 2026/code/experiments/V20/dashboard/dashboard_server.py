@@ -224,6 +224,10 @@ if HAS_FLASK_SOCK:
 						dashboard.table.putBoolean("navigation_command", True)
 						print(f"[WS] Navigation target set: ({target_x:.1f}, {target_y:.1f}) cm")
 						ws.send(json.dumps({"type": "success", "message": f"Target set to ({target_x:.1f}, {target_y:.1f}) cm"}))
+					elif cmd == "reset_odometry":
+						dashboard.table.putBoolean("reset_odometry_command", True)
+						print("[WS] reset_odometry_command sent to robot")
+						ws.send(json.dumps({"type": "success", "message": "Odometry reset command sent"}))
 					
 					# ===== TEST MODE COMMANDS (mode-gated) =====
 					elif cmd == "autotune":

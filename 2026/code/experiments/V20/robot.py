@@ -42,6 +42,9 @@ class Robot(wpilib.TimedRobot):
 		self.swervedrive.odometry.update()
 		self.swervedrive.imu.fuse_heading(self.swervedrive.odometry)
 		self.swervedrive.update_single_wheel_alignment()
+		if SmartDashboard.getBoolean("reset_odometry_command", False):
+			self.swervedrive.odometry.reset()
+			SmartDashboard.putBoolean("reset_odometry_command", False)
 	
 	def teleopExit(self):
 		self.swervedrive.stop_all()
