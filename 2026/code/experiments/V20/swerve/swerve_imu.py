@@ -25,7 +25,7 @@ class SwerveIMU:
 			        Test by rotating the robot CW and checking whether heading increases
 			        or decreases. It should decrease for CW (since CCW = positive).
 		"""
-		self.ahrs = navx.AHRS(wpilib.SPI.Port.kMXP)
+		self.ahrs = navx.AHRS(navx.AHRS.NavXComType.kMXP_SPI)
 		self.invert = invert
 
 	# ------------------------------------------------------------------
