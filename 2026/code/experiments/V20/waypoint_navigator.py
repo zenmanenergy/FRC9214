@@ -161,7 +161,7 @@ class WaypointNavigator:
 				forward_power = min(self.max_move_speed, distance_to_target / 200.0)
 				# Also correct angle drift
 				rotation_correction = (angle_diff / 45.0) * 0.2  # gentle correction
-				self.drive.move_with_rotation(forward_power, rotation_correction)
+				self.drive.drive_swerve(forward_power, 0, rotation_correction)
 		
 		# ===== STAGE 3: DWELL / ADVANCE =====
 		elif self.stage == 3:
