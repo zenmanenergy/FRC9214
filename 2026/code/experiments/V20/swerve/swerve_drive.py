@@ -274,8 +274,8 @@ class SwerveDrive:
 		
 		for wheel_name, wheel_data in config.WHEELS.items():
 			wheel_pos = wheel_data["position"]
-			vx = -forward - rotate * wheel_pos["y"]
-			vy = strafe + rotate * wheel_pos["x"]
+			vx = -forward - rotate * wheel_pos["x"]
+			vy = strafe - rotate * wheel_pos["y"]
 			
 			angle = math.degrees(math.atan2(vy, vx))
 			
