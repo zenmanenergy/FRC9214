@@ -260,6 +260,12 @@ if HAS_FLASK_SOCK:
 								ws.send(json.dumps({"type": "error", "message": f"Failed to clear history: {str(e)}"}))
 						else:
 							ws.send(json.dumps({"type": "error", "message": "Clear history only allowed in TEST mode"}))
+					elif cmd == "zero_imu":
+						dashboard.table.putBoolean("zero_imu_command", True)
+						ws.send(json.dumps({"type": "success", "message": "IMU zero command sent"}))
+					elif cmd == "toggle_imu_invert":
+						dashboard.table.putBoolean("toggle_imu_invert_command", True)
+						ws.send(json.dumps({"type": "success", "message": "IMU invert toggle sent"}))
 				
 				except json.JSONDecodeError:
 					ws.send(json.dumps({"type": "error", "message": "Invalid JSON"}))

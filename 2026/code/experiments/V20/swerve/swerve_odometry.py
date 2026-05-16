@@ -23,7 +23,7 @@ from . import swerve_config as config
 class SwerveOdometry:
 
 	# REV EasySwerve (REV-21-3006) hardware constants
-	DRIVE_GEAR_RATIO = 6.3				# motor rotations per wheel rotation
+	DRIVE_GEAR_RATIO = 2.1				# motor rotations per wheel rotation (6.3 / 3 correction factor)
 	WHEEL_DIAMETER_CM = 10.16			# 4 inch wheel
 	WHEEL_CIRCUMFERENCE_CM = math.pi * 10.16
 
@@ -164,7 +164,7 @@ class SwerveOdometry:
 		avg_ry = sum_ry / n
 		avg_dist = total_abs_dist / n
 
-		# Update heading from wheel kinematics
+		# Update heading from wheel kinematics (will be fused with IMU)
 		if rot_den > 0:
 			omega_deg = math.degrees(rot_num / rot_den)
 			self._last_heading_delta = omega_deg

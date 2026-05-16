@@ -41,3 +41,21 @@ class DashboardUpdater:
 		SmartDashboard.putNumber("Odometry X", round(x, 1))
 		SmartDashboard.putNumber("Odometry Y", round(y, 1))
 		SmartDashboard.putNumber("Odometry Heading", round(self.drive.odometry.get_heading(), 1))
+		
+		# IMU diagnostics
+		SmartDashboard.putBoolean("IMU Connected", self.drive.imu.is_connected())
+		SmartDashboard.putBoolean("IMU Calibrating", self.drive.imu.is_calibrating())
+		SmartDashboard.putBoolean("IMU Inverted", self.drive.imu.invert)
+		SmartDashboard.putNumber("IMU Raw Yaw", round(self.drive.imu.ahrs.getYaw(), 1))
+		SmartDashboard.putNumber("IMU Heading (0-360)", round(self.drive.imu.get_heading(), 1))
+		SmartDashboard.putNumber("IMU Pitch", round(self.drive.imu.get_pitch(), 1))
+		SmartDashboard.putNumber("IMU Roll", round(self.drive.imu.get_roll(), 1))
+		
+		# Odometry vs IMU heading comparison
+		SmartDashboard.putNumber("Odometry Heading Delta", round(self.drive.odometry.get_last_heading_delta(), 1))
+		wheel_heading = self.drive.odometry._heading
+		imu_heading = self.drive.imu.get_heading()
+		heading_diff = (imu_heading - wheel_heading) % 360
+		if heading_diff > 180:
+			heading_diff -= 360
+		SmartDashboard.putNumber("IMU vs Wheel Heading Diff", round(heading_diff, 1))

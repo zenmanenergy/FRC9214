@@ -27,6 +27,7 @@ class SwerveIMU:
 		"""
 		self.ahrs = navx.AHRS(navx.AHRS.NavXComType.kMXP_SPI)
 		self.invert = invert
+		self._debug_counter = 0
 
 	# ------------------------------------------------------------------
 	# Status
@@ -115,6 +116,12 @@ class SwerveIMU:
 		# Pull wheel heading toward IMU by IMU_WEIGHT fraction of the gap
 		fused = (wheel_heading + self.IMU_WEIGHT * diff) % 360
 		odometry.set_heading(fused)
+		
+		# Debug logging every 10 cycles
+		self._debug_counter += 1
+		if self._debug_counter >= 10:
+			self._debug_counter = 0
+			print(f"[FUSE] IMU={imu_heading:.1f}° Wheel={wheel_heading:.1f}° Diff={diff:.1f}° -> Fused={fused:.1f}°", flush=True)
 
 	# ------------------------------------------------------------------
 	# Dashboard
