@@ -981,7 +981,8 @@
 			ctx.fill();
 			
 			// Draw heading indicator
-			const headingRad = (odometryData.heading * Math.PI) / 180;
+			// Subtract 90 so that heading=0 points up (12 o'clock) instead of right (3 o'clock)
+			const headingRad = ((odometryData.heading - 90) * Math.PI) / 180;
 			ctx.strokeStyle = '#e74c3c';
 			ctx.lineWidth = 2;
 			ctx.beginPath();

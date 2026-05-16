@@ -43,6 +43,10 @@ class Robot(wpilib.TimedRobot):
 		self.pilot_controls.execute_teleop()
 		self.swervedrive.odometry.update()
 		
+		# Use IMU heading directly (100% IMU, no wheel kinematics blending)
+		if self.swervedrive.imu.is_ready():
+			self.swervedrive.odometry.set_heading(self.swervedrive.imu.get_heading())
+		
 		# Debug logging
 		imu_heading = self.swervedrive.imu.get_heading()
 		wheel_heading = self.swervedrive.odometry.get_heading()
@@ -51,7 +55,6 @@ class Robot(wpilib.TimedRobot):
 		
 		print(f"[ODO] X={x:.1f} Y={y:.1f} | IMU Raw Yaw={self.swervedrive.imu.ahrs.getYaw():.1f}° IMU(0-360)={imu_heading:.1f}° Wheel={wheel_heading:.1f}° Delta={wheel_delta:.1f}° Invert={self.swervedrive.imu.invert}", flush=True)
 		
-		self.swervedrive.imu.fuse_heading(self.swervedrive.odometry)
 		self.swervedrive.update_single_wheel_alignment()
 		if SmartDashboard.getBoolean("reset_odometry_command", False):
 			self.swervedrive.imu.zero_heading()
