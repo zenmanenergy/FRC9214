@@ -53,7 +53,7 @@ class Robot(wpilib.TimedRobot):
 		wheel_delta = self.swervedrive.odometry.get_last_heading_delta()
 		x, y = self.swervedrive.odometry.get_position()
 		
-		print(f"[ODO] X={x:.1f} Y={y:.1f} | IMU Raw Yaw={self.swervedrive.imu.ahrs.getYaw():.1f}° IMU(0-360)={imu_heading:.1f}° Wheel={wheel_heading:.1f}° Delta={wheel_delta:.1f}° Invert={self.swervedrive.imu.invert}", flush=True)
+		#print(f"[ODO] X={x:.1f} Y={y:.1f} | IMU Raw Yaw={self.swervedrive.imu.ahrs.getYaw():.1f}° IMU(0-360)={imu_heading:.1f}° Wheel={wheel_heading:.1f}° Delta={wheel_delta:.1f}° Invert={self.swervedrive.imu.invert}", flush=True)
 		
 		self.swervedrive.update_single_wheel_alignment()
 		if SmartDashboard.getBoolean("reset_odometry_command", False):

@@ -969,35 +969,37 @@
 				ctx.stroke();
 			}
 			
-			// Draw robot at odometry position
-			const robotX = fieldX + (odometryData.x * scale);
-			const robotY = fieldY + (fieldDrawHeight) - (odometryData.y * scale);
-			const robotSize = 15;
+			// Draw robot at odometry position (x,y is back-left corner)
+			const robotSize = 33.5;
+			const robotCenterX = fieldX + (odometryData.x * scale) + robotSize;
+			const robotCenterY = fieldY + (fieldDrawHeight) - (odometryData.y * scale) - robotSize;
 			
-			// Draw robot circle
+			// Save canvas state for rotation
+			ctx.save();
+			ctx.translate(robotCenterX, robotCenterY);
+			const headingRad = (odometryData.heading * Math.PI) / 180;
+			ctx.rotate(headingRad);
+			
+			// Draw robot square centered at origin
 			ctx.fillStyle = '#3498db';
-			ctx.beginPath();
-			ctx.arc(robotX, robotY, robotSize, 0, Math.PI * 2);
-			ctx.fill();
+			ctx.fillRect(-robotSize, -robotSize, robotSize * 2, robotSize * 2);
 			
-			// Draw heading indicator
-			// Subtract 90 so that heading=0 points up (12 o'clock) instead of right (3 o'clock)
-			const headingRad = ((odometryData.heading - 90) * Math.PI) / 180;
+			// Draw heading indicator (arrow pointing forward)
 			ctx.strokeStyle = '#e74c3c';
 			ctx.lineWidth = 2;
 			ctx.beginPath();
-			ctx.moveTo(robotX, robotY);
-			ctx.lineTo(
-				robotX + Math.cos(headingRad) * robotSize * 1.5,
-				robotY + Math.sin(headingRad) * robotSize * 1.5
-			);
+			ctx.moveTo(0, 0);
+			ctx.lineTo(0, -robotSize * 1.5);
 			ctx.stroke();
 			
-			// Draw position label
+			// Restore canvas state
+			ctx.restore();
+			
+			// Draw position label (not rotated)
 			ctx.fillStyle = '#2c3e50';
 			ctx.font = 'bold 12px Arial';
 			ctx.textAlign = 'center';
-			ctx.fillText(`(${odometryData.x.toFixed(0)}, ${odometryData.y.toFixed(0)})`, robotX, robotY - robotSize - 5);
+			ctx.fillText(`(${odometryData.x.toFixed(0)}, ${odometryData.y.toFixed(0)})`, robotCenterX, robotCenterY - robotSize - 5);
 			
 			// Update label
 			const fieldWidthDisplay = (FIELD_WIDTH_CM * unitConversions[currentUnit].factor).toFixed(1);
