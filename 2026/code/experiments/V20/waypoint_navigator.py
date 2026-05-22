@@ -29,7 +29,7 @@ class WaypointNavigator:
 		# Tuning parameters
 		self.rotation_tolerance = 5.0  # degrees
 		self.position_tolerance = 10.0  # cm
-		self.max_rotation_speed = 0.5  # power 0-1
+		self.max_rotation_speed = 0.8  # power 0-1 (increased from 0.5 for faster rotation)
 		self.max_move_speed = 0.8  # power 0-1
 		self.timeout_per_stage = 10.0  # seconds
 	
@@ -107,12 +107,18 @@ class WaypointNavigator:
 		target = self.waypoints[self.current_waypoint_index]
 		target_x = target["x"]
 		target_y = target["y"]
+		target_heading = target.get("heading", None)  # Use specified heading if provided
 		
 		# Calculate distance and angle to target
 		dx = target_x - current_x
 		dy = target_y - current_y
 		distance_to_target = math.sqrt(dx**2 + dy**2)
-		target_angle = math.degrees(math.atan2(dy, dx))
+		
+		# Use specified heading if provided, otherwise calculate angle to target
+		if target_heading is not None:
+			target_angle = target_heading
+		else:
+			target_angle = math.degrees(math.atan2(dy, dx))
 		
 		# Normalize angles to 0-360
 		target_angle = target_angle % 360
@@ -136,12 +142,13 @@ class WaypointNavigator:
 				print(f"[NAVIGATOR] WP {self.current_waypoint_index + 1}: Rotation complete, moving")
 			elif elapsed > self.timeout_per_stage:
 				# Timeout - skip waypoint
-				print(f"[NAVIGATOR] WP {self.current_waypoint_index + 1}: Rotation timeout")
+				print(f"[NAVIGATOR] WP {self.current_waypoint_index + 1}: Rotation timeout (target={target_angle:.1f}° current={current_heading:.1f}° diff={angle_diff:.1f}°)")
 				self._advance_waypoint()
 			else:
 				# Rotate toward target
 				rotation_power = (angle_diff / 180.0) * self.max_rotation_speed
 				rotation_power = max(-self.max_rotation_speed, min(self.max_rotation_speed, rotation_power))
+				print(f"[NAVIGATOR] Stage 1 - Target {target_angle:.1f}° Current {current_heading:.1f}° Diff {angle_diff:.1f}° Power {rotation_power:.3f} Elapsed {elapsed:.2f}s")
 				self.drive.rotate_in_place(rotation_power)
 		
 		# ===== STAGE 2: MOVE TO TARGET =====

@@ -219,11 +219,13 @@ if HAS_FLASK_SOCK:
 					elif cmd == "navigate_to":
 						target_x = value.get("x", 0)
 						target_y = value.get("y", 0)
+						target_heading = value.get("heading", 0)
 						dashboard.table.putNumber("navigation_target_x", target_x)
 						dashboard.table.putNumber("navigation_target_y", target_y)
+						dashboard.table.putNumber("navigation_target_heading", target_heading)
 						dashboard.table.putBoolean("navigation_command", True)
-						print(f"[WS] Navigation target set: ({target_x:.1f}, {target_y:.1f}) cm")
-						ws.send(json.dumps({"type": "success", "message": f"Target set to ({target_x:.1f}, {target_y:.1f}) cm"}))
+						print(f"[WS] Navigation target set: ({target_x:.1f}, {target_y:.1f}) cm heading {target_heading:.1f}°")
+						ws.send(json.dumps({"type": "success", "message": f"Target set to ({target_x:.1f}, {target_y:.1f}) cm heading {target_heading:.1f}°"}))
 					elif cmd == "reset_odometry":
 						dashboard.table.putBoolean("reset_odometry_command", True)
 						print("[WS] reset_odometry_command sent to robot")

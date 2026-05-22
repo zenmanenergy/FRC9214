@@ -6,6 +6,7 @@ from pilotJoystick import PilotJoystick
 from pilot_controls import PilotControls
 from dashboard.dashboard_updater import DashboardUpdater
 from dashboard.calibration_mode_handler import CalibrationModeHandler
+from waypoint_navigator import WaypointNavigator
 from swerve.encoder_calibration import EncoderCalibration
 
 class Robot(wpilib.TimedRobot):
@@ -18,6 +19,8 @@ class Robot(wpilib.TimedRobot):
 		self.dashboard = DashboardUpdater(self.swervedrive)
 		
 		self.calibration_mode_handler = CalibrationModeHandler(self.swervedrive, self.pilot_controls)
+		
+		self.navigator = WaypointNavigator(self.swervedrive)
 		
 	def robotPeriodic(self):
 		self.dashboard.update()
@@ -40,7 +43,23 @@ class Robot(wpilib.TimedRobot):
 		SmartDashboard.putString("robot_mode", "Teleop")
 	
 	def teleopPeriodic(self):
-		self.pilot_controls.execute_teleop()
+		# Check for navigation command from dashboard
+		if SmartDashboard.getBoolean("navigation_command", False):
+			target_x = SmartDashboard.getNumber("navigation_target_x", 0)
+			target_y = SmartDashboard.getNumber("navigation_target_y", 0)
+			target_heading = SmartDashboard.getNumber("navigation_target_heading", 0)
+			self.navigator.set_waypoints([{"x": target_x, "y": target_y, "heading": target_heading}])
+			self.navigator.start()
+			SmartDashboard.putBoolean("navigation_command", False)
+			print(f"[ROBOT] Navigation started to ({target_x:.1f}, {target_y:.1f}) cm heading {target_heading:.1f}°", flush=True)
+		
+		# Update navigator
+		self.navigator.update()
+		
+		# Only accept pilot input if not navigating
+		if not self.navigator.is_active:
+			self.pilot_controls.execute_teleop()
+		
 		self.swervedrive.odometry.update()
 		
 		# Use IMU heading directly (100% IMU, no wheel kinematics blending)
