@@ -173,9 +173,16 @@ class SwerveOdometry:
 			self._last_heading_delta = 0.0
 
 		# Rotate robot-frame displacement into field frame using pre-update heading
+		# The robot moved avg_rx forward and avg_ry to the right (in robot frame).
+		# We need to rotate this displacement vector to field coordinates based on heading.
+		# Using 2D rotation matrix where h is the robot's heading angle:
+		#   field_x = robot_right * cos(h) - robot_forward * sin(h)
+		#   field_y = robot_right * sin(h) + robot_forward * cos(h)
+		# This ensures forward motion always increases field_y and right motion increases field_x
+		# when heading = 0, and rotates correctly as the robot turns.
 		h = math.radians(heading_before)
-		self._x += avg_rx * math.cos(h) - avg_ry * math.sin(h)
-		self._y += avg_rx * math.sin(h) + avg_ry * math.cos(h)
+		self._x += avg_ry * math.cos(h) - avg_rx * math.sin(h)
+		self._y += -1*(avg_ry * math.sin(h) + avg_rx * math.cos(h))
 
 		self._total_distance_cm += avg_dist
 
