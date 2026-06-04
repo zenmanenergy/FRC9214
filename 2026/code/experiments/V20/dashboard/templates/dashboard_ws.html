@@ -453,6 +453,17 @@
 						</div>
 					</div>
 					<button class="button btn-warning" onclick="resetOdometry()" style="margin-top: 15px;">↻ Reset Odometry</button>
+					
+					<div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #ddd;">
+						<div style="font-weight: bold; color: #2c3e50; margin-bottom: 12px;">Waypoint Heading</div>
+						<div style="display: flex; gap: 8px; align-items: center;">
+							<input type="number" id="waypointHeading" min="0" max="359" value="0" style="width: 60px; padding: 6px; border: 1px solid #ccc; border-radius: 4px;">
+							<span style="font-size: 12px; color: #666;">°</span>
+						</div>
+						<button class="button btn-primary" onclick="setWaypointHeading()" style="margin-top: 8px;">✓ Set Heading</button>
+						<button class="button btn-success" onclick="runNavigation()" style="margin-top: 8px; display: none;" id="runBtn">▶ Run Navigation</button>
+						<button class="button btn-danger" onclick="clearWaypoint()" style="margin-top: 8px;">✕ Clear Waypoint</button>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -945,28 +956,32 @@
 			if (navigationTarget) {
 				const targetX = fieldX + (navigationTarget.x * scale);
 				const targetY = fieldY + (fieldDrawHeight) - (navigationTarget.y * scale);
+				const wpSize = 25;
 				
-				// Draw target circle
-				ctx.fillStyle = 'rgba(46, 204, 113, 0.3)';
-				ctx.beginPath();
-				ctx.arc(targetX, targetY, 20, 0, Math.PI * 2);
-				ctx.fill();
+				// Save canvas state for rotation
+				ctx.save();
+				ctx.translate(targetX, targetY);
+				const waypointHeadingRad = (navigationTarget.heading * Math.PI) / 180;
+				ctx.rotate(waypointHeadingRad);
 				
-				ctx.strokeStyle = '#2ecc71';
+				// Draw waypoint square
+				ctx.fillStyle = 'rgba(255, 159, 64, 0.3)';
+				ctx.fillRect(-wpSize, -wpSize, wpSize * 2, wpSize * 2);
+				
+				ctx.strokeStyle = '#ff9f40';
+				ctx.lineWidth = 2;
+				ctx.strokeRect(-wpSize, -wpSize, wpSize * 2, wpSize * 2);
+				
+				// Draw heading indicator (line pointing forward)
+				ctx.strokeStyle = '#e74c3c';
 				ctx.lineWidth = 2;
 				ctx.beginPath();
-				ctx.arc(targetX, targetY, 20, 0, Math.PI * 2);
+				ctx.moveTo(0, 0);
+				ctx.lineTo(0, -wpSize * 1.5);
 				ctx.stroke();
 				
-				// Draw crosshair
-				ctx.strokeStyle = '#2ecc71';
-				ctx.lineWidth = 1;
-				ctx.beginPath();
-				ctx.moveTo(targetX - 8, targetY);
-				ctx.lineTo(targetX + 8, targetY);
-				ctx.moveTo(targetX, targetY - 8);
-				ctx.lineTo(targetX, targetY + 8);
-				ctx.stroke();
+				// Restore canvas state
+				ctx.restore();
 			}
 			
 			// Draw robot at odometry position (x,y is back-left corner)
@@ -1037,6 +1052,53 @@
 			sendCommand("reset_odometry", {});
 		}
 		
+		function setWaypointHeading() {
+			if (!navigationTarget) {
+				showError("No waypoint set. Click field first.");
+				return;
+			}
+			
+			const heading = parseInt(document.getElementById('waypointHeading').value);
+			if (isNaN(heading) || heading < 0 || heading > 359) {
+				showError("Heading must be 0-359");
+				return;
+			}
+			
+			navigationTarget.heading = heading;
+			drawFieldMap();
+			
+			// Show run button
+			document.getElementById('runBtn').style.display = 'block';
+			showError(`Heading set to ${heading}°. Click "Run Navigation" to start.`, false);
+		}
+		
+		function runNavigation() {
+			if (!navigationTarget) {
+				showError("No waypoint set.");
+				return;
+			}
+			
+			if (!ws || ws.readyState !== WebSocket.OPEN) {
+				showError("WebSocket not connected");
+				return;
+			}
+			
+			sendCommand("navigate_to", {
+				x: navigationTarget.x,
+				y: navigationTarget.y,
+				heading: navigationTarget.heading
+			});
+			showError(`Navigating to (${navigationTarget.x.toFixed(0)}, ${navigationTarget.y.toFixed(0)}) cm heading ${navigationTarget.heading}°`, false);
+			document.getElementById('runBtn').style.display = 'none';
+		}
+		
+		function clearWaypoint() {
+			navigationTarget = null;
+			drawFieldMap();
+			document.getElementById('runBtn').style.display = 'none';
+			showError("Waypoint cleared", false);
+		}
+		
 		function handleMapClick(event) {
 			const canvas = document.getElementById('mapCanvas');
 			if (!canvas || !canvas.mapScale) return;
@@ -1056,19 +1118,12 @@
 				const fieldCoordsX = (relX / scale);
 				const fieldCoordsY = ((fieldDrawHeight - relY) / scale);
 				
-				navigationTarget = { x: fieldCoordsX, y: fieldCoordsY };
+				navigationTarget = { x: fieldCoordsX, y: fieldCoordsY, heading: 0 };
+				document.getElementById('waypointHeading').value = 0;
+				document.getElementById('runBtn').style.display = 'none';
 				drawFieldMap();
 				
-				// Send navigation command to simulator (always send for simulator testing)
-				if (ws && ws.readyState === WebSocket.OPEN) {
-					sendCommand("navigate_to", {
-						x: fieldCoordsX,
-						y: fieldCoordsY
-					});
-					showError(`Navigation target set: (${fieldCoordsX.toFixed(0)}, ${fieldCoordsY.toFixed(0)}) cm`, false);
-				} else {
-					showError("WebSocket not connected - target marked but not sent", true);
-				}
+				showError(`Waypoint set: (${fieldCoordsX.toFixed(0)}, ${fieldCoordsY.toFixed(0)}) cm. Set heading to proceed.`, false);
 			}
 		}
 		

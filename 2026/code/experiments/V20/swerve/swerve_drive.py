@@ -510,17 +510,13 @@ class SwerveDrive:
 				self.movement_state = "idle"
 			return
 		
-		drive_power = -abs(rotation_input) * config.MOTOR_SCALE_TELEOP
+		# Drive power direction follows rotation_input sign (positive = left, negative = right)
+		drive_power = -rotation_input * config.MOTOR_SCALE_TELEOP
 		
 		for wheel_name in config.WHEELS.keys():
-			base_angle = config.WHEELS[wheel_name]["rotation_angle"]
-			if rotation_input <= 0:
-				target_angle = (base_angle + 180) % 360
-			else:
-				target_angle = base_angle
-			
-			wheel_data = config.WHEELS[wheel_name]
-			target_angle = (target_angle + wheel_data["manual_offset"]) % 360
+			# Always use base rotation angle, don't flip it based on direction
+			# Just reverse motor direction like the forward stick does
+			target_angle = (config.WHEELS[wheel_name]["rotation_angle"] + config.WHEELS[wheel_name]["manual_offset"]) % 360
 			
 			self.drive_wheel_to_angle(wheel_name, target_angle)
 			
@@ -547,6 +543,10 @@ class SwerveDrive:
 		
 		self.update_single_wheel_alignment()
 		self.tuner.update()
+	
+	def rotate_in_place(self, rotation_power):
+		"""Rotate robot in place at a given power (-1.0 to 1.0)"""
+		self.drive_rotation(rotation_power)
 	
 	def start_autotune(self):
 		self.tuner.start()
