@@ -1,6 +1,15 @@
 """Waypoint Navigator - Stage-based autonomous navigation system"""
 import math
 import time
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from swerve.pid_controller import PIDController
+try:
+	from wpilib import SmartDashboard
+	_HAS_SD = True
+except ImportError:
+	_HAS_SD = False
 
 
 class WaypointNavigator:
@@ -28,11 +37,51 @@ class WaypointNavigator:
 		
 		# Tuning parameters
 		self.rotation_tolerance = 5.0  # degrees
-		self.position_tolerance = 10.0  # cm
-		self.max_rotation_speed = 0.8  # power 0-1 (increased from 0.5 for faster rotation)
+		self.position_tolerance = 25.0  # cm - how close is "close enough"
+		self.max_rotation_speed = 0.8  # power 0-1
 		self.max_move_speed = 0.8  # power 0-1
+		self.min_drive_speed = 0.15   # minimum above drive_swerve deadzone (0.1)
 		self.timeout_per_stage = 10.0  # seconds
+
+		# Velocity profiling (smooth accel/decel)
+		self.current_drive_speed = 0.0   # tracked speed, ramped each loop
+		self.accel_rate = 0.03           # max speed increase per loop tick (~50Hz = 1.5/sec)
+		self.decel_rate = 0.05           # max speed decrease per loop tick (brakes harder)
+		self.decel_distance = 80.0       # cm from final waypoint to start braking
+
+		self.loop = False  # Loop through waypoints when all are complete
+
+		# PID controllers
+		# kD=0 intentionally: odometry dead-reckoning is noisy, D amplifies that noise
+		# Tune kP_drive so that at your typical approach distance it outputs ~0.3-0.5
+		# e.g. kp=0.004 -> at 100cm output=0.40, at 40cm output=0.16 (clamped to min)
+		self.pid_drive = PIDController(kp=0.004, ki=0.0, kd=0.0, name="Nav_Drive")
+		self.pid_drive.max_integral = 0.3
+		# kp=0.007 -> at 45deg output=0.315, at 10deg output=0.07 (clamped to min)
+		self.pid_rotate = PIDController(kp=0.007, ki=0.0, kd=0.0, name="Nav_Rotate")
+		self.pid_rotate.max_integral = 0.3
+		
+		# Publish starting gains to SmartDashboard for live tuning
+		self._publish_gains()
 	
+	def _publish_gains(self):
+		"""Publish PID gains to SmartDashboard for live tuning"""
+		if not _HAS_SD:
+			return
+		SmartDashboard.putNumber("Nav_kP_drive", self.pid_drive.kp)
+		SmartDashboard.putNumber("Nav_kP_rotate", self.pid_rotate.kp)
+		SmartDashboard.putNumber("Nav_pos_tolerance", self.position_tolerance)
+		SmartDashboard.putNumber("Nav_rot_tolerance", self.rotation_tolerance)
+
+	def _sync_gains(self):
+		"""Read live gain edits from SmartDashboard and apply them"""
+		if not _HAS_SD:
+			return
+		self.pid_drive.kp = SmartDashboard.getNumber("Nav_kP_drive", self.pid_drive.kp)
+		self.pid_rotate.kp = SmartDashboard.getNumber("Nav_kP_rotate", self.pid_rotate.kp)
+		self.position_tolerance = SmartDashboard.getNumber("Nav_pos_tolerance", self.position_tolerance)
+		self.rotation_tolerance = SmartDashboard.getNumber("Nav_rot_tolerance", self.rotation_tolerance)
+
 	def set_waypoints(self, waypoints):
 		"""
 		Set list of waypoints.
@@ -53,8 +102,11 @@ class WaypointNavigator:
 		
 		self.is_active = True
 		self.current_waypoint_index = 0
-		self.stage = 1  # Start with rotation stage
+		self.stage = 1
 		self.start_time = time.time()
+		self.current_drive_speed = 0.0
+		self.pid_drive.reset()
+		self.pid_rotate.reset()
 		print(f"[NAVIGATOR] Starting: {len(self.waypoints)} waypoints")
 		return True
 	
@@ -90,13 +142,16 @@ class WaypointNavigator:
 			"current_x": self.drive.odometry.get_x(),
 			"current_y": self.drive.odometry.get_y(),
 			"heading": self.drive.odometry.get_heading(),
-			"progress": f"Waypoint {self.current_waypoint_index + 1}/{len(self.waypoints)} Stage {self.stage}"
+			"progress": f"Waypoint {self.current_waypoint_index + 1}/{len(self.waypoints)} {'Driving' if self.stage == 1 else 'Dwell'}"
 		}
 	
 	def update(self):
 		"""Call periodically (e.g., from robot loop) to execute navigation"""
 		if not self.is_active:
 			return
+		
+		# Pick up any live gain changes from SmartDashboard
+		self._sync_gains()
 		
 		# Get current pose
 		current_x = self.drive.odometry.get_x()
@@ -133,62 +188,104 @@ class WaypointNavigator:
 		
 		elapsed = time.time() - self.start_time
 		
-		# ===== STAGE 1: ROTATE TO TARGET =====
+		# ===== STAGE 1: DRIVE + ROTATE SIMULTANEOUSLY =====
 		if self.stage == 1:
-			if abs(angle_diff) < self.rotation_tolerance:
-				# Rotation complete, move to stage 2
+			if distance_to_target < self.position_tolerance:
+				self.drive.stop_all()
 				self.stage = 2
 				self.start_time = time.time()
-				print(f"[NAVIGATOR] WP {self.current_waypoint_index + 1}: Rotation complete, moving")
+				print(f"[NAVIGATOR] WP {self.current_waypoint_index + 1}: Reached target (head_err={angle_diff:.1f}°)")
 			elif elapsed > self.timeout_per_stage:
-				# Timeout - skip waypoint
-				print(f"[NAVIGATOR] WP {self.current_waypoint_index + 1}: Rotation timeout (target={target_angle:.1f}° current={current_heading:.1f}° diff={angle_diff:.1f}°)")
-				self._advance_waypoint()
-			else:
-				# Rotate toward target
-				rotation_power = (angle_diff / 180.0) * self.max_rotation_speed
-				rotation_power = max(-self.max_rotation_speed, min(self.max_rotation_speed, rotation_power))
-				print(f"[NAVIGATOR] Stage 1 - Target {target_angle:.1f}° Current {current_heading:.1f}° Diff {angle_diff:.1f}° Power {rotation_power:.3f} Elapsed {elapsed:.2f}s")
-				self.drive.rotate_in_place(rotation_power)
-		
-		# ===== STAGE 2: MOVE TO TARGET =====
-		elif self.stage == 2:
-			if distance_to_target < self.position_tolerance:
-				# Reached waypoint
 				self.drive.stop_all()
-				self.stage = 3
-				self.start_time = time.time()
-				print(f"[NAVIGATOR] WP {self.current_waypoint_index + 1}: Reached target")
-			elif elapsed > self.timeout_per_stage:
-				# Timeout - skip waypoint
-				print(f"[NAVIGATOR] WP {self.current_waypoint_index + 1}: Movement timeout")
+				print(f"[NAVIGATOR] WP {self.current_waypoint_index + 1}: Timeout (dist={distance_to_target:.1f}cm pos=({current_x:.1f},{current_y:.1f}) head_err={angle_diff:.1f}°)")
 				self._advance_waypoint()
 			else:
-				# Move toward target
-				forward_power = min(self.max_move_speed, distance_to_target / 200.0)
-				# Also correct angle drift
-				rotation_correction = (angle_diff / 45.0) * 0.2  # gentle correction
-				self.drive.drive_swerve(forward_power, 0, rotation_correction)
+				# Find next mandatory stop: waypoint with dwell>0, or final waypoint (non-loop)
+				next_stop_wp = None
+				for look in range(self.current_waypoint_index, len(self.waypoints)):
+					wp = self.waypoints[look]
+					is_last = (look == len(self.waypoints) - 1) and not self.loop
+					if wp.get("dwell", 0) > 0 or is_last:
+						next_stop_wp = wp
+						break
+				
+				if next_stop_wp is not None:
+					dist_to_stop = math.sqrt((next_stop_wp["x"] - current_x)**2 + (next_stop_wp["y"] - current_y)**2)
+					if dist_to_stop < self.decel_distance:
+						# Decel to zero (full stop at dwell/end)
+						target_speed = self.max_move_speed * (dist_to_stop / self.decel_distance)
+						target_speed = max(0.0, target_speed)
+					else:
+						target_speed = self.max_move_speed
+				else:
+					target_speed = self.max_move_speed
+				
+				# Enforce min speed only when NOT in a decel-to-stop zone
+				if target_speed > 0 and target_speed < self.min_drive_speed:
+					target_speed = self.min_drive_speed
+				
+				# Ramp current_drive_speed toward target (accel limit up, decel limit down)
+				if target_speed > self.current_drive_speed:
+					self.current_drive_speed = min(target_speed, self.current_drive_speed + self.accel_rate)
+				else:
+					self.current_drive_speed = max(target_speed, self.current_drive_speed - self.decel_rate)
+				
+				drive_speed = self.current_drive_speed
+				
+				# Field-oriented translation toward target position
+				h = math.radians(current_heading)
+				norm_dx = dx / distance_to_target
+				norm_dy = dy / distance_to_target
+				robot_forward = norm_dx * math.sin(h) + norm_dy * math.cos(h)
+				robot_strafe = norm_dx * math.cos(h) - norm_dy * math.sin(h)
+				
+				# Rotation PID: heading error -> rotation power
+				if abs(angle_diff) < self.rotation_tolerance:
+					rotation_power = 0.0
+					self.pid_rotate.reset()
+				else:
+					rotation_power = self.pid_rotate.calculate(angle_diff)
+					rotation_power = max(-self.max_rotation_speed, min(self.max_rotation_speed, rotation_power))
+					# Enforce minimum power above drive_rotation deadzone (0.1)
+					if 0 < abs(rotation_power) < 0.15:
+						rotation_power = 0.15 if rotation_power > 0 else -0.15
+				
+				print(f"[NAVIGATOR] WP {self.current_waypoint_index + 1} - Dist {distance_to_target:.1f}cm Head {current_heading:.1f} Err {angle_diff:.1f} Spd {drive_speed:.3f} RF {robot_forward:.3f} RS {robot_strafe:.3f} Rot {rotation_power:.3f} T {elapsed:.2f}s")
+				self.drive.drive_swerve(robot_forward * drive_speed, robot_strafe * drive_speed, rotation_power)
 		
-		# ===== STAGE 3: DWELL / ADVANCE =====
-		elif self.stage == 3:
-			dwell_time = target.get("dwell", 0.5)  # Optional dwell at waypoint
+		# ===== STAGE 2: DWELL / ADVANCE =====
+		elif self.stage == 2:
+			dwell_time = target.get("dwell", 0)
 			if elapsed > dwell_time:
 				self._advance_waypoint()
 	
 	def _advance_waypoint(self):
-		"""Move to next waypoint or finish"""
+		"""Move to next waypoint, loop, or finish"""
 		self.current_waypoint_index += 1
 		
 		if self.current_waypoint_index >= len(self.waypoints):
-			# All waypoints complete
-			self.drive.stop_all()
-			self.is_active = False
-			self.stage = 0
-			print(f"[NAVIGATOR] Navigation complete!")
+			if self.loop:
+				# Loop back to first waypoint
+				self.current_waypoint_index = 0
+				self.stage = 1
+				self.start_time = time.time()				self.current_drive_speed = 0.0				self.pid_drive.reset()
+				self.pid_rotate.reset()
+				next_wp = self.waypoints[0]
+				print(f"[NAVIGATOR] Looping back to WP 1: ({next_wp['x']}, {next_wp['y']})")
+			else:
+				# All waypoints complete
+				self.drive.stop_all()
+				self.is_active = False
+				self.stage = 0
+				print(f"[NAVIGATOR] Navigation complete!")
 		else:
 			# Next waypoint
 			self.stage = 1
 			self.start_time = time.time()
+			# If we just stopped at a dwell, restart from zero speed
+			if self.waypoints[self.current_waypoint_index - 1].get("dwell", 0) > 0:
+				self.current_drive_speed = 0.0
+			self.pid_drive.reset()
+			self.pid_rotate.reset()
 			next_wp = self.waypoints[self.current_waypoint_index]
 			print(f"[NAVIGATOR] Moving to waypoint {self.current_waypoint_index + 1}: ({next_wp['x']}, {next_wp['y']})")

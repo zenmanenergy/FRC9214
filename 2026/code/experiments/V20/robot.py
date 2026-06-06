@@ -43,15 +43,26 @@ class Robot(wpilib.TimedRobot):
 		SmartDashboard.putString("robot_mode", "Teleop")
 	
 	def teleopPeriodic(self):
-		# Check for navigation command from dashboard
-		if SmartDashboard.getBoolean("navigation_command", False):
-			target_x = SmartDashboard.getNumber("navigation_target_x", 0)
-			target_y = SmartDashboard.getNumber("navigation_target_y", 0)
-			target_heading = SmartDashboard.getNumber("navigation_target_heading", 0)
-			self.navigator.set_waypoints([{"x": target_x, "y": target_y, "heading": target_heading}])
-			self.navigator.start()
-			SmartDashboard.putBoolean("navigation_command", False)
-			print(f"[ROBOT] Navigation started to ({target_x:.1f}, {target_y:.1f}) cm heading {target_heading:.1f}°", flush=True)
+		# Check for waypoint route command from dashboard
+		if SmartDashboard.getBoolean("navigate_waypoints_command", False):
+			SmartDashboard.putBoolean("navigate_waypoints_command", False)
+			waypoints_json = SmartDashboard.getString("navigation_waypoints_json", "[]")
+			loop = SmartDashboard.getBoolean("navigation_loop", False)
+			try:
+				import json
+				waypoints = json.loads(waypoints_json)
+				if waypoints:
+					self.navigator.loop = loop
+					self.navigator.set_waypoints(waypoints)
+					self.navigator.start()
+					print(f"[ROBOT] Navigation started: {len(waypoints)} waypoints loop={loop}", flush=True)
+			except Exception as e:
+				print(f"[ROBOT] Navigation parse error: {e}", flush=True)
+		
+		if SmartDashboard.getBoolean("stop_navigation_command", False):
+			self.navigator.stop()
+			SmartDashboard.putBoolean("stop_navigation_command", False)
+			print("[ROBOT] Navigation stopped by dashboard", flush=True)
 		
 		# Update navigator
 		self.navigator.update()

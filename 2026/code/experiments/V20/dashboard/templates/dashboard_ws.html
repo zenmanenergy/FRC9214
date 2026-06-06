@@ -442,27 +442,49 @@
 					</div>
 					<canvas id="mapCanvas" width="600" height="600" style="border: 2px solid #3498db; border-radius: 5px; background: white; max-width: 100%;"></canvas>
 				</div>
-				<div style="flex: 0 0 250px; background: #f8f9fa; border-radius: 5px; padding: 15px;">
-					<div style="font-weight: bold; color: #2c3e50; margin-bottom: 15px; border-bottom: 2px solid #3498db; padding-bottom: 8px;">Robot Pose</div>
-					<div style="font-size: 12px; line-height: 1.8;">
+				<div style="flex: 0 0 300px; background: #f8f9fa; border-radius: 5px; padding: 15px;">
+					<div style="font-weight: bold; color: #2c3e50; margin-bottom: 10px; border-bottom: 2px solid #3498db; padding-bottom: 8px;">Robot Pose</div>
+					<div style="font-size: 12px; line-height: 1.8; margin-bottom: 10px;">
 						<div><strong>X:</strong> <span id="poseX">0.0</span> <span id="unitX">cm</span></div>
 						<div><strong>Y:</strong> <span id="poseY">0.0</span> <span id="unitY">cm</span></div>
 						<div><strong>Heading:</strong> <span id="poseHeading">0.0</span>°</div>
-						<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+						<div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #ddd;">
 							<strong>Distance:</strong> <span id="poseDistance">0.0</span> <span id="unitDistance">cm</span>
 						</div>
 					</div>
-					<button class="button btn-warning" onclick="resetOdometry()" style="margin-top: 15px;">↻ Reset Odometry</button>
+					<button class="button btn-warning" onclick="resetOdometry()" style="margin-top: 5px; margin-bottom: 15px; padding: 7px;">Reset Odometry</button>
 					
-					<div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #ddd;">
-						<div style="font-weight: bold; color: #2c3e50; margin-bottom: 12px;">Waypoint Heading</div>
-						<div style="display: flex; gap: 8px; align-items: center;">
-							<input type="number" id="waypointHeading" min="0" max="359" value="0" style="width: 60px; padding: 6px; border: 1px solid #ccc; border-radius: 4px;">
-							<span style="font-size: 12px; color: #666;">°</span>
+					<div style="padding-top: 12px; border-top: 2px solid #ddd; margin-bottom: 12px;">
+						<div style="font-weight: bold; color: #2c3e50; font-size: 14px; margin-bottom: 8px;">Quick Route: Square</div>
+						<div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px; font-size: 12px;">
+							<label style="flex: 0 0 40px;">Size:</label>
+							<input type="number" id="squareSide" value="67" min="10" max="500" style="flex: 1; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;">
+							<span style="color: #888;">cm</span>
 						</div>
-						<button class="button btn-primary" onclick="setWaypointHeading()" style="margin-top: 8px;">✓ Set Heading</button>
-						<button class="button btn-success" onclick="runNavigation()" style="margin-top: 8px; display: none;" id="runBtn">▶ Run Navigation</button>
-						<button class="button btn-danger" onclick="clearWaypoint()" style="margin-top: 8px;">✕ Clear Waypoint</button>
+						<div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px; font-size: 12px;">
+							<label style="flex: 0 0 40px;">Hdg:</label>
+							<input type="number" id="squareHeading" value="0" min="0" max="359" style="flex: 1; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;">
+							<span style="color: #888;">deg</span>
+						</div>
+						<button class="button btn-primary" onclick="loadSquare()" style="padding: 7px; width: 100%; margin: 0;">Load Square</button>
+					</div>
+					
+					<div style="padding-top: 15px; border-top: 2px solid #ddd;">
+						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+							<div style="font-weight: bold; color: #2c3e50; font-size: 14px;">Waypoints</div>
+							<label style="font-size: 12px; display: flex; align-items: center; gap: 4px; cursor: pointer;">
+								<input type="checkbox" id="loopCheck"> Loop
+							</label>
+						</div>
+						<div style="font-size: 11px; color: #888; margin-bottom: 8px;">Click field to add points</div>
+						<div id="waypointTable" style="max-height: 260px; overflow-y: auto; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; background: white;">
+							<div style="padding: 15px; text-align: center; color: #aaa; font-size: 12px;">No waypoints added</div>
+						</div>
+						<div style="display: flex; gap: 6px; margin-bottom: 6px;">
+							<button class="button btn-success" onclick="runWaypoints()" style="flex: 1; padding: 9px; margin: 0;">Run Route</button>
+							<button class="button btn-danger" onclick="stopNavigation()" style="flex: 1; padding: 9px; margin: 0;">Stop</button>
+						</div>
+						<button class="button btn-warning" onclick="clearAllWaypoints()" style="padding: 7px; width: 100%; margin: 0;">Clear All</button>
 					</div>
 				</div>
 			</div>
@@ -853,7 +875,11 @@
 			heading: 0,
 			distance: 0
 		};
-		let navigationTarget = null;
+		let waypointList = [];
+		let routeStartPos = null; // robot position when first waypoint was placed
+		let hoveredWaypoint = -1;
+		let selectedWaypoint = -1;
+		const WP_SIZE = 33.5;
 		
 		const unitConversions = {
 			'cm': { factor: 1, label: 'cm' },
@@ -952,42 +978,138 @@
 			ctx.stroke();
 			ctx.setLineDash([]);
 			
-			// Draw navigation target if set
-			if (navigationTarget) {
-				const targetX = fieldX + (navigationTarget.x * scale);
-				const targetY = fieldY + (fieldDrawHeight) - (navigationTarget.y * scale);
-				const wpSize = 25;
+			// Draw waypoint path
+			if (waypointList.length > 0) {
+				// Draw Catmull-Rom spline through waypoints
+				if (waypointList.length > 1) {
+					const loopOn = document.getElementById('loopCheck') && document.getElementById('loopCheck').checked;
+					
+// Build canvas-space points — use square CENTER (corner + WP_SIZE offset)
+				const pts = waypointList.map(wp => ({
+						x: fieldX + (wp.x * scale) + WP_SIZE,
+						y: fieldY + fieldDrawHeight - (wp.y * scale) - WP_SIZE
+					}));
+					
+					// Extend points for Catmull-Rom: duplicate ends (or wrap if looping)
+					let chain;
+					if (loopOn) {
+						chain = [pts[pts.length - 1], ...pts, pts[0], pts[1]];
+					} else {
+						chain = [pts[0], ...pts, pts[pts.length - 1]];
+					}
+					
+					ctx.strokeStyle = 'rgba(255, 159, 64, 0.85)';
+					ctx.lineWidth = 2;
+					ctx.setLineDash([]);
+					ctx.beginPath();
+					
+					const segments = loopOn ? pts.length : pts.length - 1;
+					for (let si = 0; si < segments; si++) {
+						const p0 = chain[si];
+						const p1 = chain[si + 1];
+						const p2 = chain[si + 2];
+						const p3 = chain[si + 3];
+						
+						// Catmull-Rom -> cubic bezier conversion (alpha = 0.5)
+						const cp1x = p1.x + (p2.x - p0.x) / 6;
+						const cp1y = p1.y + (p2.y - p0.y) / 6;
+						const cp2x = p2.x - (p3.x - p1.x) / 6;
+						const cp2y = p2.y - (p3.y - p1.y) / 6;
+						
+						if (si === 0) ctx.moveTo(p1.x, p1.y);
+						ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+					}
+					
+					if (loopOn) ctx.closePath();
+					ctx.stroke();
+				}
 				
-				// Save canvas state for rotation
-				ctx.save();
-				ctx.translate(targetX, targetY);
-				const waypointHeadingRad = (navigationTarget.heading * Math.PI) / 180;
-				ctx.rotate(waypointHeadingRad);
-				
-				// Draw waypoint square
-				ctx.fillStyle = 'rgba(255, 159, 64, 0.3)';
-				ctx.fillRect(-wpSize, -wpSize, wpSize * 2, wpSize * 2);
-				
-				ctx.strokeStyle = '#ff9f40';
-				ctx.lineWidth = 2;
-				ctx.strokeRect(-wpSize, -wpSize, wpSize * 2, wpSize * 2);
-				
-				// Draw heading indicator (line pointing forward)
-				ctx.strokeStyle = '#e74c3c';
-				ctx.lineWidth = 2;
-				ctx.beginPath();
-				ctx.moveTo(0, 0);
-				ctx.lineTo(0, -wpSize * 1.5);
-				ctx.stroke();
-				
-				// Restore canvas state
-				ctx.restore();
+				// Draw each waypoint: square + heading arrow (same size/style as robot)
+				waypointList.forEach(function(wp, wi) {
+					const wpCornerX = fieldX + (wp.x * scale);
+					const wpCornerY = fieldY + fieldDrawHeight - (wp.y * scale);
+					const wpCenterX = wpCornerX + WP_SIZE;
+					const wpCenterY = wpCornerY - WP_SIZE;
+					
+					const isSelected = wi === selectedWaypoint;
+					const isHovered = wi === hoveredWaypoint && !isSelected;
+					
+					ctx.save();
+					ctx.translate(wpCenterX, wpCenterY);
+					const headRad = (wp.heading * Math.PI) / 180;
+					ctx.rotate(headRad);
+					
+					if (isSelected) {
+						// Glow effect
+						ctx.shadowColor = '#f39c12';
+						ctx.shadowBlur = 18;
+						ctx.fillStyle = 'rgba(255, 220, 100, 0.55)';
+						ctx.strokeStyle = '#f39c12';
+					} else if (isHovered) {
+						ctx.shadowColor = '#2ecc71';
+						ctx.shadowBlur = 12;
+						ctx.fillStyle = 'rgba(100, 220, 180, 0.55)';
+						ctx.strokeStyle = '#27ae60';
+					} else {
+						ctx.shadowBlur = 0;
+						ctx.fillStyle = 'rgba(130, 200, 255, 0.5)';
+						ctx.strokeStyle = '#2980b9';
+					}
+					
+					ctx.fillRect(-WP_SIZE, -WP_SIZE, WP_SIZE * 2, WP_SIZE * 2);
+					ctx.lineWidth = isSelected ? 3 : 2;
+					ctx.strokeRect(-WP_SIZE, -WP_SIZE, WP_SIZE * 2, WP_SIZE * 2);
+					ctx.shadowBlur = 0;
+					
+					// Forward arrow
+					ctx.strokeStyle = '#e74c3c';
+					ctx.lineWidth = 2;
+					ctx.beginPath();
+					ctx.moveTo(0, 0);
+					ctx.lineTo(0, -WP_SIZE * 1.5);
+					ctx.stroke();
+					
+					ctx.restore();
+					
+					// Number label (unrotated, centered in square)
+					ctx.fillStyle = isSelected ? '#7d6608' : '#1a5276';
+					ctx.font = 'bold 11px Arial';
+					ctx.textAlign = 'center';
+					ctx.textBaseline = 'middle';
+					ctx.fillText(wi + 1, wpCenterX, wpCenterY);
+					ctx.textBaseline = 'alphabetic';
+					
+					// Always show heading and dwell above the square
+					const dwell = wp.dwell || 0;
+					ctx.fillStyle = isSelected ? '#7d6608' : '#555';
+					ctx.font = (isSelected ? 'bold' : '') + ' 10px Arial';
+					ctx.fillText('Hdg: ' + Math.round(wp.heading) + 'deg', wpCenterX, wpCenterY - WP_SIZE - 18);
+					ctx.fillText('Pause: ' + dwell.toFixed(1) + 's', wpCenterX, wpCenterY - WP_SIZE - 6);
+				});
 			}
 			
-			// Draw robot at odometry position (x,y is back-left corner)
+			// Draw line from robot current position to first waypoint
 			const robotSize = 33.5;
 			const robotCenterX = fieldX + (odometryData.x * scale) + robotSize;
 			const robotCenterY = fieldY + (fieldDrawHeight) - (odometryData.y * scale) - robotSize;
+			
+			if (waypointList.length > 0 && routeStartPos !== null) {
+				const firstWp = waypointList[0];
+				const startX = fieldX + (routeStartPos.x * scale) + robotSize;
+				const startY = fieldY + fieldDrawHeight - (routeStartPos.y * scale) - robotSize;
+				const firstWpX = fieldX + (firstWp.x * scale) + robotSize;
+				const firstWpY = fieldY + fieldDrawHeight - (firstWp.y * scale) - robotSize;
+				ctx.strokeStyle = 'rgba(52, 152, 219, 0.9)';
+				ctx.lineWidth = 2;
+				ctx.setLineDash([6, 4]);
+				ctx.beginPath();
+				ctx.moveTo(startX, startY);
+				ctx.lineTo(firstWpX, firstWpY);
+				ctx.stroke();
+				ctx.setLineDash([]);
+			}
+			
+			// Draw robot at odometry position (x,y is back-left corner)
 			
 			// Save canvas state for rotation
 			ctx.save();
@@ -1040,63 +1162,230 @@
 			document.getElementById('unitDistance').textContent = unitConversions[currentUnit].label;
 		}
 		
+		function loadSquare() {
+			const side = parseFloat(document.getElementById('squareSide').value) || 67;
+			const headingDeg = parseFloat(document.getElementById('squareHeading').value) || 0;
+			const h = headingDeg * Math.PI / 180;
+			
+			// Snapshot robot position when route is loaded
+			routeStartPos = { x: odometryData.x, y: odometryData.y };
+			// Rotation: x' = x*cos(h) - y*sin(h),  y' = x*sin(h) + y*cos(h)
+			const corners = [
+				{rx: side, ry: 0},
+				{rx: side, ry: side},
+				{rx: 0,    ry: side},
+				{rx: 0,    ry: 0}
+			];
+			
+			waypointList = corners.map(c => ({
+				x: Math.round(c.rx * Math.cos(h) - c.ry * Math.sin(h)),
+				y: Math.round(c.rx * Math.sin(h) + c.ry * Math.cos(h)),
+				heading: Math.round(headingDeg)
+			}));
+			
+			// Auto-enable loop so the robot returns to start
+			const loopEl = document.getElementById('loopCheck');
+			if (loopEl) loopEl.checked = true;
+			
+			renderWaypointTable();
+			drawFieldMap();
+			showError('Square loaded: ' + side + 'cm, heading ' + Math.round(headingDeg) + 'deg, loop on', false);
+		}
+		
 		function resetOdometry() {
 			if (!ws || ws.readyState !== WebSocket.OPEN) {
 				showError("WebSocket not connected");
 				return;
 			}
 			odometryData = { x: 0, y: 0, heading: 0, distance: 0 };
-			navigationTarget = null;
 			updateOdometryDisplay();
 			drawFieldMap();
 			sendCommand("reset_odometry", {});
 		}
 		
-		function setWaypointHeading() {
-			if (!navigationTarget) {
-				showError("No waypoint set. Click field first.");
+		function renderWaypointTable() {
+			const table = document.getElementById('waypointTable');
+			if (!table) return;
+			if (waypointList.length === 0) {
+				table.innerHTML = '<div style="padding: 15px; text-align: center; color: #aaa; font-size: 12px;">No waypoints added</div>';
 				return;
 			}
-			
-			const heading = parseInt(document.getElementById('waypointHeading').value);
-			if (isNaN(heading) || heading < 0 || heading > 359) {
-				showError("Heading must be 0-359");
-				return;
-			}
-			
-			navigationTarget.heading = heading;
-			drawFieldMap();
-			
-			// Show run button
-			document.getElementById('runBtn').style.display = 'block';
-			showError(`Heading set to ${heading}°. Click "Run Navigation" to start.`, false);
+			let html = '<table style="width: 100%; border-collapse: collapse; font-size: 11px;">';
+			html += '<thead><tr style="background: #3498db; color: white;">';
+			html += '<th style="padding: 4px 2px; text-align: center; width: 20px;">#</th>';
+			html += '<th style="padding: 4px 2px; text-align: center;">X cm</th>';
+			html += '<th style="padding: 4px 2px; text-align: center;">Y cm</th>';
+			html += '<th style="padding: 4px 2px; text-align: center;">Hdg</th>';
+			html += '<th style="padding: 4px 2px; text-align: center;">Pause s</th>';
+			html += '<th style="padding: 4px 2px; width: 24px;"></th>';
+			html += '</tr></thead><tbody>';
+			waypointList.forEach(function(wp, i) {
+				const bg = i === selectedWaypoint ? '#fff8dc' : (i % 2 === 0 ? '#fff' : '#f5f5f5');
+				html += '<tr style="background:' + bg + ';">';
+				html += '<td style="padding: 3px 2px; text-align: center; font-weight: bold; color: #3498db;">' + (i + 1) + '</td>';
+				html += '<td style="padding: 2px;"><input type="number" value="' + Math.round(wp.x) + '" onchange="updateWaypointField(' + i + ',\'x\',this.value)" style="width: 52px; padding: 2px 3px; border: 1px solid #ddd; border-radius: 3px; font-size: 11px;"></td>';
+				html += '<td style="padding: 2px;"><input type="number" value="' + Math.round(wp.y) + '" onchange="updateWaypointField(' + i + ',\'y\',this.value)" style="width: 52px; padding: 2px 3px; border: 1px solid #ddd; border-radius: 3px; font-size: 11px;"></td>';
+				html += '<td style="padding: 2px;"><input type="number" min="0" max="359" value="' + Math.round(wp.heading) + '" onchange="updateWaypointField(' + i + ',\'heading\',this.value)" style="width: 44px; padding: 2px 3px; border: 1px solid #ddd; border-radius: 3px; font-size: 11px;"></td>';
+				html += '<td style="padding: 2px;"><input type="number" min="0" step="0.5" value="' + (wp.dwell || 0).toFixed(1) + '" onchange="updateWaypointField(' + i + ',\'dwell\',this.value)" style="width: 44px; padding: 2px 3px; border: 1px solid #ddd; border-radius: 3px; font-size: 11px;"></td>';
+				html += '<td style="padding: 2px; text-align: center;"><button onclick="deleteWaypoint(' + i + ')" style="background:#e74c3c;color:white;border:none;border-radius:3px;padding:2px 5px;cursor:pointer;font-size:10px;font-weight:bold;">X</button></td>';
+				html += '</tr>';
+			});
+			html += '</tbody></table>';
+			table.innerHTML = html;
 		}
 		
-		function runNavigation() {
-			if (!navigationTarget) {
-				showError("No waypoint set.");
-				return;
+		function updateWaypointField(index, field, value) {
+			if (index < 0 || index >= waypointList.length) return;
+			let num = parseFloat(value);
+			if (isNaN(num)) return;
+			if (field === 'heading') num = ((Math.round(num) % 360) + 360) % 360;
+			if (field === 'dwell') num = Math.max(0, Math.round(num * 10) / 10);
+			waypointList[index][field] = num;
+			drawFieldMap();
+		}
+		
+		function deleteWaypoint(index) {
+			waypointList.splice(index, 1);
+			renderWaypointTable();
+			drawFieldMap();
+		}
+		
+		function clearAllWaypoints() {
+			waypointList = [];
+			routeStartPos = null;
+			renderWaypointTable();
+			drawFieldMap();
+		}
+		
+		function sampleSpline(waypoints, stepCm) {
+			// Samples the Catmull-Rom spline through waypoints into dense {x,y,heading,dwell} points.
+			// Heading is interpolated (shortest-path) between user-set waypoint headings so the
+			// robot arrives at each waypoint facing exactly the heading you dialed in.
+			stepCm = stepCm || 20;
+			if (waypoints.length < 2) return waypoints;
+			
+			const loopOn = document.getElementById('loopCheck') && document.getElementById('loopCheck').checked;
+			const pts = waypoints.map(wp => ({ x: wp.x, y: wp.y }));
+			
+			// Extend chain for Catmull-Rom boundary conditions
+			let chain;
+			if (loopOn) {
+				chain = [pts[pts.length - 1], ...pts, pts[0], pts[1]];
+			} else {
+				chain = [pts[0], ...pts, pts[pts.length - 1]];
 			}
 			
+			const segments = loopOn ? pts.length : pts.length - 1;
+			
+			// Evaluate Catmull-Rom at parameter t within segment si
+			function crPoint(si, t) {
+				const p0 = chain[si], p1 = chain[si+1], p2 = chain[si+2], p3 = chain[si+3];
+				const t2 = t*t, t3 = t2*t;
+				return {
+					x: 0.5 * ((2*p1.x) + (-p0.x+p2.x)*t + (2*p0.x-5*p1.x+4*p2.x-p3.x)*t2 + (-p0.x+3*p1.x-3*p2.x+p3.x)*t3),
+					y: 0.5 * ((2*p1.y) + (-p0.y+p2.y)*t + (2*p0.y-5*p1.y+4*p2.y-p3.y)*t2 + (-p0.y+3*p1.y-3*p2.y+p3.y)*t3)
+				};
+			}
+			
+			// Shortest-path angle lerp (always takes the short way around 360)
+			function lerpAngle(a, b, t) {
+				let diff = ((b - a) % 360 + 360) % 360;
+				if (diff > 180) diff -= 360;
+				return ((a + diff * t) % 360 + 360) % 360;
+			}
+			
+			// Build dense point cloud, tracking si, t, and forced dwell at user waypoint endpoints
+			const stepsPerSeg = 200;
+			const dense = [];
+			for (let si = 0; si < segments; si++) {
+				for (let i = 0; i < stepsPerSeg; i++) {
+					const t = i / stepsPerSeg;
+					const p = crPoint(si, t);
+					dense.push({ x: p.x, y: p.y, si: si, t: t, dwell: 0, forced: false });
+				}
+			}
+			// Always include final point; mark it with the final waypoint's dwell
+			{
+				const p = crPoint(segments - 1, 1.0);
+				const finalWpIdx = loopOn ? 0 : waypoints.length - 1;
+				dense.push({ x: p.x, y: p.y, si: segments - 1, t: 1.0, dwell: waypoints[finalWpIdx].dwell || 0, forced: true });
+			}
+			// Mark each intermediate segment endpoint (= user waypoint) with its dwell
+			for (let si = 0; si < segments - 1; si++) {
+				const wpIdx = (si + 1) % waypoints.length;
+				const dwell = waypoints[wpIdx].dwell || 0;
+				if (dwell > 0) {
+					// The endpoint of segment si is at dense index (si+1)*stepsPerSeg
+					const idx = (si + 1) * stepsPerSeg;
+					dense[idx].dwell = dwell;
+					dense[idx].forced = true;
+				}
+			}
+			
+			// Thin to stepCm arc-length spacing, always keeping forced (dwell) points
+			const thinned = [dense[0]];
+			let last = dense[0];
+			for (let i = 1; i < dense.length; i++) {
+				const d = Math.sqrt((dense[i].x - last.x)**2 + (dense[i].y - last.y)**2);
+				if (d >= stepCm || dense[i].forced) {
+					thinned.push(dense[i]);
+					last = dense[i];
+				}
+			}
+			
+			// Assign heading by interpolating user-set waypoint headings along each segment
+			return thinned.map(pt => {
+				const si = pt.si;
+				const t = pt.t;
+				const wpA = si % waypoints.length;
+				const wpB = (si + 1) % waypoints.length;
+				const heading = lerpAngle(waypoints[wpA].heading, waypoints[wpB].heading, t);
+				return { x: Math.round(pt.x), y: Math.round(pt.y), heading: Math.round(heading), dwell: pt.dwell || 0 };
+			});
+		}
+		
+		function runWaypoints() {
+			if (waypointList.length === 0) {
+				showError("No waypoints set. Click on the field to add points.");
+				return;
+			}
 			if (!ws || ws.readyState !== WebSocket.OPEN) {
 				showError("WebSocket not connected");
 				return;
 			}
+			const loopEl = document.getElementById('loopCheck');
+			const loop = loopEl ? loopEl.checked : false;
 			
-			sendCommand("navigate_to", {
-				x: navigationTarget.x,
-				y: navigationTarget.y,
-				heading: navigationTarget.heading
-			});
-			showError(`Navigating to (${navigationTarget.x.toFixed(0)}, ${navigationTarget.y.toFixed(0)}) cm heading ${navigationTarget.heading}°`, false);
-			document.getElementById('runBtn').style.display = 'none';
+			// Sample spline into dense waypoints for the robot to actually follow the curve
+			const splinePoints = sampleSpline(waypointList, 20);
+			sendCommand("navigate_waypoints", { waypoints: splinePoints, loop: loop });
+			showError("Route started: " + splinePoints.length + " spline points from " + waypointList.length + " waypoints, loop=" + loop, false);
 		}
 		
-		function clearWaypoint() {
-			navigationTarget = null;
-			drawFieldMap();
-			document.getElementById('runBtn').style.display = 'none';
-			showError("Waypoint cleared", false);
+		function stopNavigation() {
+			if (!ws || ws.readyState !== WebSocket.OPEN) {
+				showError("WebSocket not connected");
+				return;
+			}
+			sendCommand("stop_navigation", {});
+			showError("Stop command sent", false);
+		}
+		
+		// Returns the index of the waypoint under canvas point (cx, cy), or -1
+		function hitTestWaypoint(cx, cy) {
+			if (!document.getElementById('mapCanvas').mapScale) return -1;
+			const { scale, fieldX, fieldY, fieldDrawHeight } = document.getElementById('mapCanvas').mapScale;
+			for (let wi = waypointList.length - 1; wi >= 0; wi--) {
+				const wp = waypointList[wi];
+				const wcx = fieldX + (wp.x * scale) + WP_SIZE;
+				const wcy = fieldY + fieldDrawHeight - (wp.y * scale) - WP_SIZE;
+				// Transform click into square local space (unrotate)
+				const headRad = (wp.heading * Math.PI) / 180;
+				const lx = (cx - wcx) * Math.cos(-headRad) - (cy - wcy) * Math.sin(-headRad);
+				const ly = (cx - wcx) * Math.sin(-headRad) + (cy - wcy) * Math.cos(-headRad);
+				if (Math.abs(lx) <= WP_SIZE && Math.abs(ly) <= WP_SIZE) return wi;
+			}
+			return -1;
 		}
 		
 		function handleMapClick(event) {
@@ -1107,23 +1396,38 @@
 			const clickX = event.clientX - rect.left;
 			const clickY = event.clientY - rect.top;
 			
-			const { scale, fieldX, fieldY, fieldDrawHeight } = canvas.mapScale;
+			// Check if clicking an existing waypoint first
+			const hitIdx = hitTestWaypoint(clickX, clickY);
+			if (hitIdx >= 0) {
+				selectedWaypoint = (selectedWaypoint === hitIdx) ? -1 : hitIdx;
+				drawFieldMap();
+				return;
+			}
 			
-			// Check if click is within field
+			// Deselect on click elsewhere
+			selectedWaypoint = -1;
+			
+			const { scale, fieldX, fieldY, fieldDrawHeight, fieldDrawWidth } = canvas.mapScale;
+			
 			const relX = clickX - fieldX;
 			const relY = clickY - fieldY;
 			
-			if (relX >= 0 && relX <= fieldDrawHeight && relY >= 0 && relY <= fieldDrawHeight) {
-				// Convert pixel coordinates to field coordinates
-				const fieldCoordsX = (relX / scale);
-				const fieldCoordsY = ((fieldDrawHeight - relY) / scale);
+			if (relX >= 0 && relX <= fieldDrawWidth && relY >= 0 && relY <= fieldDrawHeight) {
+				const fieldCoordsX = Math.round(relX / scale);
+				const fieldCoordsY = Math.round((fieldDrawHeight - relY) / scale);
 				
-				navigationTarget = { x: fieldCoordsX, y: fieldCoordsY, heading: 0 };
-				document.getElementById('waypointHeading').value = 0;
-				document.getElementById('runBtn').style.display = 'none';
+				// First click: insert robot's current position as WP1, then the clicked point as WP2
+				if (waypointList.length === 0) {
+					routeStartPos = { x: odometryData.x, y: odometryData.y };
+					const robotX = Math.round(odometryData.x);
+					const robotY = Math.round(odometryData.y);
+					waypointList.push({ x: robotX, y: robotY, heading: 0 });
+				}
+				
+				waypointList.push({ x: fieldCoordsX, y: fieldCoordsY, heading: 0 });
+				renderWaypointTable();
 				drawFieldMap();
-				
-				showError(`Waypoint set: (${fieldCoordsX.toFixed(0)}, ${fieldCoordsY.toFixed(0)}) cm. Set heading to proceed.`, false);
+				showError('WP ' + waypointList.length + ' added: (' + fieldCoordsX + ', ' + fieldCoordsY + ') cm', false);
 			}
 		}
 		
@@ -1132,7 +1436,6 @@
 			
 			if (type === "state") {
 				updateAngles(data);
-				// Update odometry from incoming state
 				if (data.odometry) {
 					odometryData.x = parseFloat(data.odometry.x) || 0;
 					odometryData.y = parseFloat(data.odometry.y) || 0;
@@ -1151,6 +1454,9 @@
 			else if (type === "autotune_progress") {
 				document.getElementById("autotuneStatus").textContent = `Tuning ${data.wheel}...`;
 			}
+			else if (type === "success") {
+				showError(data.message, false);
+			}
 			else if (type === "error") {
 				showError(data.message);
 			}
@@ -1163,12 +1469,59 @@
 			updatePresetsPanel();
 			connectWebSocket();
 			
-			// Add map canvas click handler
+			// Add map canvas event handlers
 			const mapCanvas = document.getElementById('mapCanvas');
 			if (mapCanvas) {
 				mapCanvas.addEventListener('click', handleMapClick);
+				mapCanvas.addEventListener('mousemove', function(event) {
+					const rect = mapCanvas.getBoundingClientRect();
+					const mx = event.clientX - rect.left;
+					const my = event.clientY - rect.top;
+					const hit = hitTestWaypoint(mx, my);
+					if (hit !== hoveredWaypoint) {
+						hoveredWaypoint = hit;
+						mapCanvas.style.cursor = hit >= 0 ? 'pointer' : 'crosshair';
+						drawFieldMap();
+					}
+				});
+				mapCanvas.addEventListener('mouseleave', function() {
+					hoveredWaypoint = -1;
+					drawFieldMap();
+				});
 				mapCanvas.style.cursor = 'crosshair';
 			}
+			
+			// Arrow key heading/dwell control for selected waypoint
+			window.addEventListener('keydown', function(event) {
+				if (selectedWaypoint < 0 || selectedWaypoint >= waypointList.length) return;
+				const step = event.shiftKey ? 1 : 5;
+				if (event.key === 'ArrowLeft') {
+					event.preventDefault();
+					waypointList[selectedWaypoint].heading = ((waypointList[selectedWaypoint].heading - step) % 360 + 360) % 360;
+					renderWaypointTable();
+					drawFieldMap();
+				} else if (event.key === 'ArrowRight') {
+					event.preventDefault();
+					waypointList[selectedWaypoint].heading = (waypointList[selectedWaypoint].heading + step) % 360;
+					renderWaypointTable();
+					drawFieldMap();
+				} else if (event.key === 'ArrowUp') {
+					event.preventDefault();
+					const dwellStep = event.shiftKey ? 0.1 : 0.5;
+					waypointList[selectedWaypoint].dwell = Math.round(((waypointList[selectedWaypoint].dwell || 0) + dwellStep) * 10) / 10;
+					renderWaypointTable();
+					drawFieldMap();
+				} else if (event.key === 'ArrowDown') {
+					event.preventDefault();
+					const dwellStep = event.shiftKey ? 0.1 : 0.5;
+					waypointList[selectedWaypoint].dwell = Math.max(0, Math.round(((waypointList[selectedWaypoint].dwell || 0) - dwellStep) * 10) / 10);
+					renderWaypointTable();
+					drawFieldMap();
+				} else if (event.key === 'Escape') {
+					selectedWaypoint = -1;
+					drawFieldMap();
+				}
+			});
 		});
 	</script>
 </body>
