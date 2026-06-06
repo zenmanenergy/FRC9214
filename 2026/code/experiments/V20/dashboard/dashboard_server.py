@@ -216,16 +216,18 @@ if HAS_FLASK_SOCK:
 						angle = value.get("angle", 0)
 						dashboard.table.putString("set_wheel_angle_name", wheel)
 						dashboard.table.putNumber("set_wheel_angle_value", angle)
-					elif cmd == "navigate_to":
-						target_x = value.get("x", 0)
-						target_y = value.get("y", 0)
-						target_heading = value.get("heading", 0)
-						dashboard.table.putNumber("navigation_target_x", target_x)
-						dashboard.table.putNumber("navigation_target_y", target_y)
-						dashboard.table.putNumber("navigation_target_heading", target_heading)
-						dashboard.table.putBoolean("navigation_command", True)
-						print(f"[WS] Navigation target set: ({target_x:.1f}, {target_y:.1f}) cm heading {target_heading:.1f}°")
-						ws.send(json.dumps({"type": "success", "message": f"Target set to ({target_x:.1f}, {target_y:.1f}) cm heading {target_heading:.1f}°"}))
+					elif cmd == "navigate_waypoints":
+						waypoints = value.get("waypoints", [])
+						loop = value.get("loop", False)
+						dashboard.table.putString("navigation_waypoints_json", json.dumps(waypoints))
+						dashboard.table.putBoolean("navigation_loop", loop)
+						dashboard.table.putBoolean("navigate_waypoints_command", True)
+						print(f"[WS] Waypoint route: {len(waypoints)} points loop={loop}")
+						ws.send(json.dumps({"type": "success", "message": f"Route started: {len(waypoints)} waypoints"}))
+					elif cmd == "stop_navigation":
+						dashboard.table.putBoolean("stop_navigation_command", True)
+						print(f"[WS] Stop navigation sent")
+						ws.send(json.dumps({"type": "success", "message": "Navigation stopped"}))
 					elif cmd == "reset_odometry":
 						dashboard.table.putBoolean("reset_odometry_command", True)
 						print("[WS] reset_odometry_command sent to robot")
