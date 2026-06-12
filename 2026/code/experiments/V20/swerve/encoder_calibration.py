@@ -13,6 +13,7 @@ class EncoderCalibration:
 		self.offsets = self.full_data.get("offsets", {})
 		self.pid_gains = self.full_data.get("pid_gains", {})
 		self.pid_tuning_history = self.full_data.get("pid_tuning_history", [])
+		self.navigator_rotation_gains = self.full_data.get("navigator_rotation_gains", {})
 		
 		# Initialize regression data (will be calculated from history if it exists)
 		self.pid_regression = {}
@@ -38,6 +39,11 @@ class EncoderCalibration:
 				"ki": 0.005,
 				"kd": 0.0001
 			},
+			"navigator_rotation_gains": {
+				"kp": 0.004,
+				"ki": 0.0,
+				"kd": 0.0001
+			},
 			"pid_tuning_history": []
 		}
 		try:
@@ -53,7 +59,10 @@ class EncoderCalibration:
 						defaults["offsets"].update(data)
 					print(f"[LOAD] Loaded calibration from: {path}")
 					print(f"       Offsets: {defaults['offsets']}")
-					print(f"       PID: KP={defaults['pid_gains']['kp']}, KI={defaults['pid_gains']['ki']}, KD={defaults['pid_gains']['kd']}")
+					print(f"       Wheel PID: KP={defaults['pid_gains']['kp']}, KI={defaults['pid_gains']['ki']}, KD={defaults['pid_gains']['kd']}")
+					if "navigator_rotation_gains" in defaults:
+						gains = defaults['navigator_rotation_gains']
+						print(f"       Navigator Rotation: KP={gains.get('kp', 0.004)}, KI={gains.get('ki', 0.0)}, KD={gains.get('kd', 0.0001)}")
 					if defaults['pid_tuning_history']:
 						print(f"       Tuning history: {len(defaults['pid_tuning_history'])} entries")
 					return defaults
@@ -68,6 +77,7 @@ class EncoderCalibration:
 		try:
 			self.full_data["offsets"] = self.offsets
 			self.full_data["pid_gains"] = self.pid_gains
+			self.full_data["navigator_rotation_gains"] = self.navigator_rotation_gains
 			self.full_data["pid_tuning_history"] = self.pid_tuning_history
 			path = self.get_calibration_path()
 			with open(path, "w") as f:
@@ -76,7 +86,10 @@ class EncoderCalibration:
 			print(f"[SAVE] File contents being written:")
 			print(json.dumps(self.full_data, indent=2))
 			print(f"       Offsets: {self.offsets}")
-			print(f"       PID: KP={self.pid_gains['kp']:.6f}, KI={self.pid_gains['ki']:.6f}, KD={self.pid_gains['kd']:.6f}")
+			print(f"       Wheel PID: KP={self.pid_gains['kp']:.6f}, KI={self.pid_gains['ki']:.6f}, KD={self.pid_gains['kd']:.6f}")
+			if self.navigator_rotation_gains:
+				gains = self.navigator_rotation_gains
+				print(f"       Navigator Rotation: KP={gains.get('kp', 0):.6f}, KI={gains.get('ki', 0):.6f}, KD={gains.get('kd', 0):.6f}")
 			print(f"       Tuning history: {len(self.pid_tuning_history)} entries")
 			if self.pid_tuning_history:
 				print(f"       Latest tuning: {self.pid_tuning_history[-1]}")
@@ -247,6 +260,17 @@ class EncoderCalibration:
 		self.pid_gains["kp"] = kp
 		self.pid_gains["ki"] = ki
 		self.pid_gains["kd"] = kd
+	
+	def set_navigator_rotation_gains(self, kp, ki, kd):
+		"""Set navigator rotation PID gains"""
+		self.navigator_rotation_gains["kp"] = kp
+		self.navigator_rotation_gains["ki"] = ki
+		self.navigator_rotation_gains["kd"] = kd
+		print(f"[NAV] Navigator rotation gains updated: KP={kp:.6f}, KI={ki:.6f}, KD={kd:.6f}")
+	
+	def get_navigator_rotation_gains(self):
+		"""Get navigator rotation PID gains"""
+		return self.navigator_rotation_gains.copy()
 	
 	def get_pid_gains(self):
 		"""Get PID gains as dict"""

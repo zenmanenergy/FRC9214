@@ -87,8 +87,14 @@ class SwerveDrive:
 	def _apply_smooth_acceleration(self, wheel_name, target_power):
 		previous_power = self.per_wheel_previous_power.get(wheel_name, 0.0)
 		
-		power_diff = target_power - previous_power
-		ramped_power = previous_power + (power_diff * self.power_ramp_rate)
+		# Only ramp when decelerating to zero (stopping smoothly).
+		# Acceleration is handled by the caller (navigator ramp or joystick).
+		# Applying a ramp on the way up fights the navigator's own velocity profile.
+		if target_power == 0.0:
+			power_diff = target_power - previous_power
+			ramped_power = previous_power + (power_diff * self.power_ramp_rate)
+		else:
+			ramped_power = target_power
 		
 		self.per_wheel_previous_power[wheel_name] = ramped_power
 		
@@ -254,10 +260,9 @@ class SwerveDrive:
 		return False
 	
 	def drive_swerve(self, forward, strafe, rotate):
-		deadzone = 0.1
-		forward = forward if abs(forward) >= deadzone else 0.0
-		strafe = strafe if abs(strafe) >= deadzone else 0.0
-		rotate = rotate if abs(rotate) >= deadzone else 0.0
+		# Only apply deadzone to rotate - joystick deadband already handled in PilotJoystick.
+		# Applying deadzone to forward/strafe here breaks autonomous ramp-up (small values get zeroed).
+		rotate = rotate if abs(rotate) >= 0.1 else 0.0
 		
 		if forward == 0 and strafe == 0 and rotate == 0:
 			for wheel_name, wheel in self.wheels.items():
@@ -323,20 +328,34 @@ class SwerveDrive:
 			# Always register the target so wheels re-align if they drift away
 			self.drive_wheel_to_angle(wheel_name, target_angle)
 			
-			if angle_error <= config.DRIVE_ANGLE_TOLERANCE:
-				drive_power = -target_speed * config.MOTOR_SCALE_TELEOP
-				ramped_power = self._apply_smooth_acceleration(wheel_name, drive_power)
-				wheel.set_drive_power(ramped_power)
-				if abs(target_speed) > 0.01:
-					self.movement_state = "moving"
-					self.last_move_time = wpilib.Timer.getFPGATimestamp()
-			else:
-				ramped_power = self._apply_smooth_acceleration(wheel_name, 0.0)
-				wheel.set_drive_power(ramped_power)
-				if len(self.wheel_alignment_state) > 0:
-					self.movement_state = "aligning"
+			# Scale drive power by cosine of angle error.
+			# cos(0) = 1.0 (full power when aligned), cos(90) = 0.0 (no power when perpendicular).
+			# This replaces the hard on/off cutoff which caused pulsing during combined drive+rotate.
+			angle_scale = math.cos(math.radians(angle_error))
+			if angle_scale < 0:
+				angle_scale = 0.0
+			
+			drive_power = -target_speed * config.MOTOR_SCALE_TELEOP * angle_scale
+			ramped_power = self._apply_smooth_acceleration(wheel_name, drive_power)
+			wheel.set_drive_power(ramped_power)
+			if abs(drive_power) > 0.01:
+				self.movement_state = "moving"
+				self.last_move_time = wpilib.Timer.getFPGATimestamp()
+			elif len(self.wheel_alignment_state) > 0:
+				self.movement_state = "aligning"
 		
 		self.update_motor_currents()
+	
+	def rotate_in_place_autotune(self, rotation_power):
+		"""
+		Rotation autotune wrapper - delegates to drive_rotation() which correctly:
+		1. Targets rotation stance angles from config
+		2. Calls update_single_wheel_alignment() to maintain wheel angles via turn motors
+		3. Applies relay power to DRIVE motors to physically rotate the robot
+		
+		Requires robot to be on the ground so heading actually changes.
+		"""
+		self.drive_rotation(rotation_power)
 	
 	def rotate_to_angle(self, angle):
 		if not self.aligning:

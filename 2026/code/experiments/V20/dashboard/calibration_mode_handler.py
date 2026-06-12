@@ -5,15 +5,17 @@ from wpilib import SmartDashboard
 class CalibrationModeHandler:
 	"""Handle all calibration mode dashboard commands and control logic"""
 	
-	def __init__(self, drive, pilot_controls):
+	def __init__(self, drive, pilot_controls, navigator=None):
 		"""Initialize calibration mode handler
 		
 		Args:
 			drive: SwerveDrive instance
 			pilot_controls: PilotControls instance
+			navigator: WaypointNavigator instance (optional, for autotune)
 		"""
 		self.drive = drive
 		self.pilot_controls = pilot_controls
+		self.navigator = navigator
 		
 		# State tracking for command detection
 		self.last_focused_wheel = None
@@ -21,6 +23,7 @@ class CalibrationModeHandler:
 		self.last_set_wheel_angle_name = None
 		self.driving_wheel_to_angle = None
 		self.driving_wheel_target_angle = None
+		self.autotune_rotation_active = False
 		
 		# Initialize NetworkTables values
 		self._init_network_tables()
@@ -40,6 +43,12 @@ class CalibrationModeHandler:
 		"""Called periodically during calibration mode"""
 		SmartDashboard.putString("robot_mode", "Calibration")
 		
+		# Handle rotation autotune if active
+		if self.autotune_rotation_active and self.navigator:
+			# Autotune runs asynchronously - we just skip other controls
+			SmartDashboard.putString("autotune_status", "Tuning rotation...")
+			return
+		
 		# Read all control commands from NetworkTables
 		self._handle_focus_change()
 		self._handle_wheel_direction_command()
@@ -53,9 +62,9 @@ class CalibrationModeHandler:
 		# Update drive systems
 		self.drive.update_alignment()
 		self.drive.update_single_wheel_alignment()
-		if self.drive.autotuning:
+		if hasattr(self.drive, 'tuner') and self.drive.tuner.is_active():
 			self._update_autotune_status()
-			self.drive.update_autotune()
+			self.drive.tuner.update()
 		
 		# Execute joystick control
 		focused_wheel = SmartDashboard.getString("focused_wheel", "")
@@ -109,12 +118,33 @@ class CalibrationModeHandler:
 	def _handle_autotune_commands(self):
 		"""Handle autotune, tuning history, and clear history commands"""
 		autotune_command = SmartDashboard.getBoolean("autotune_command", False)
+		autotune_rotation_command = SmartDashboard.getBoolean("autotune_rotation_command", False)
 		tuning_history_command = SmartDashboard.getBoolean("tuning_history_command", False)
 		clear_tuning_command = SmartDashboard.getBoolean("clear_tuning_history_command", False)
 		
 		if autotune_command:
 			self.drive.start_autotune()
 			SmartDashboard.putBoolean("autotune_command", False)
+		
+		if autotune_rotation_command and self.navigator:
+			self.autotune_rotation_active = True
+			SmartDashboard.putBoolean("autotune_rotation_command", False)
+			print("[HANDLER] Starting rotation autotune...", flush=True)
+			# Run autotune - this blocks for ~15-20 seconds
+			result = self.navigator.autotune_rotation(
+				target_heading=45.0,
+				max_power=0.5,
+				duration_seconds=15.0
+			)
+			self.autotune_rotation_active = False
+			
+			# Send result back to dashboard
+			if result.get('success'):
+				SmartDashboard.putString("autotune_rotation_status", f"✓ Complete: KP={result['kp']:.6f}")
+				print(f"[HANDLER] Rotation autotune complete: {result}", flush=True)
+			else:
+				SmartDashboard.putString("autotune_rotation_status", f"✗ Failed: {result.get('message', 'Unknown error')}")
+				print(f"[HANDLER] Rotation autotune failed: {result.get('message')}", flush=True)
 		
 		if tuning_history_command:
 			self.drive._publish_tuning_history_to_nt()
@@ -126,8 +156,8 @@ class CalibrationModeHandler:
 	
 	def _update_autotune_status(self):
 		"""Update autotune status on NetworkTables"""
-		if self.drive.autotune_gains:
-			wheel_name = self.drive.autotune_gains["wheels"][self.drive.autotune_gains["current_index"]]
+		if hasattr(self.drive, 'tuner') and hasattr(self.drive.tuner, 'gains') and self.drive.tuner.gains:
+			wheel_name = self.drive.tuner.gains["wheels"][self.drive.tuner.gains["current_index"]]
 			SmartDashboard.putString("autotune_wheel", wheel_name)
 	
 	def _handle_calibration_command(self):

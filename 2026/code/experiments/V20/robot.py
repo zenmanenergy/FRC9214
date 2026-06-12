@@ -18,9 +18,9 @@ class Robot(wpilib.TimedRobot):
 		
 		self.dashboard = DashboardUpdater(self.swervedrive)
 		
-		self.calibration_mode_handler = CalibrationModeHandler(self.swervedrive, self.pilot_controls)
-		
 		self.navigator = WaypointNavigator(self.swervedrive)
+		
+		self.calibration_mode_handler = CalibrationModeHandler(self.swervedrive, self.pilot_controls, self.navigator)
 		
 	def robotPeriodic(self):
 		self.dashboard.update()

@@ -329,6 +329,7 @@
 				<div class="section">
 					<div class="section-title">Tuning</div>
 					<button class="button btn-danger" id="autotuneBtn" onclick="if(isRobotEnabled) startAutotune(); else showError('Bot must be enabled to autotune')">⚙️ Autotune PID</button>
+					<button class="button btn-warning" id="autotuneRotationBtn" onclick="if(isRobotEnabled) startAutotuneRotation(); else showError('Bot must be enabled to autotune')">🔄 Autotune Rotation</button>
 					<button class="button btn-primary" onclick="if(isRobotEnabled) window.location.href='/history'; else showError('Bot must be enabled to view history')">📊 Tuning History</button>
 				</div>
 			</div>
@@ -488,6 +489,9 @@
 			else if (type === "autotune_complete") {
 				handleAutotuneComplete(data);
 			}
+			else if (type === "autotune_rotation_complete") {
+				handleAutotuneRotationComplete(data);
+			}
 			else if (type === "autotune_progress") {
 				document.getElementById("autotuneStatus").textContent = `Tuning ${data.wheel}...`;
 			}
@@ -528,6 +532,20 @@
 			status.innerHTML = `✓ Complete!<br>KP=${data.kp.toFixed(6)}<br>KI=${data.ki.toFixed(6)}<br>KD=${data.kd.toFixed(6)}<br>@ ${data.battery_voltage.toFixed(2)}V`;
 			status.style.color = "#2ecc71";
 			document.getElementById("autotuneBtn").disabled = false;
+			document.getElementById("autotuneRotationBtn").disabled = false;
+		}
+		
+		function handleAutotuneRotationComplete(data) {
+			const status = document.getElementById("autotuneStatus");
+			if (data.success) {
+				status.innerHTML = `✓ Rotation Tuned!<br>KP=${data.kp.toFixed(6)}<br>KI=${data.ki.toFixed(6)}<br>KD=${data.kd.toFixed(6)}<br>Period=${data.period.toFixed(3)}s`;
+				status.style.color = "#27ae60";
+			} else {
+				status.innerHTML = `✗ Rotation Tune Failed<br>${data.message}`;
+				status.style.color = "#e74c3c";
+			}
+			document.getElementById("autotuneRotationBtn").disabled = false;
+			document.getElementById("autotuneBtn").disabled = false;
 		}
 		
 		function updatePresetsPanel() {
@@ -561,6 +579,14 @@
 			document.getElementById("autotuneStatus").textContent = "Starting autotune...";
 			document.getElementById("autotuneStatus").style.color = "#f39c12";
 			sendCommand("autotune", "start");
+		}
+		
+		function startAutotuneRotation() {
+			if (!confirm("Autotune Rotation will take ~20 seconds. Robot must be ELEVATED (off the ground). Continue?")) return;
+			document.getElementById("autotuneRotationBtn").disabled = true;
+			document.getElementById("autotuneStatus").textContent = "Tuning Rotation...";
+			document.getElementById("autotuneStatus").style.color = "#e74c3c";
+			sendCommand("autotune_rotation", "start");
 		}
 		
 		// ===== Swerve Drawing =====
