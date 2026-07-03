@@ -1379,10 +1379,11 @@
 			const loopEl = document.getElementById('loopCheck');
 			const loop = loopEl ? loopEl.checked : false;
 			
-			// Sample spline into dense waypoints for the robot to actually follow the curve
-			const splinePoints = sampleSpline(waypointList, 20);
-			sendCommand("navigate_waypoints", { waypoints: splinePoints, loop: loop });
-			showError("Route started: " + splinePoints.length + " spline points from " + waypointList.length + " waypoints, loop=" + loop, false);
+			// Send only the control waypoints (not sampled spline).
+			// Python will use Catmull-Rom to calculate smooth path in real-time.
+			const useSpline = waypointList.length >= 2;
+			sendCommand("navigate_waypoints", { waypoints: waypointList, loop: loop, use_spline: useSpline });
+			showError("Route started: " + waypointList.length + " waypoints (spline=" + useSpline + "), loop=" + loop, false);
 		}
 		
 		function stopNavigation() {

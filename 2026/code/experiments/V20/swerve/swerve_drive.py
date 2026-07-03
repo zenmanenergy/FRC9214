@@ -344,6 +344,10 @@ class SwerveDrive:
 			elif len(self.wheel_alignment_state) > 0:
 				self.movement_state = "aligning"
 		
+		# Debug: log all wheel drive powers being sent
+		drive_powers_str = " | ".join([f"{name}={self.wheels[name].get_drive_power():.3f}" for name in self.wheels.keys()])
+		print(f"[DRIVE-SWERVE] Powers: {drive_powers_str}")
+		
 		self.update_motor_currents()
 	
 	def rotate_in_place_autotune(self, rotation_power):

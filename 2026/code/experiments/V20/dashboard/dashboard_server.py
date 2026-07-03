@@ -219,11 +219,13 @@ if HAS_FLASK_SOCK:
 					elif cmd == "navigate_waypoints":
 						waypoints = value.get("waypoints", [])
 						loop = value.get("loop", False)
+						use_spline = value.get("use_spline", False)
 						dashboard.table.putString("navigation_waypoints_json", json.dumps(waypoints))
 						dashboard.table.putBoolean("navigation_loop", loop)
+						dashboard.table.putBoolean("navigation_use_spline", use_spline)
 						dashboard.table.putBoolean("navigate_waypoints_command", True)
-						print(f"[WS] Waypoint route: {len(waypoints)} points loop={loop}")
-						ws.send(json.dumps({"type": "success", "message": f"Route started: {len(waypoints)} waypoints"}))
+						print(f"[WS] Waypoint route: {len(waypoints)} points loop={loop} spline={use_spline}")
+						ws.send(json.dumps({"type": "success", "message": f"Route started: {len(waypoints)} waypoints (spline={use_spline})"}))
 					elif cmd == "stop_navigation":
 						dashboard.table.putBoolean("stop_navigation_command", True)
 						print(f"[WS] Stop navigation sent")
