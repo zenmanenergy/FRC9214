@@ -16,7 +16,7 @@ This is a **swerve drive** robot used for FRC (FIRST Robotics Competition). It's
 If you're new to the codebase, start here:
 
 1. **[Swerve Drive Explained](docs/Swerve-Drive-Explained.md)** - Understand how swerve drive works and why it's special
-2. **[Dashboard Guide](docs/Dashboard-Guide.md)** - Learn how to use the control interface to test the robot
+2. **[Simulator Guide](docs/Simulator-Guide.md)** - Learn how to test the robot using simulation and the dashboard
 3. **[Autonomous Paths](docs/Autonomous-Paths.md)** - See how the robot plans and follows paths on its own
 
 ## What's in This Folder?

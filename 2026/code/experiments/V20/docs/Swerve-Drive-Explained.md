@@ -340,4 +340,4 @@ def teleopPeriodic(self):
 
 ---
 
-**Next:** Learn how to [control the robot using the Dashboard](Dashboard-Guide.md)
+**Next:** Learn how to [test the robot using the simulator and dashboard](Simulator-Guide.md)
