@@ -202,6 +202,44 @@
 			margin-top: 2px;
 		}
 		
+		.vision-section {
+			margin-top: 30px;
+			padding-top: 20px;
+			border-top: 2px solid #eee;
+			width: 100%;
+		}
+		
+		.vision-title {
+			font-weight: bold;
+			color: #2c3e50;
+			margin-bottom: 10px;
+			font-size: 14px;
+		}
+		
+		.vision-feed {
+			width: 100%;
+			max-width: 500px;
+			height: auto;
+			border: 2px solid #3498db;
+			border-radius: 5px;
+			background: #000;
+			display: block;
+		}
+		
+		.vision-status {
+			font-size: 12px;
+			color: #666;
+			margin-top: 8px;
+		}
+		
+		.vision-status.loading {
+			color: #f39c12;
+		}
+		
+		.vision-status.ready {
+			color: #27ae60;
+		}
+		
 		@media (max-width: 600px) {
 			.content {
 				flex-direction: column;
@@ -288,9 +326,13 @@
 				</div>
 			</div>
 		</div>
-	</div>
 	
-	<script>
+	<!-- VISION SECTION -->
+	<div class="vision-section">
+		<div class="vision-title">📷 Camera Feed</div>
+		<img id="visionFeed" class="vision-feed" src="/video_feed?t=0" alt="Camera feed loading...">
+		<div id="visionStatus" class="vision-status loading">Loading camera feed...</div>
+	</div>
 		// WebSocket setup
 		let ws = null;
 		let wheelAngles = { front_left: 0, front_right: 0, rear_left: 0, rear_right: 0 };
@@ -493,7 +535,31 @@
 		window.addEventListener("load", () => {
 			drawSwerve();
 			connectWebSocket();
+			startVisionFeed();
 		});
+		
+		// Vision feed auto-refresh
+		function startVisionFeed() {
+			const feedImg = document.getElementById("visionFeed");
+			const statusEl = document.getElementById("visionStatus");
+			
+			function refreshFrame() {
+				feedImg.src = "/video_feed?t=" + Date.now();
+			}
+			
+			feedImg.onload = () => {
+				statusEl.textContent = "✓ Live";
+				statusEl.className = "vision-status ready";
+			};
+			
+			feedImg.onerror = () => {
+				statusEl.textContent = "⚠ No feed";
+				statusEl.className = "vision-status";
+			};
+			
+			// Refresh every 100ms
+			setInterval(refreshFrame, 100);
+		}
 	</script>
 </body>
 </html>

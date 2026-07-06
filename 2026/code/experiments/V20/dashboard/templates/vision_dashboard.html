@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vision Dashboard</title>
+    <style>
+      body {
+        margin: 0;
+        background: #111;
+        color: #eee;
+        font-family: Arial, sans-serif;
+      }
+      .panel {
+        padding: 16px;
+      }
+      .status {
+        margin-bottom: 12px;
+        font-weight: 600;
+      }
+      img {
+        width: 100%;
+        max-width: 1280px;
+        border: 1px solid #444;
+        background: #000;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="panel">
+      <h3>AprilTag Vision Dashboard</h3>
+      <div class="status" id="status">Waiting for frame...</div>
+      <img id="video" src="/video_feed" alt="Vision feed" />
+    </div>
+    <script>
+      const img = document.getElementById('video');
+      const status = document.getElementById('status');
+      function refreshFrame() {
+        const stamp = Date.now();
+        img.src = '/video_feed?ts=' + stamp;
+        status.textContent = 'Live feed';
+      }
+      setInterval(refreshFrame, 100);
+      refreshFrame();
+    </script>
+  </body>
+</html>

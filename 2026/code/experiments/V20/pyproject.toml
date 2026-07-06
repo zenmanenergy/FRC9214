@@ -25,4 +25,10 @@ components = [
 requires = [
     "robotpy-rev",
     "robotpy-navx",
+    "opencv-python",
+    "numpy",
+    "pupil-apriltags",
+    "pynetworktables",
+    "flask",
+    "flask-sock",
 ]

@@ -1,4 +1,6 @@
 """FRC Swerve Drive Test Robot"""
+import threading
+
 import wpilib
 from wpilib import SmartDashboard, DriverStation
 from swerve.swerve_drive import SwerveDrive
@@ -8,6 +10,7 @@ from dashboard.dashboard_updater import DashboardUpdater
 from dashboard.calibration_mode_handler import CalibrationModeHandler
 from waypoint_navigator import WaypointNavigator
 from swerve.encoder_calibration import EncoderCalibration
+from apriltags.frc_apriltags import CameraViewer
 
 class Robot(wpilib.TimedRobot):
 	def robotInit(self):
@@ -21,6 +24,20 @@ class Robot(wpilib.TimedRobot):
 		self.navigator = WaypointNavigator(self.swervedrive)
 		
 		self.calibration_mode_handler = CalibrationModeHandler(self.swervedrive, self.pilot_controls, self.navigator)
+		
+		self.vision_viewer = None
+		self.vision_thread = None
+		try:
+			self.vision_viewer = CameraViewer()
+			self.vision_thread = threading.Thread(
+				target=self.vision_viewer.run,
+				kwargs={"host": "0.0.0.0", "port": 5000},
+				daemon=True,
+			)
+			self.vision_thread.start()
+			print("[VISION] Localhost viewer started on http://127.0.0.1:5000/", flush=True)
+		except Exception as exc:
+			print(f"[VISION] Viewer startup skipped: {exc}", flush=True)
 		
 	def robotPeriodic(self):
 		self.dashboard.update()

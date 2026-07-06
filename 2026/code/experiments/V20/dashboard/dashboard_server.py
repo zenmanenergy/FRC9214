@@ -1,5 +1,5 @@
 """Swerve Drive Dashboard Server - WebSocket Server for Teleop and Test Modes"""
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, Response
 import ntcore
 import threading
 import time
@@ -175,6 +175,24 @@ def serve_dashboard():
 def history():
 	"""Serve tuning history page"""
 	return render_template("history.html")
+
+@app.route("/video_feed")
+def video_feed():
+	"""Serve camera frame from NetworkTables"""
+	try:
+		if not dashboard.table:
+			return Response(status=503)  # Service unavailable
+		
+		# Get the camera frame from NetworkTables
+		raw_frame = dashboard.table.getRaw("frc_apriltags/vision/camera_frame", ntcore.Value.kRaw(b""))
+		
+		if not raw_frame or len(raw_frame) == 0:
+			return Response(status=204)  # No content
+		
+		return Response(raw_frame, mimetype="image/jpeg")
+	except Exception as e:
+		print(f"[VIDEO] Error serving frame: {e}")
+		return Response(status=500)
 
 if HAS_FLASK_SOCK:
 	@sock.route("/ws")

@@ -322,6 +322,27 @@
 			font-size: 12px;
 		}
 		
+		.vision-feed {
+			width: 100%;
+			height: auto;
+			max-width: 600px;
+			border: 2px solid #3498db;
+			border-radius: 5px;
+			background: #000;
+			display: block;
+		}
+		
+		.vision-status {
+			font-size: 12px;
+			color: #666;
+			margin-top: 8px;
+		}
+		
+		.vision-status.ready {
+			color: #27ae60;
+			font-weight: bold;
+		}
+		
 		@media (max-width: 900px) {
 			.content {
 				flex-direction: column;
@@ -355,6 +376,7 @@
 		<div class="tab-bar">
 			<button class="tab-btn active" onclick="switchTab('swerve')">Swerve</button>
 			<button class="tab-btn" onclick="switchTab('map')">Field Map</button>
+			<button class="tab-btn" onclick="switchTab('vision')">📷 Camera</button>
 		</div>
 		
 		<!-- SWERVE TAB -->
@@ -490,9 +512,41 @@
 				</div>
 			</div>
 		</div>
+		
+		<!-- VISION TAB -->
+		<div id="vision" class="tab-content">
+			<div style="padding: 20px; text-align: center;">
+				<h2 style="color: #2c3e50; margin-bottom: 15px;">📷 Camera Feed</h2>
+				<img id="visionFeed" class="vision-feed" src="/video_feed?t=0" alt="Camera feed loading...">
+				<div id="visionStatus" class="vision-status">Loading camera feed...</div>
+			</div>
+		</div>
 	</div>
 	
 	<script>
+		// ===== Vision Feed Setup =====
+		function startVisionFeed() {
+			const feedImg = document.getElementById("visionFeed");
+			const statusEl = document.getElementById("visionStatus");
+			
+			function refreshFrame() {
+				feedImg.src = "/video_feed?t=" + Date.now();
+			}
+			
+			feedImg.onload = () => {
+				statusEl.textContent = "✓ Live";
+				statusEl.className = "vision-status ready";
+			};
+			
+			feedImg.onerror = () => {
+				statusEl.textContent = "⚠ No camera feed available";
+				statusEl.className = "vision-status";
+			};
+			
+			// Refresh every 100ms
+			setInterval(refreshFrame, 100);
+		}
+		
 		// ===== WebSocket Setup =====
 		let ws = null;
 		let wheelAngles = { front_left: 0, front_right: 0, rear_left: 0, rear_right: 0 };
@@ -1495,6 +1549,7 @@
 			drawFieldMap();
 			updatePresetsPanel();
 			connectWebSocket();
+			startVisionFeed();
 			
 			// Add map canvas event handlers
 			const mapCanvas = document.getElementById('mapCanvas');

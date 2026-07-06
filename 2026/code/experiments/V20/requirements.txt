@@ -1,0 +1,9 @@
+opencv-python
+numpy
+pupil-apriltags
+pynetworktables
+robotpy
+robotpy-rev
+robotpy-navx
+flask
+flask-sock
