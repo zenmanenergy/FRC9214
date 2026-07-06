@@ -219,11 +219,13 @@ if HAS_FLASK_SOCK:
 					elif cmd == "navigate_waypoints":
 						waypoints = value.get("waypoints", [])
 						loop = value.get("loop", False)
+						use_spline = value.get("use_spline", False)
 						dashboard.table.putString("navigation_waypoints_json", json.dumps(waypoints))
 						dashboard.table.putBoolean("navigation_loop", loop)
+						dashboard.table.putBoolean("navigation_use_spline", use_spline)
 						dashboard.table.putBoolean("navigate_waypoints_command", True)
-						print(f"[WS] Waypoint route: {len(waypoints)} points loop={loop}")
-						ws.send(json.dumps({"type": "success", "message": f"Route started: {len(waypoints)} waypoints"}))
+						print(f"[WS] Waypoint route: {len(waypoints)} points loop={loop} spline={use_spline}")
+						ws.send(json.dumps({"type": "success", "message": f"Route started: {len(waypoints)} waypoints (spline={use_spline})"}))
 					elif cmd == "stop_navigation":
 						dashboard.table.putBoolean("stop_navigation_command", True)
 						print(f"[WS] Stop navigation sent")
@@ -236,11 +238,18 @@ if HAS_FLASK_SOCK:
 					# ===== TEST MODE COMMANDS (mode-gated) =====
 					elif cmd == "autotune":
 						robot_mode = dashboard.table.getString("robot_mode", "Unknown")
-						if robot_mode == "Test":
+						if robot_mode in ["Test", "Calibration"]:
 							dashboard.table.putBoolean("autotune_command", True)
 							print(f"[WS] autotune_command = true (TEST MODE)")
 						else:
 							ws.send(json.dumps({"type": "error", "message": "Autotune only allowed in TEST mode"}))
+					elif cmd == "autotune_rotation":
+						robot_mode = dashboard.table.getString("robot_mode", "Unknown")
+						if robot_mode in ["Test", "Calibration"]:
+							dashboard.table.putBoolean("autotune_rotation_command", True)
+							print(f"[WS] autotune_rotation_command = true (TEST MODE)")
+						else:
+							ws.send(json.dumps({"type": "error", "message": "Autotune Rotation only allowed in TEST mode"}))
 					elif cmd == "tuning_history":
 						try:
 							history_json_str = dashboard.table.getString("autotune_history_json", "[]")
@@ -256,7 +265,7 @@ if HAS_FLASK_SOCK:
 							ws.send(json.dumps({"type": "error", "message": f"Failed to load tuning history: {str(e)}"}))
 					elif cmd == "clear_tuning":
 						robot_mode = dashboard.table.getString("robot_mode", "Unknown")
-						if robot_mode == "Test":
+						if robot_mode in ["Test", "Calibration"]:
 							try:
 								dashboard.table.putBoolean("clear_tuning_history_command", True)
 								ws.send(json.dumps({"type": "success", "message": "Tuning history cleared"}))
@@ -270,7 +279,6 @@ if HAS_FLASK_SOCK:
 					elif cmd == "toggle_imu_invert":
 						dashboard.table.putBoolean("toggle_imu_invert_command", True)
 						ws.send(json.dumps({"type": "success", "message": "IMU invert toggle sent"}))
-				
 				except json.JSONDecodeError:
 					ws.send(json.dumps({"type": "error", "message": "Invalid JSON"}))
 				except Exception as e:

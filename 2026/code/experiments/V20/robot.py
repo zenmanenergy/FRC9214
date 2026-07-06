@@ -18,13 +18,19 @@ class Robot(wpilib.TimedRobot):
 		
 		self.dashboard = DashboardUpdater(self.swervedrive)
 		
-		self.calibration_mode_handler = CalibrationModeHandler(self.swervedrive, self.pilot_controls)
-		
 		self.navigator = WaypointNavigator(self.swervedrive)
+		
+		self.calibration_mode_handler = CalibrationModeHandler(self.swervedrive, self.pilot_controls, self.navigator)
 		
 	def robotPeriodic(self):
 		self.dashboard.update()
 		SmartDashboard.putBoolean("Robot Enabled", DriverStation.isEnabled())
+	
+	def autonomousInit(self):
+		"""Called at start of autonomous"""
+		self.navigator.stop()  # Ensure clean state
+		self.swervedrive.stop_all()
+		SmartDashboard.putString("robot_mode", "Autonomous")
 	
 	def testInit(self):
 		self.calibration_mode_handler.test_init()
@@ -34,8 +40,14 @@ class Robot(wpilib.TimedRobot):
 	def testExit(self):
 		self.calibration_mode_handler.test_exit()
 	
+	def disabledInit(self):
+		"""Called when robot is disabled"""
+		self.navigator.stop()
+		self.swervedrive.stop_all()
+	
 	def teleopInit(self):
 		self.swervedrive.stop_all()
+		self.navigator.stop()  # Ensure navigator is reset on teleop start
 		self.swervedrive.aligning = False
 		self.swervedrive.wheel_alignment_state.clear()
 		self.swervedrive.imu.zero_heading()
@@ -48,14 +60,15 @@ class Robot(wpilib.TimedRobot):
 			SmartDashboard.putBoolean("navigate_waypoints_command", False)
 			waypoints_json = SmartDashboard.getString("navigation_waypoints_json", "[]")
 			loop = SmartDashboard.getBoolean("navigation_loop", False)
+			use_spline = SmartDashboard.getBoolean("navigation_use_spline", False)
 			try:
 				import json
 				waypoints = json.loads(waypoints_json)
 				if waypoints:
 					self.navigator.loop = loop
-					self.navigator.set_waypoints(waypoints)
+					self.navigator.set_waypoints(waypoints, use_spline=use_spline)
 					self.navigator.start()
-					print(f"[ROBOT] Navigation started: {len(waypoints)} waypoints loop={loop}", flush=True)
+					print(f"[ROBOT] Navigation started: {len(waypoints)} waypoints loop={loop} spline={use_spline}", flush=True)
 			except Exception as e:
 				print(f"[ROBOT] Navigation parse error: {e}", flush=True)
 		
