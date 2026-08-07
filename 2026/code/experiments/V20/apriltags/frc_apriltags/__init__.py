@@ -13,7 +13,7 @@ import time
 from typing import Any
 
 try:
-    from importlib_metadata import PackageNotFoundError, version
+    from importlib_metadata import PackageNotFoundError, version # type: ignore[import-not-found]
 except Exception:  # pragma: no cover - Python 3.11+ compatibility
     from importlib.metadata import PackageNotFoundError, version
 
@@ -23,7 +23,7 @@ except Exception:  # pragma: no cover - optional on laptop/dev environments
     ntcore = None
 
 try:
-    from networktables import NetworkTablesInstance
+    from networktables import NetworkTablesInstance # type: ignore[import-not-found]
 except Exception:  # pragma: no cover - optional on laptop/dev environments
     NetworkTablesInstance = None
 
