@@ -477,6 +477,11 @@
 								<input type="checkbox" id="loopCheck"> Loop
 							</label>
 						</div>
+						<div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px; font-size: 12px;">
+							<label style="flex: 0 0 50px;">Speed:</label>
+							<input type="range" id="routeSpeed" value="0.8" min="0.1" max="1.0" step="0.05" style="flex: 1;">
+							<span id="routeSpeedLabel" style="flex: 0 0 35px; text-align: right; color: #666; font-weight: bold;">0.80</span>
+						</div>
 						<div style="font-size: 11px; color: #888; margin-bottom: 8px;">Click field to add points</div>
 						<div id="waypointTable" style="max-height: 260px; overflow-y: auto; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; background: white;">
 							<div style="padding: 15px; text-align: center; color: #aaa; font-size: 12px;">No waypoints added</div>
@@ -501,6 +506,28 @@
 		let isRobotEnabled = false;
 		let debugMode = false;
 		let debugWheelOnly = 'rear_right';
+		
+		// Speed slider handler
+		document.addEventListener('DOMContentLoaded', () => {
+			const speedSlider = document.getElementById('routeSpeed');
+			const speedLabel = document.getElementById('routeSpeedLabel');
+			if (speedSlider && speedLabel) {
+				speedSlider.addEventListener('input', (e) => {
+					speedLabel.textContent = parseFloat(e.target.value).toFixed(2);
+				});
+			}
+		});
+		
+		// Speed slider handler
+		document.addEventListener('DOMContentLoaded', () => {
+			const speedSlider = document.getElementById('routeSpeed');
+			const speedLabel = document.getElementById('routeSpeedLabel');
+			if (speedSlider && speedLabel) {
+				speedSlider.addEventListener('input', (e) => {
+					speedLabel.textContent = parseFloat(e.target.value).toFixed(2);
+				});
+			}
+		});
 		
 		const WS_URL = `ws://${window.location.hostname}:${window.location.port}/ws`;
 		
@@ -1378,12 +1405,14 @@
 			}
 			const loopEl = document.getElementById('loopCheck');
 			const loop = loopEl ? loopEl.checked : false;
+			const speedEl = document.getElementById('routeSpeed');
+			const speed = speedEl ? parseFloat(speedEl.value) : 0.8;
 			
 			// Send only the control waypoints (not sampled spline).
 			// Python will use Catmull-Rom to calculate smooth path in real-time.
 			const useSpline = waypointList.length >= 2;
-			sendCommand("navigate_waypoints", { waypoints: waypointList, loop: loop, use_spline: useSpline });
-			showError("Route started: " + waypointList.length + " waypoints (spline=" + useSpline + "), loop=" + loop, false);
+			sendCommand("navigate_waypoints", { waypoints: waypointList, loop: loop, use_spline: useSpline, max_speed: speed });
+			showError("Route started: " + waypointList.length + " waypoints (spline=" + useSpline + "), loop=" + loop + ", speed=" + speed.toFixed(2), false);
 		}
 		
 		function stopNavigation() {

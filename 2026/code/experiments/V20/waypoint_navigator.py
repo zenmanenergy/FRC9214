@@ -143,6 +143,16 @@ class WaypointNavigator:
 		
 		print(f"[NAVIGATOR] Set {len(waypoints)} waypoints (spline={use_spline})")
 	
+	def set_max_speed(self, max_speed):
+		"""
+		Set maximum speed for navigation.
+		
+		Args:
+			max_speed: Maximum speed as a fraction 0.0-1.0 of full power
+		"""
+		self.max_move_speed = max(0.1, min(1.0, max_speed))  # Clamp to [0.1, 1.0]
+		print(f"[NAVIGATOR] Set max speed to {self.max_move_speed:.2f}")
+	
 	def start(self):
 		"""Start navigation sequence"""
 		if not self.waypoints:
@@ -427,8 +437,8 @@ class WaypointNavigator:
 		# Debug output
 		print(f"[NAVIGATOR-SPLINE] Dist={actual_distance:.1f}/{self.spline_total_distance:.1f}cm Remain={distance_remaining:.1f}cm Spd={drive_speed:.3f} HeadErr={heading_error:.1f}° LatErr={lateral_error:.1f}cm")
 		
-		# Send command to swerve drive
-		self.drive.drive_swerve(robot_forward * drive_speed, robot_strafe * drive_speed, rotation_power)
+		# Send command to swerve drive (negate strafe to account for drive_swerve negation)
+		self.drive.drive_swerve(robot_forward * drive_speed, -robot_strafe * drive_speed, rotation_power)
 		
 		# Check if we've reached the end
 		if distance_remaining < self.position_tolerance:
@@ -569,7 +579,8 @@ class WaypointNavigator:
 				print(f"[NAVIGATOR-DEBUG] WP{self.current_waypoint_index + 1} Dist={distance_to_target:.1f}cm SpeedFromWP={speed_from_wp:.3f} SpeedFromStop={speed_from_stop:.3f} TargetSpd={target_speed:.3f} RampedSpd={drive_speed:.3f} FwdPwr={drive_fwd_power:.3f} StrPwr={drive_str_power:.3f} Rot={rotation_power:.3f}")
 				
 				print(f"[NAVIGATOR] WP {self.current_waypoint_index + 1} - Dist {distance_to_target:.1f}cm Head {current_heading:.1f} Err {angle_diff:.1f} Spd {drive_speed:.3f} RF {robot_forward:.3f} RS {robot_strafe:.3f} Rot {rotation_power:.3f} T {elapsed:.2f}s")
-				self.drive.drive_swerve(robot_forward * drive_speed, robot_strafe * drive_speed, rotation_power)
+				# Note: drive_swerve negates both forward and strafe, so we negate strafe here to account for that
+				self.drive.drive_swerve(robot_forward * drive_speed, -robot_strafe * drive_speed, rotation_power)
 		
 		# ===== STAGE 2: DWELL / ADVANCE =====
 		elif self.stage == 2:

@@ -61,14 +61,16 @@ class Robot(wpilib.TimedRobot):
 			waypoints_json = SmartDashboard.getString("navigation_waypoints_json", "[]")
 			loop = SmartDashboard.getBoolean("navigation_loop", False)
 			use_spline = SmartDashboard.getBoolean("navigation_use_spline", False)
+			max_speed = SmartDashboard.getNumber("navigation_max_speed", 0.8)
 			try:
 				import json
 				waypoints = json.loads(waypoints_json)
 				if waypoints:
 					self.navigator.loop = loop
 					self.navigator.set_waypoints(waypoints, use_spline=use_spline)
+					self.navigator.set_max_speed(max_speed)
 					self.navigator.start()
-					print(f"[ROBOT] Navigation started: {len(waypoints)} waypoints loop={loop} spline={use_spline}", flush=True)
+					print(f"[ROBOT] Navigation started: {len(waypoints)} waypoints loop={loop} spline={use_spline} speed={max_speed}", flush=True)
 			except Exception as e:
 				print(f"[ROBOT] Navigation parse error: {e}", flush=True)
 		
