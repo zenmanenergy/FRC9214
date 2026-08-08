@@ -29,19 +29,7 @@
   <body>
     <div class="panel">
       <h3>AprilTag Vision Dashboard</h3>
-      <div class="status" id="status">Waiting for frame...</div>
-      <img id="video" src="/video_feed" alt="Vision feed" />
+      <div class="status" id="status">Vision feed disabled</div>
     </div>
-    <script>
-      const img = document.getElementById('video');
-      const status = document.getElementById('status');
-      function refreshFrame() {
-        const stamp = Date.now();
-        img.src = '/video_feed?ts=' + stamp;
-        status.textContent = 'Live feed';
-      }
-      setInterval(refreshFrame, 100);
-      refreshFrame();
-    </script>
   </body>
 </html>
