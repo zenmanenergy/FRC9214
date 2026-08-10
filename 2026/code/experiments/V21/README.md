@@ -115,8 +115,6 @@ done = swerve.drive_to_heading(target_angle=180.0)
 ## Autonomous Navigation
 
 ```python
-from swerve import CatmullRomSpline
-
 # Define waypoints
 waypoints = [
     {'x': 0, 'y': 0, 'heading': 0},
@@ -124,17 +122,13 @@ waypoints = [
     {'x': 200, 'y': 100, 'heading': 90},
 ]
 
-# Create smooth path
-path = CatmullRomSpline(waypoints)
+# Start following the path
+swerve.follow_path(waypoints, speed=0.6)
 
-# Query any point along the path
-state = path.get_state_at_distance(150.0)  # At 150cm
-print(f"Go to ({state['x']:.1f}, {state['y']:.1f}) facing {state['heading']:.1f}°")
-
-# Or iterate through the entire path
-for state in path.sample_path(step_cm=10.0):  # Every 10cm
-    print(f"Waypoint at {state['distance']:.1f}cm")
-    robot_move_to(state['x'], state['y'], state['heading'])
+# In main autonomous loop
+while not swerve.is_path_complete():
+    swerve.update_autonomous()
+    # Path following, odometry, and heading fusion all handled automatically
 ```
 
 ## Calibration & Tuning

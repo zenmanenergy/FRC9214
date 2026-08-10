@@ -22,7 +22,7 @@ A production-ready, type-hinted Python library for FRC swerve drive control with
 This is a local library. Import it directly:
 
 ```python
-from swerve import SwerveDrive, SwerveOdometry, CatmullRomSpline
+from swerve import SwerveDrive, SwerveOdometry
 ```
 
 ## Quick Start
@@ -74,28 +74,32 @@ if aligned:
 
 ### Autonomous Path Following
 
-```python
-from swerve import CatmullRomSpline
+Define waypoints and let the library handle everything:
 
-# Define waypoints with position (cm) and heading (°)
+```python
 waypoints = [
     {'x': 0, 'y': 0, 'heading': 0},
     {'x': 100, 'y': 50, 'heading': 45},
-    {'x': 200, 'y': 0, 'heading': 90},
+    {'x': 200, 'y': 100, 'heading': 90},
 ]
 
-# Create smooth path
-path = CatmullRomSpline(waypoints)
+# Start path following
+swerve.follow_path(waypoints, speed=0.6)
 
-# Query any point along the path
-state = path.get_state_at_distance(50.0)  # At 50cm
-print(f"Target: ({state['x']:.1f}, {state['y']:.1f}) @ {state['heading']:.1f}°")
+# Drive the path (odometry and IMU fusion handled automatically)
+while not swerve.is_path_complete():
+    swerve.update_autonomous()
 
-# Or sample the entire path
-for state in path.sample_path(step_cm=10.0):  # Every 10cm
-    print(f"Waypoint at {state['distance']:.1f}cm: "
-          f"({state['x']:.1f}, {state['y']:.1f}) facing {state['heading']:.1f}°")
+# Done!
 ```
+
+**That's it!** No need to deal with splines, waypoint sampling, or manual state management. Just define waypoints and call two methods.
+
+**Autonomous Methods:**
+- `follow_path(waypoints, speed)` - Start following a path
+- `update_autonomous()` - Call in loop to drive along path (all updates handled internally)
+- `is_path_complete()` - Check if destination reached
+- `stop_path()` - Cancel path following
 
 ## Core Classes
 
@@ -112,6 +116,12 @@ swerve.drive_straight(speed, target_angle)             # Straight line
 swerve.drive_for_distance(speed, distance_cm)          # Limited distance
 swerve.drive_to_heading(target_angle)                  # In-place rotation
 swerve.stop_all()                                      # Emergency stop
+
+# Autonomous path following
+swerve.follow_path(waypoints, speed=0.5)              # Start following path
+swerve.update_autonomous()                             # Update in main loop
+swerve.is_path_complete()                              # Check if done
+swerve.stop_path()                                     # Cancel path
 
 # State queries
 is_moving = swerve.is_moving()                         # Moving or aligning?

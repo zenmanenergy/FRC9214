@@ -9,12 +9,27 @@ A complete, production-ready swerve drive system for FRC robots featuring:
 - Motor current monitoring for collision detection
 - Persistent encoder offset and tuning calibration
 
-Quick Start:
+Quick Start - Teleop:
     from swerve import SwerveDrive
     
     swerve = SwerveDrive()
     swerve.drive_swerve(forward=0.5, strafe=0.0, rotate=0.0)
     swerve.odometry.update()
+
+Quick Start - Autonomous Path:
+    from swerve import SwerveDrive
+    
+    waypoints = [
+        {'x': 0, 'y': 0, 'heading': 0},
+        {'x': 100, 'y': 50, 'heading': 45},
+        {'x': 200, 'y': 100, 'heading': 90},
+    ]
+    
+    swerve = SwerveDrive()
+    swerve.follow_path(waypoints, speed=0.6)
+    
+    while not swerve.is_path_complete():
+        swerve.update_autonomous()
 
 Configuration:
     Edit swerve_config.py to match your robot's dimensions and CAN IDs.
