@@ -122,14 +122,43 @@ waypoints = [
     {'x': 200, 'y': 100, 'heading': 90},
 ]
 
-# Start following the path
+# Start path
 swerve.follow_path(waypoints, speed=0.6)
 
-# In main autonomous loop
+# Drive the path (odometry and IMU fusion handled automatically)
 while not swerve.is_path_complete():
     swerve.update_autonomous()
-    # Path following, odometry, and heading fusion all handled automatically
+
+# Done!
 ```
+
+## Path Recording (for Tuning & Debugging)
+
+Record the actual path the robot takes and compare it to the planned path:
+
+```python
+# Record the actual robot movement
+swerve.start_recording()
+swerve.follow_path(waypoints, speed=0.6)
+
+while not swerve.is_path_complete():
+    swerve.update_autonomous()  # Automatically records position each loop
+
+# Get recorded path
+actual_path = swerve.get_recorded_path()  # List of {'x', 'y', 'heading', 'timestamp', 'distance'}
+
+# Export for analysis
+swerve.export_recorded_path("/home/lvuser/path_run.json")
+
+# Compare with planned path
+planned_path = list(swerve.path.sample_path(step_cm=10.0))
+```
+
+Use this to:
+- Debug odometry drift
+- Verify path accuracy
+- Tune PID gains for smoother tracking
+- Analyze motor performance
 
 ## Calibration & Tuning
 

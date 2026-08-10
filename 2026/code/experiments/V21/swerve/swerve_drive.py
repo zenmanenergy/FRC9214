@@ -4,7 +4,12 @@ Coordinates all four swerve wheels, odometry, and IMU for field-relative and
 robot-relative movement. Supports teleop drive, autonomous path following,
 and in-place rotation with motor current monitoring for safety.
 
-Example:
+Path Recording for Debugging:
+  The library can record the actual robot path during autonomous execution
+  to compare against the planned path. This helps debug odometry accuracy
+  and trajectory tuning.
+
+Example - Teleop:
     swerve = SwerveDrive()
     # Field-relative drive
     swerve.drive_swerve(forward=0.5, strafe=0.2, rotate=0.1)
@@ -12,6 +17,18 @@ Example:
     swerve.odometry.update()
     # Fuse IMU heading into odometry
     swerve.imu.fuse_heading(swerve.odometry)
+
+Example - Autonomous with Recording:
+    swerve = SwerveDrive()
+    swerve.start_recording()  # Begin recording actual path
+    swerve.follow_path(waypoints, speed=0.6)
+    while not swerve.is_path_complete():
+        swerve.update_autonomous()  # Automatically records position
+    
+    # Export for analysis
+    actual = swerve.get_recorded_path()
+    planned = list(swerve.path.sample_path(step_cm=5.0))
+    swerve.export_recorded_path("/home/lvuser/path_run1.json")
 """
 
 from typing import Dict, Optional, Tuple, List
@@ -101,6 +118,10 @@ class SwerveDrive:
 		self.path_current_distance = 0.0
 		self.path_speed = 0.5
 		self.following_path = False
+		
+		# Path recording for accuracy debugging
+		self.recording_path = False
+		self.recorded_positions = []
 	
 	def stop_all(self) -> None:
 		for wheel in self.wheels.values():
@@ -211,6 +232,7 @@ class SwerveDrive:
 		self.drive_swerve(forward, strafe, rotate)
 		self.odometry.update()
 		self.imu.fuse_heading(self.odometry)
+		self.record_position()  # Record actual position if recording enabled
 		self.update_motor_currents()
 	
 	def is_path_complete(self) -> bool:
@@ -231,6 +253,102 @@ class SwerveDrive:
 		self.path = None
 		self.stop_all()
 		print("[AUTONOMOUS] Path cancelled", flush=True)
+	
+	# ========== PATH RECORDING FOR DEBUGGING ==========
+	
+	def start_recording(self) -> None:
+		"""Start recording the actual robot path during autonomous.
+		
+		Call before follow_path() to capture how the robot actually moves.
+		
+		Example:
+			swerve.start_recording()
+			swerve.follow_path(waypoints, speed=0.6)
+			while not swerve.is_path_complete():
+				swerve.update_autonomous()
+			
+			actual_path = swerve.get_recorded_path()
+		"""
+		self.recorded_positions = []
+		self.recording_path = True
+		print("[RECORDING] Started path recording", flush=True)
+	
+	def stop_recording(self) -> None:
+		"""Stop recording the robot path."""
+		self.recording_path = False
+		print(f"[RECORDING] Stopped path recording ({len(self.recorded_positions)} points)", flush=True)
+	
+	def record_position(self) -> None:
+		"""Record current robot position. Called automatically during update_autonomous().
+		
+		Can also be called manually during any movement for general path tracking.
+		"""
+		if not self.recording_path:
+			return
+		
+		x, y = self.odometry.get_position()
+		heading = self.odometry.get_heading()
+		timestamp = wpilib.Timer.getFPGATimestamp()
+		
+		self.recorded_positions.append({
+			'x': x,
+			'y': y,
+			'heading': heading,
+			'timestamp': timestamp,
+			'distance': self.odometry.get_total_distance(),
+		})
+	
+	def get_recorded_path(self) -> List[Dict]:
+		"""Get the recorded path as a list of position dictionaries.
+		
+		Returns:
+			List of dicts with keys: 'x', 'y', 'heading', 'timestamp', 'distance'
+		
+		Example:
+			actual = swerve.get_recorded_path()
+			planned = swerve.path.sample_path(step_cm=5.0)  # or from follow_path
+		"""
+		return self.recorded_positions.copy()
+	
+	def clear_recording(self) -> None:
+		"""Clear recorded path data."""
+		self.recorded_positions = []
+		self.recording_path = False
+	
+	def export_recorded_path(self, filename: str = "/tmp/recorded_path.json") -> bool:
+		"""Export recorded path to JSON file.
+		
+		Args:
+			filename: File path to write JSON to (default: /tmp/recorded_path.json)
+		
+		Returns:
+			True if export successful, False if recording is empty or write failed
+		
+		Example:
+			if swerve.export_recorded_path("/home/lvuser/paths/run1.json"):
+				print("Path exported successfully")
+		"""
+		if not self.recorded_positions:
+			print("[RECORDING] No recorded path to export", flush=True)
+			return False
+		
+		try:
+			import json
+			data = {
+				'waypoint_count': len(self.recorded_positions),
+				'start_position': self.recorded_positions[0] if self.recorded_positions else None,
+				'end_position': self.recorded_positions[-1] if self.recorded_positions else None,
+				'positions': self.recorded_positions,
+			}
+			
+			with open(filename, 'w') as f:
+				json.dump(data, f, indent=2)
+			
+			print(f"[RECORDING] Exported {len(self.recorded_positions)} positions to {filename}", flush=True)
+			return True
+		except Exception as e:
+			print(f"[RECORDING] Failed to export path: {e}", flush=True)
+			return False
 	
 	# ========== END AUTONOMOUS ==========
 	

@@ -101,6 +101,54 @@ while not swerve.is_path_complete():
 - `is_path_complete()` - Check if destination reached
 - `stop_path()` - Cancel path following
 
+### Path Recording for Accuracy Debugging
+
+Record the actual robot path during autonomous and export for analysis:
+
+```python
+# Start recording before path following
+swerve.start_recording()
+swerve.follow_path(waypoints, speed=0.6)
+
+while not swerve.is_path_complete():
+    swerve.update_autonomous()  # Positions recorded automatically each loop
+
+# Get recorded path (list of dicts with x, y, heading, timestamp, distance)
+actual_path = swerve.get_recorded_path()
+
+# Export to JSON for external analysis
+swerve.export_recorded_path("/home/lvuser/path_run1.json")
+
+# Compare with planned path
+planned_path = list(swerve.path.sample_path(step_cm=10.0))
+```
+
+**Recording Methods:**
+- `start_recording()` - Begin recording actual robot path
+- `stop_recording()` - Stop recording (called automatically when path completes)
+- `record_position()` - Manually record current position (called automatically in update_autonomous)
+- `get_recorded_path()` - Retrieve all recorded positions as list of dicts
+- `export_recorded_path(filename)` - Write recorded path to JSON file
+- `clear_recording()` - Clear recorded data
+
+**Recorded Position Format:**
+```python
+{
+    'x': 105.3,        # Position in cm (field frame)
+    'y': 48.7,
+    'heading': 44.2,   # Heading in degrees (0-360)
+    'timestamp': 15.42,# FPGA time when recorded
+    'distance': 105.3, # Total distance traveled from start
+}
+```
+
+**Use Cases:**
+- Compare planned vs actual path to identify odometry drift
+- Detect undershoot/overshoot in waypoint navigation
+- Verify PID tuning effectiveness
+- Analyze mechanical issues (wheel slip, binding)
+- Generate data for external path visualization tools
+
 ## Core Classes
 
 ### SwerveDrive
