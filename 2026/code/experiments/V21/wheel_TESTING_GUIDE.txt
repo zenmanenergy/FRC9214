@@ -1,0 +1,191 @@
+WHEEL TESTING - COMMENT/UNCOMMENT GUIDE
+========================================
+
+HOW TO TEST ONE WHEEL AT A TIME:
+
+The key: Comment out the IF statements for wheels you DON'T want to test.
+Use execute_teleop() (real game mode logic) for all tests.
+
+In swerve_wheel.py, there are two methods with IF statements:
+1. set_drive_power() - Lines ~41-49 (4 separate IF statements)
+2. set_turn_power() - Lines ~51-71 (4 separate IF statements)
+
+TEST 1: REAR_LEFT ONLY
+-----------------------
+In set_drive_power():
+[ ] UNCOMMENT rear_left IF block (lines ~41-42)
+[ ] COMMENT OUT rear_right IF block (lines ~44-45)
+[ ] COMMENT OUT front_left IF block (lines ~46-47) 
+[ ] COMMENT OUT front_right IF block (lines ~48-49)
+
+In set_turn_power():
+[ ] UNCOMMENT rear_left IF block (lines ~53-56)
+[ ] COMMENT OUT rear_right IF block (lines ~57-60)
+[ ] COMMENT OUT front_left IF block (lines ~61-64)
+[ ] COMMENT OUT front_right IF block (lines ~65-71)
+
+Run robot with execute_teleop() - ONLY rear_left wheel should move
+- Left stick: rear_left drive motor moves
+- Right stick: rear_left turn motor rotates
+- Verify: Smooth motion, no oscillation, stops when released
+
+TEST 2: REAR_RIGHT ONLY
+------------------------
+In set_drive_power():
+[ ] COMMENT OUT rear_left IF block
+[ ] UNCOMMENT rear_right IF block
+[ ] COMMENT OUT front_left IF block 
+[ ] COMMENT OUT front_right IF block
+
+In set_turn_power():
+[ ] COMMENT OUT rear_left IF block
+[ ] UNCOMMENT rear_right IF block
+[ ] COMMENT OUT front_left IF block
+[ ] COMMENT OUT front_right IF block
+
+Run robot with execute_teleop() - ONLY rear_right wheel should move
+- Verify: Smooth motion, no oscillation, stops when released
+
+TEST 3: FRONT_LEFT ONLY
+------------------------
+In set_drive_power():
+[ ] COMMENT OUT rear_left IF block
+[ ] COMMENT OUT rear_right IF block
+[ ] UNCOMMENT front_left IF block
+[ ] COMMENT OUT front_right IF block
+
+In set_turn_power():
+[ ] COMMENT OUT rear_left IF block
+[ ] COMMENT OUT rear_right IF block
+[ ] UNCOMMENT front_left IF block
+[ ] COMMENT OUT front_right IF block
+
+Run robot with execute_teleop() - ONLY front_left wheel should move
+- Verify: Smooth motion, no oscillation, stops when released
+
+TEST 4: FRONT_RIGHT ONLY
+------------------------
+In set_drive_power():
+[ ] COMMENT OUT rear_left IF block
+[ ] COMMENT OUT rear_right IF block
+[ ] COMMENT OUT front_left IF block
+[ ] UNCOMMENT front_right IF block
+
+In set_turn_power():
+[ ] COMMENT OUT rear_left IF block
+[ ] COMMENT OUT rear_right IF block
+[ ] COMMENT OUT front_left IF block
+[ ] UNCOMMENT front_right IF block
+
+Run robot with execute_teleop() - ONLY front_right wheel should move
+- Verify: Smooth motion, no oscillation, stops when released
+
+TEST 5: ALL 4 WHEELS
+---------------------
+In set_drive_power():
+[ ] UNCOMMENT all 4 IF blocks
+
+In set_turn_power():
+[ ] UNCOMMENT all 4 IF blocks
+
+Run robot with execute_teleop() - ALL wheels should respond normally
+- Left stick: forward/backward/strafe movement
+- Right stick: in-place rotation
+- Verify: Smooth 4-wheel coordination, no oscillation
+
+WHAT TO WATCH FOR:
+==================
+
+SMOOTH MOTION & CORRECT DIRECTION = PASS
+- Wheel spins smoothly with stick input
+- Wheel stops immediately when stick released
+- Correct motor direction for stick input
+
+IF MOTOR HUNTING/OSCILLATING:
+- Wheel bounces back and forth around a target angle
+- Motor power jumps between max and negative max
+- Happens repeatedly even after stick released
+- DIAGNOSIS: Logic issue in control flow (not PID tuning)
+- CHECK: Open swerve_wheel.py set_turn_power() - compare this wheel's IF block with rear_left
+  * Example: if self.name == "rear_right": if self.turn_motor: self.turn_motor.set(power)
+  * Does it have the same structure as rear_left?
+  * Is the inversion sign (-power vs power) correct?
+- CHECK: Open swerve_wheel.py set_drive_power() - compare this wheel's IF block with rear_left
+  * Does it have the same structure as rear_left?
+  * Is the inversion sign correct?
+- FIX: Copy the correct pattern from a working wheel, adjust only the wheel name and inversion sign
+
+IF CONSTANT TWITCHING AFTER STOP:
+- Wheel won't settle, keeps twitching left/right after motion stops
+- Never fully stops oscillating even 1-2 seconds after stick release
+- DIAGNOSIS: Logic issue - alignment loop not stopping correctly
+- CHECK: Open swerve_drive.py - find update_single_wheel_alignment() method
+  * Look for: if at_target: (around line ~360)
+  * This should STOP the motor when wheel reaches tolerance
+  * Verify this wheel's alignment state is being updated correctly
+- CHECK: Open swerve_drive.py - look for the tolerance check
+  * tolerance = config.ALIGN_TOLERANCE (should be 5.0 degrees)
+  * Is this wheel getting within tolerance?
+- FIX: Verify alignment state is being cleared after wheel stops
+  * Check that wheel_alignment_state is removed for this wheel when at_target is true
+
+IF MOTOR JERKING/STUTTERING:
+- Wheel moves in jerky steps instead of smooth rotation
+- Feels like it's fighting against itself
+- DIAGNOSIS: Logic conflict or wiring issue
+- CHECK: Open swerve_wheel.py set_turn_power() - find this wheel's IF block
+  * Is the condition correct? (if self.name == "rear_left":)
+  * Is self.turn_motor being checked? (if self.turn_motor:)
+  * Compare with another wheel - are they identical except for the name?
+- CHECK: Open swerve_wheel.py set_drive_power() - find this wheel's IF block
+  * Same checks as above
+- CHECK: Open CANID.py - find this wheel's motor CAN IDs
+  * Are they the same as the other wheels in raw value?
+  * Did you copy them correctly from the physical motor?
+- FIX: Copy the exact IF block structure from rear_left, change only the wheel name and inversion sign
+
+IF ROTATING WRONG DIRECTION:
+- Left stick forward makes wheel go backward
+- Right stick right makes wheel spin left instead of right
+- DIAGNOSIS: Motor inversion logic error
+- CHECK: Open swerve_wheel.py set_turn_power() - find this wheel's line that sends power
+  * Example for rear_left: self.turn_motor.set(-power)  // has minus sign
+  * Example for rear_right: self.turn_motor.set(power)  // no minus sign
+  * Is this wheel's inversion matching the expected direction?
+- CHECK: Open swerve_wheel.py set_drive_power() - find this wheel's line that sends power
+  * Check if the inversion sign is correct
+- FIX: Toggle the inversion sign (add minus if missing, remove if present)
+  * Change: self.turn_motor.set(power) → self.turn_motor.set(-power)
+  * Or reverse it depending on which direction is wrong
+
+IF WHEEL ANGLE WRONG:
+- Wheel points at wrong angle when commanded (e.g., commanded 45° but points 225°)
+- Wheel is rotated 180° from where it should be
+- DIAGNOSIS: Encoder offset or calibration issue
+- CHECK: Open encoder_calibration.py - look for offsets loaded
+  * Does it load offsets from the JSON file?
+  * Is this wheel in the JSON file?
+- CHECK: Open swerve_config.py - find MANUAL_OFFSETS
+  * Find this wheel's offset value
+  * Example: "rear_left": 90.0
+  * Is this value correct for your physical setup?
+- FIX: Re-calibrate this wheel's encoder offset
+  * In test mode, rotate wheel to 0° physically
+  * Press RIGHT_BUMPER (save as 0deg)
+  * Or press LEFT_BUMPER for 90° and BACK for 180°
+
+IF WHEEL DRIFTS SLOWLY:
+- Wheel moves smoothly at first but slowly drifts to wrong angle over time
+- Happens only during extended movement (not immediate)
+- DIAGNOSIS: Encoder feedback loss or motor feedback issue
+- CHECK: Open swerve_wheel.py - find get_raw_angle() method
+  * Verify it's reading: return self.encoder.get() * 360.0
+  * Check that self.encoder is initialized in __init__
+- CHECK: Open swerve_config.py - find WHEEL_ENCODERS or encoder DIO pins
+  * Find this wheel's encoder pin
+  * Is it plugged into the correct DIO port on the RoboRIO?
+- CHECK: Open swerve_wheel.py - verify encoder is in __init__
+  * Look for: self.encoder = wpilib.DutyCycleEncoder(encoder_dio)
+  * Is encoder_dio passed in correctly?
+- FIX: Verify physical encoder cable is connected and not damaged
+  * Check DIO pin connection matches swerve_config.py

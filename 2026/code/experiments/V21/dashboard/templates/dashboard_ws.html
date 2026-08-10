@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Honking Narwhals Team 9214</title>
+	<style>
+		* { margin: 0; padding: 0; box-sizing: border-box; }
+		
+		body {
+			font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+			background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			min-height: 100vh;
+			padding: 10px;
+		}
+		
+		.container {
+			background: white;
+			border-radius: 10px;
+			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+			padding: 20px;
+			max-width: 1200px;
+			width: 100%;
+		}
+		
+		.tab-bar {
+			display: flex;
+			gap: 10px;
+			margin-bottom: 20px;
+			border-bottom: 2px solid #eee;
+			padding-bottom: 10px;
+		}
+		
+		.tab-btn {
+			padding: 8px 16px;
+			background: #f0f0f0;
+			border: none;
+			border-radius: 5px 5px 0 0;
+			cursor: pointer;
+			font-weight: bold;
+			color: #666;
+			transition: all 0.2s;
+		}
+		
+		.tab-btn:hover {
+			background: #e0e0e0;
+		}
+		
+		.tab-btn.active {
+			background: #3498db;
+			color: white;
+		}
+		
+		.tab-content {
+			display: none;
+		}
+		
+		.tab-content.active {
+			display: block;
+		}
+		
+		h1 {
+			text-align: center;
+			color: #333;
+			margin-bottom: 5px;
+			font-size: 24px;
+		}
+		
+		.status-bar {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 10px 0;
+			border-bottom: 2px solid #eee;
+			margin-bottom: 15px;
+			font-size: 13px;
+		}
+		
+		.status {
+			display: flex;
+			gap: 15px;
+		}
+		
+		.status-item {
+			display: flex;
+			gap: 5px;
+			align-items: center;
+		}
+		
+		#wsStatus {
+			font-weight: bold;
+			color: #e74c3c;
+		}
+		
+		#wsStatus.connected {
+			color: #2ecc71;
+		}
+		
+		.content {
+			display: flex;
+			gap: 20px;
+		}
+		
+		.left-panel {
+			flex: 0 0 250px;
+		}
+		
+		.button {
+			display: block;
+			width: 100%;
+			padding: 10px;
+			margin-bottom: 8px;
+			border: none;
+			border-radius: 5px;
+			font-size: 12px;
+			font-weight: bold;
+			cursor: pointer;
+			color: white;
+			transition: all 0.3s;
+		}
+		
+		.button:hover {
+			opacity: 0.9;
+			transform: translateY(-2px);
+		}
+		
+		.button:disabled {
+			opacity: 0.6;
+			cursor: not-allowed;
+		}
+		
+		.btn-primary { background: #3498db; }
+		.btn-success { background: #27ae60; }
+		.btn-danger { background: #e74c3c; }
+		.btn-warning { background: #f39c12; }
+		
+		.section {
+			background: #f8f9fa;
+			border-radius: 5px;
+			padding: 12px;
+			margin-bottom: 12px;
+		}
+		
+		.section-title {
+			font-weight: bold;
+			color: #2c3e50;
+			margin-bottom: 8px;
+			border-bottom: 2px solid #3498db;
+			padding-bottom: 5px;
+		}
+		
+		.center-panel {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			gap: 20px;
+		}
+		
+		.canvas-wrapper {
+			position: relative;
+			display: inline-block;
+		}
+		
+		canvas {
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			background: white;
+			max-width: 100%;
+			display: block;
+		}
+		
+		.canvas-angle-box {
+			position: absolute;
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			color: white;
+			border-radius: 8px;
+			padding: 6px 10px;
+			text-align: center;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+			min-width: 45px;
+			font-size: 12px;
+			font-weight: bold;
+			cursor: pointer;
+			transition: all 0.2s ease;
+		}
+		
+		.canvas-angle-box:hover {
+			background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+			transform: scale(1.1);
+		}
+		
+		.canvas-angle-box.value {
+			font-size: 16px;
+			font-weight: bold;
+		}
+		
+		#canvas-fr-angle { top: 5px; right: 5px; }
+		#canvas-rr-angle { bottom: 5px; right: 5px; }
+		#canvas-rl-angle { bottom: 5px; left: 5px; }
+		#canvas-fl-angle { top: 5px; left: 5px; }
+		
+		.angle-adjust-buttons {
+			position: absolute;
+			display: flex;
+			flex-direction: column;
+			gap: 2px;
+			margin-left: 8px;
+		}
+		
+		.angle-btn-up, .angle-btn-down {
+			width: 20px;
+			height: 16px;
+			border: 1px solid #667eea;
+			background: white;
+			color: #667eea;
+			font-weight: bold;
+			cursor: pointer;
+			border-radius: 3px;
+			transition: all 0.1s ease;
+			padding: 0;
+			font-size: 12px;
+			line-height: 1;
+		}
+		
+		.angle-btn-up:hover, .angle-btn-down:hover {
+			background: #667eea;
+			color: white;
+			transform: scale(1.1);
+		}
+		
+		.angles-display {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 10px;
+			background: white;
+			padding: 10px;
+			border-radius: 5px;
+			border: 1px solid #ddd;
+		}
+		
+		.angle-box {
+			background: #f0f0f0;
+			padding: 10px;
+			border-radius: 3px;
+			text-align: center;
+			border-left: 4px solid #3498db;
+		}
+		
+		.angle-label {
+			font-size: 11px;
+			color: #666;
+			font-weight: bold;
+		}
+		
+		.angle-value {
+			font-size: 18px;
+			color: #2c3e50;
+			font-weight: bold;
+			cursor: pointer;
+			padding: 4px 8px;
+			border-radius: 4px;
+			transition: all 0.2s ease;
+		}
+		
+		.angle-value:hover {
+			background: #e8f0ff;
+			color: #667eea;
+			transform: scale(1.05);
+		}
+		
+		.right-panel {
+			flex: 0 0 300px;
+		}
+		
+		.panel-box {
+			background: #f8f9fa;
+			border: 1px solid #ddd;
+			border-radius: 5px;
+			padding: 12px;
+			margin-bottom: 15px;
+		}
+		
+		.panel-title {
+			font-weight: bold;
+			color: #2c3e50;
+			margin-bottom: 8px;
+			font-size: 13px;
+		}
+		
+		.error-display {
+			padding: 8px;
+			margin-bottom: 15px;
+			background: #fff3cd;
+			border: 1px solid #ffc107;
+			border-radius: 5px;
+			max-height: 100px;
+			overflow-y: auto;
+			display: none;
+		}
+		
+		.error-display.show {
+			display: block;
+		}
+		
+		.error-message {
+			color: #856404;
+			font-size: 12px;
+			padding: 4px 0;
+			border-bottom: 1px solid #ffc10044;
+		}
+		
+		.success-message {
+			background: #d4edda;
+			color: #155724;
+			padding: 8px 12px;
+			margin-bottom: 4px;
+			border-radius: 4px;
+			border-left: 4px solid #28a745;
+			font-size: 12px;
+		}
+		
+		@media (max-width: 900px) {
+			.content {
+				flex-direction: column;
+			}
+			.left-panel, .right-panel {
+				flex: none;
+				width: 100%;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>🐳 Honking Narwhals Team 9214</h1>
+		
+		<div class="status-bar">
+			<div class="status">
+				<div class="status-item">
+					<span>WebSocket:</span>
+					<span id="wsStatus">Connecting...</span>
+				</div>
+				<div class="status-item">
+					<span>Robot:</span>
+					<span id="robotStatus">-</span>
+				</div>
+			</div>
+		</div>
+		
+		<div id="errorDisplay" class="error-display"></div>
+		
+		<div class="tab-bar">
+			<button class="tab-btn active" onclick="switchTab('swerve')">Swerve</button>
+			<button class="tab-btn" onclick="switchTab('map')">Field Map</button>
+		</div>
+		
+		<!-- SWERVE TAB -->
+		<div id="swerve" class="tab-content active">
+			<div class="content">
+			<!-- LEFT PANEL -->
+			<div class="left-panel">
+				<div class="section">
+					<div class="section-title">Calibration</div>
+					<button class="button btn-primary" onclick="if(isRobotEnabled) window.location.href='/calibration'; else showError('Bot must be enabled to calibrate')">🔧 Calibration Wizard</button>
+					<button class="button btn-primary" onclick="if(isRobotEnabled) sendCommand('align', ''); else showError('Bot must be enabled to command wheels')">→ Align All</button>
+				</div>
+				
+
+				<div class="section">
+					<div class="section-title">Tuning</div>
+					<button class="button btn-danger" id="autotuneBtn" onclick="if(isRobotEnabled) startAutotune(); else showError('Bot must be enabled to autotune')">⚙️ Autotune PID</button>
+					<button class="button btn-warning" id="autotuneRotationBtn" onclick="if(isRobotEnabled) startAutotuneRotation(); else showError('Bot must be enabled to autotune')">🔄 Autotune Rotation</button>
+					<button class="button btn-primary" onclick="if(isRobotEnabled) window.location.href='/history'; else showError('Bot must be enabled to view history')">📊 Tuning History</button>
+				</div>
+			</div>
+			
+			<!-- CENTER PANEL -->
+			<div class="center-panel">
+		<div class="canvas-wrapper">
+			<canvas id="swerveCanvas" width="320" height="320"></canvas>
+					<div style="position: absolute; top: 0; left: 0; width: 320px; height: 320px; pointer-events: none;">
+									<div id="canvas-fl-angle" class="canvas-angle-box value" style="pointer-events: auto;" onclick="if(isRobotEnabled) editCanvasAngle('front_left', this); else showError('Bot must be enabled to edit angles')">0°</div>
+						<div id="fl-btns" class="angle-adjust-buttons" style="top: 5px; left: 58px; pointer-events: auto;">
+										<button class="angle-btn-up" onclick="if(isRobotEnabled) adjustAngle('front_left', 5); else showError('Bot must be enabled to adjust angles')">▲</button>
+										<button class="angle-btn-down" onclick="if(isRobotEnabled) adjustAngle('front_left', -5); else showError('Bot must be enabled to adjust angles')">▼</button>
+						</div>
+						
+									<div id="canvas-fr-angle" class="canvas-angle-box value" style="pointer-events: auto;" onclick="if(isRobotEnabled) editCanvasAngle('front_right', this); else showError('Bot must be enabled to edit angles')">0°</div>
+						<div id="fr-btns" class="angle-adjust-buttons" style="top: 5px; right: 58px; pointer-events: auto;">
+										<button class="angle-btn-up" onclick="if(isRobotEnabled) adjustAngle('front_right', 5); else showError('Bot must be enabled to adjust angles')">▲</button>
+										<button class="angle-btn-down" onclick="if(isRobotEnabled) adjustAngle('front_right', -5); else showError('Bot must be enabled to adjust angles')">▼</button>
+						</div>
+						
+									<div id="canvas-rl-angle" class="canvas-angle-box value" style="pointer-events: auto;" onclick="if(isRobotEnabled) editCanvasAngle('rear_left', this); else showError('Bot must be enabled to edit angles')">0°</div>
+						<div id="rl-btns" class="angle-adjust-buttons" style="bottom: 5px; left: 58px; pointer-events: auto;">
+										<button class="angle-btn-up" onclick="if(isRobotEnabled) adjustAngle('rear_left', 5); else showError('Bot must be enabled to adjust angles')">▲</button>
+										<button class="angle-btn-down" onclick="if(isRobotEnabled) adjustAngle('rear_left', -5); else showError('Bot must be enabled to adjust angles')">▼</button>
+						</div>
+						
+									<div id="canvas-rr-angle" class="canvas-angle-box value" style="pointer-events: auto;" onclick="if(isRobotEnabled) editCanvasAngle('rear_right', this); else showError('Bot must be enabled to edit angles')">0°</div>
+						<div id="rr-btns" class="angle-adjust-buttons" style="bottom: 5px; right: 58px; pointer-events: auto;">
+										<button class="angle-btn-up" onclick="if(isRobotEnabled) adjustAngle('rear_right', 5); else showError('Bot must be enabled to adjust angles')">▲</button>
+										<button class="angle-btn-down" onclick="if(isRobotEnabled) adjustAngle('rear_right', -5); else showError('Bot must be enabled to adjust angles')">▼</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			<!-- RIGHT PANEL -->
+			<div class="right-panel">
+				<div class="panel-box">
+					<div class="panel-title">Autotune Status</div>
+					<div id="autotuneStatus" style="font-size: 12px; color: #666;">Idle</div>
+				</div>
+				
+				<div class="panel-box" id="presetsBox" style="display: none; border: 2px solid #2ecc71; background: #e8f8e8;">
+					<div class="panel-title" id="presetsTitle" style="color: #27ae60;">Presets for <span id="focusedWheelName"></span></div>
+					<button class="button btn-primary" onclick="if(isRobotEnabled && focusedWheel) applyPreset(0); else showError('Bot must be enabled and wheel must be focused')" title="Set focused wheel to 0°">↑ Forward (0°)</button>
+					<button class="button btn-primary" onclick="if(isRobotEnabled && focusedWheel) applyPreset(270); else showError('Bot must be enabled and wheel must be focused')" title="Set focused wheel to 270°">→ Right (270°)</button>
+					<button class="button btn-primary" onclick="if(isRobotEnabled && focusedWheel) applyPreset(180); else showError('Bot must be enabled and wheel must be focused')" title="Set focused wheel to 180°">↓ Back (180°)</button>
+					<button class="button btn-primary" onclick="if(isRobotEnabled && focusedWheel) applyPreset(90); else showError('Bot must be enabled and wheel must be focused')" title="Set focused wheel to 90°">← Left (90°)</button>
+				</div>
+			</div>
+		</div>
+		</div>
+		
+		<!-- MAP TAB -->
+		<div id="map" class="tab-content">
+			<div style="display: flex; gap: 20px; align-items: flex-start;">
+				<div style="flex: 1;">
+					<div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+						<label for="unitSelect" style="font-weight: bold;">Units:</label>
+						<select id="unitSelect" onchange="changeUnits(this.value)" style="padding: 6px 10px; border-radius: 4px; border: 1px solid #ccc;">
+							<option value="cm">Centimeters</option>
+							<option value="m">Meters</option>
+							<option value="in">Inches</option>
+							<option value="ft">Feet</option>
+						</select>
+						<span id="unitLabel" style="color: #666; font-size: 12px; font-weight: bold;">Field: 0 × 0 cm</span>
+					</div>
+					<canvas id="mapCanvas" width="600" height="600" style="border: 2px solid #3498db; border-radius: 5px; background: white; max-width: 100%;"></canvas>
+				</div>
+				<div style="flex: 0 0 300px; background: #f8f9fa; border-radius: 5px; padding: 15px;">
+					<div style="font-weight: bold; color: #2c3e50; margin-bottom: 10px; border-bottom: 2px solid #3498db; padding-bottom: 8px;">Robot Pose</div>
+					<div style="font-size: 12px; line-height: 1.8; margin-bottom: 10px;">
+						<div><strong>X:</strong> <span id="poseX">0.0</span> <span id="unitX">cm</span></div>
+						<div><strong>Y:</strong> <span id="poseY">0.0</span> <span id="unitY">cm</span></div>
+						<div><strong>Heading:</strong> <span id="poseHeading">0.0</span>°</div>
+						<div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #ddd;">
+							<strong>Distance:</strong> <span id="poseDistance">0.0</span> <span id="unitDistance">cm</span>
+						</div>
+					</div>
+					<button class="button btn-warning" onclick="resetOdometry()" style="margin-top: 5px; margin-bottom: 15px; padding: 7px;">Reset Odometry</button>
+					
+					<div style="padding-top: 12px; border-top: 2px solid #ddd; margin-bottom: 12px;">
+						<div style="font-weight: bold; color: #2c3e50; font-size: 14px; margin-bottom: 8px;">Quick Route: Square</div>
+						<div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px; font-size: 12px;">
+							<label style="flex: 0 0 40px;">Size:</label>
+							<input type="number" id="squareSide" value="67" min="10" max="500" style="flex: 1; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;">
+							<span style="color: #888;">cm</span>
+						</div>
+						<div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px; font-size: 12px;">
+							<label style="flex: 0 0 40px;">Hdg:</label>
+							<input type="number" id="squareHeading" value="0" min="0" max="359" style="flex: 1; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;">
+							<span style="color: #888;">deg</span>
+						</div>
+						<button class="button btn-primary" onclick="loadSquare()" style="padding: 7px; width: 100%; margin: 0;">Load Square</button>
+					</div>
+					
+					<div style="padding-top: 15px; border-top: 2px solid #ddd;">
+						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+							<div style="font-weight: bold; color: #2c3e50; font-size: 14px;">Waypoints</div>
+							<label style="font-size: 12px; display: flex; align-items: center; gap: 4px; cursor: pointer;">
+								<input type="checkbox" id="loopCheck"> Loop
+							</label>
+						</div>
+						<div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px; font-size: 12px;">
+							<label style="flex: 0 0 50px;">Speed:</label>
+							<input type="range" id="routeSpeed" value="0.8" min="0.1" max="1.0" step="0.05" style="flex: 1;">
+							<span id="routeSpeedLabel" style="flex: 0 0 35px; text-align: right; color: #666; font-weight: bold;">0.80</span>
+						</div>
+						<div style="font-size: 11px; color: #888; margin-bottom: 8px;">Click field to add points</div>
+						<div id="waypointTable" style="max-height: 260px; overflow-y: auto; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; background: white;">
+							<div style="padding: 15px; text-align: center; color: #aaa; font-size: 12px;">No waypoints added</div>
+						</div>
+						<div style="display: flex; gap: 6px; margin-bottom: 6px;">
+							<button class="button btn-success" onclick="runWaypoints()" style="flex: 1; padding: 9px; margin: 0;">Run Route</button>
+							<button class="button btn-danger" onclick="stopNavigation()" style="flex: 1; padding: 9px; margin: 0;">Stop</button>
+						</div>
+						<button class="button btn-warning" onclick="clearAllWaypoints()" style="padding: 7px; width: 100%; margin: 0;">Clear All</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<script>
+		// ===== WebSocket Setup =====
+		let ws = null;
+		let wheelAngles = { front_left: 0, front_right: 0, rear_left: 0, rear_right: 0 };
+		let focusedWheel = null;
+		let updateCount = 0;
+		let isRobotEnabled = false;
+		let debugMode = false;
+		let debugWheelOnly = 'rear_right';
+		
+		// Speed slider handler
+		document.addEventListener('DOMContentLoaded', () => {
+			const speedSlider = document.getElementById('routeSpeed');
+			const speedLabel = document.getElementById('routeSpeedLabel');
+			if (speedSlider && speedLabel) {
+				speedSlider.addEventListener('input', (e) => {
+					speedLabel.textContent = parseFloat(e.target.value).toFixed(2);
+				});
+			}
+		});
+		
+		// Speed slider handler
+		document.addEventListener('DOMContentLoaded', () => {
+			const speedSlider = document.getElementById('routeSpeed');
+			const speedLabel = document.getElementById('routeSpeedLabel');
+			if (speedSlider && speedLabel) {
+				speedSlider.addEventListener('input', (e) => {
+					speedLabel.textContent = parseFloat(e.target.value).toFixed(2);
+				});
+			}
+		});
+		
+		const WS_URL = `ws://${window.location.hostname}:${window.location.port}/ws`;
+		
+		function connectWebSocket() {
+			console.log("[WS] Connecting to:", WS_URL);
+			ws = new WebSocket(WS_URL);
+			
+			ws.onopen = () => {
+				console.log("[WS] Connected!");
+				document.getElementById("wsStatus").textContent = "Connected";
+				document.getElementById("wsStatus").className = "connected";
+			};
+			
+			ws.onmessage = (event) => {
+				try {
+					const data = JSON.parse(event.data);
+					handleWebSocketMessage(data);
+				} catch (e) {
+					console.error("[WS] Parse error:", e, event.data);
+					showError("WebSocket parse error: " + e.message);
+				}
+			};
+			
+			ws.onerror = (error) => {
+				console.error("[WS] Error:", error);
+				document.getElementById("wsStatus").textContent = "Error";
+				document.getElementById("wsStatus").className = "";
+				showError("WebSocket error - check browser console");
+			};
+			
+			ws.onclose = () => {
+				console.log("[WS] Closed, reconnecting...");
+				document.getElementById("wsStatus").textContent = "Reconnecting...";
+				document.getElementById("wsStatus").className = "";
+				setTimeout(connectWebSocket, 2000);
+			};
+		}
+		
+		function updateBackgroundColor() {
+			const container = document.querySelector('.container');
+			container.style.background = isRobotEnabled ? 'white' : '#ff0000';
+		}
+		
+		function sendCommand(cmd, value) {
+			if (!ws || ws.readyState !== WebSocket.OPEN) {
+				showError("WebSocket not connected");
+				return;
+			}
+			
+			// DEBUG MODE: Filter commands to only affect rear_right
+			if (debugMode && cmd === 'set_wheels_direction') {
+				console.log(`[DEBUG MODE ACTIVE] Filtering preset to only control ${debugWheelOnly}`);
+				// Only send target angle for rear_right, others stay at 0
+				value = {
+					front_left: 0,
+					front_right: 0,
+					rear_left: 0,
+					rear_right: value.rear_right
+				};
+				console.log(`[DEBUG MODE] Modified value:`, value);
+			}
+			
+			console.log(`[WS] Sending: cmd=${cmd}, value=`, value);
+			console.log(`[DEBUG] Command type: ${typeof value}, Value dump:`, JSON.stringify(value));
+			
+			// Special debug for wheel direction commands
+			if (cmd === 'set_wheels_direction') {
+				console.log(`[DEBUG] Wheel direction preset:`);
+				console.log(`  Front Left: ${value.front_left}°`);
+				console.log(`  Front Right: ${value.front_right}°`);
+				console.log(`  Rear Left: ${value.rear_left}°`);
+				console.log(`  Rear Right: ${value.rear_right}°`);
+			}
+			
+			if (cmd === "focus") {
+				focusedWheel = value;
+				drawSwerve();
+			}
+			ws.send(JSON.stringify({ cmd, value }));
+			console.log(`[DEBUG] Message sent successfully`);
+		}
+		
+		function updateAngles(data) {
+			if (data.angles) {
+				wheelAngles = data.angles;
+				const elements = {
+					'canvas-fl-angle': data.angles.front_left,
+					'canvas-fr-angle': data.angles.front_right,
+					'canvas-rl-angle': data.angles.rear_left,
+					'canvas-rr-angle': data.angles.rear_right
+				};
+				
+				for (const [id, angle] of Object.entries(elements)) {
+					const el = document.getElementById(id);
+					if (el && !(el instanceof HTMLInputElement)) {
+						el.textContent = Math.round(angle) + "°";
+					}
+				}
+				drawSwerve();
+			}
+			if (data.robot_enabled !== undefined) {
+				isRobotEnabled = data.robot_enabled;
+				document.getElementById("robotStatus").textContent = isRobotEnabled ? "✓ Enabled" : "✗ Disabled";
+				updateBackgroundColor();
+			}
+			
+		}
+		
+		function handleAutotuneComplete(data) {
+			const status = document.getElementById("autotuneStatus");
+			status.innerHTML = `✓ Complete!<br>KP=${data.kp.toFixed(6)}<br>KI=${data.ki.toFixed(6)}<br>KD=${data.kd.toFixed(6)}<br>@ ${data.battery_voltage.toFixed(2)}V`;
+			status.style.color = "#2ecc71";
+			document.getElementById("autotuneBtn").disabled = false;
+			document.getElementById("autotuneRotationBtn").disabled = false;
+		}
+		
+		function handleAutotuneRotationComplete(data) {
+			const status = document.getElementById("autotuneStatus");
+			if (data.success) {
+				status.innerHTML = `✓ Rotation Tuned!<br>KP=${data.kp.toFixed(6)}<br>KI=${data.ki.toFixed(6)}<br>KD=${data.kd.toFixed(6)}<br>Period=${data.period.toFixed(3)}s`;
+				status.style.color = "#27ae60";
+			} else {
+				status.innerHTML = `✗ Rotation Tune Failed<br>${data.message}`;
+				status.style.color = "#e74c3c";
+			}
+			document.getElementById("autotuneRotationBtn").disabled = false;
+			document.getElementById("autotuneBtn").disabled = false;
+		}
+		
+		function updatePresetsPanel() {
+			const presetsBox = document.getElementById("presetsBox");
+			const focusedWheelName = document.getElementById("focusedWheelName");
+			
+			if (focusedWheel) {
+				presetsBox.style.display = "block";
+				focusedWheelName.textContent = focusedWheel.replace('_', ' ').toUpperCase();
+			} else {
+				presetsBox.style.display = "none";
+			}
+		}
+		
+		function applyPreset(angle) {
+			if (!focusedWheel || !isRobotEnabled) {
+				showError("Bot must be enabled and wheel must be focused");
+				return;
+			}
+			
+			const angles = { front_left: wheelAngles.front_left, front_right: wheelAngles.front_right, rear_left: wheelAngles.rear_left, rear_right: wheelAngles.rear_right };
+			angles[focusedWheel] = angle;
+			
+			sendCommand('set_wheels_direction', { angles: angles, focused_wheel: focusedWheel });
+			console.log(`[PRESET] Applied ${angle}° to ${focusedWheel}`);
+		}
+		
+		function startAutotune() {
+			if (!confirm("Autotune will take ~40 seconds. Robot must not move. Continue?")) return;
+			document.getElementById("autotuneBtn").disabled = true;
+			document.getElementById("autotuneStatus").textContent = "Starting autotune...";
+			document.getElementById("autotuneStatus").style.color = "#f39c12";
+			sendCommand("autotune", "start");
+		}
+		
+		function startAutotuneRotation() {
+			if (!confirm("Autotune Rotation will take ~20 seconds. Robot must be ELEVATED (off the ground). Continue?")) return;
+			document.getElementById("autotuneRotationBtn").disabled = true;
+			document.getElementById("autotuneStatus").textContent = "Tuning Rotation...";
+			document.getElementById("autotuneStatus").style.color = "#e74c3c";
+			sendCommand("autotune_rotation", "start");
+		}
+		
+		// ===== Swerve Drawing =====
+		const canvas = document.getElementById("swerveCanvas");
+		const ctx = canvas.getContext("2d");
+		const BOT_WIDTH = 150;
+		const BOT_HEIGHT = 150;
+		const WHEEL_SIZE = 12;
+		const CENTER_X = canvas.width / 2;
+		const CENTER_Y = canvas.height / 2;
+		
+		const WHEEL_POSITIONS = {
+			front_left: { x: -BOT_WIDTH / 2, y: -BOT_HEIGHT / 2 },
+			rear_left: { x: -BOT_WIDTH / 2, y: BOT_HEIGHT / 2 },
+			front_right: { x: BOT_WIDTH / 2, y: -BOT_HEIGHT / 2 },
+			rear_right: { x: BOT_WIDTH / 2, y: BOT_HEIGHT / 2 }
+		};
+		
+		function drawSwerve() {
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			
+			// Grid
+			ctx.strokeStyle = "#e0e0e0";
+			ctx.lineWidth = 1;
+			for (let i = 0; i <= canvas.width; i += 40) {
+				ctx.beginPath();
+				ctx.moveTo(i, 0);
+				ctx.lineTo(i, canvas.height);
+				ctx.stroke();
+				ctx.beginPath();
+				ctx.moveTo(0, i);
+				ctx.lineTo(canvas.width, i);
+				ctx.stroke();
+			}
+			
+			// Robot frame
+			ctx.strokeStyle = "#333";
+			ctx.lineWidth = 2;
+			ctx.strokeRect(CENTER_X - BOT_WIDTH / 2, CENTER_Y - BOT_HEIGHT / 2, BOT_WIDTH, BOT_HEIGHT);
+			
+			// Center point
+			ctx.fillStyle = "#666";
+			ctx.beginPath();
+			ctx.arc(CENTER_X, CENTER_Y, 4, 0, 2 * Math.PI);
+			ctx.fill();
+			
+			// Wheels
+			Object.entries(WHEEL_POSITIONS).forEach(([name, pos]) => {
+				const wheelX = CENTER_X + pos.x;
+				const wheelY = CENTER_Y + pos.y;
+				let displayAngle = wheelAngles[name] || 0;
+				
+				// Flip angle for all wheels since motors are wired backwards
+				// and direction is corrected via speed flip in code
+				displayAngle = -displayAngle;
+				
+				const angle = displayAngle * (Math.PI / 180) - Math.PI / 2;
+				const isFocused = name === focusedWheel;
+				
+				// Highlight focused wheel
+				if (isFocused) {
+					ctx.fillStyle = "#2ecc71";
+					ctx.shadowColor = "rgba(46, 204, 113, 0.8)";
+					ctx.shadowBlur = 15;
+				} else {
+					ctx.fillStyle = "#3498db";
+					ctx.shadowColor = "transparent";
+				}
+				
+				ctx.beginPath();
+				ctx.arc(wheelX, wheelY, WHEEL_SIZE, 0, 2 * Math.PI);
+				ctx.fill();
+				ctx.shadowColor = "transparent";
+				
+				ctx.strokeStyle = "white";
+				ctx.lineWidth = 2;
+				const arrowLen = WHEEL_SIZE * 1.5;
+				ctx.beginPath();
+				ctx.moveTo(wheelX, wheelY);
+				ctx.lineTo(wheelX + arrowLen * Math.cos(angle), wheelY + arrowLen * Math.sin(angle));
+				ctx.stroke();
+				
+				// Label
+				ctx.fillStyle = "#333";
+				ctx.font = "10px Arial";
+				ctx.textAlign = "center";
+				ctx.fillText(name.toUpperCase(), wheelX, wheelY + WHEEL_SIZE + 18);
+			});
+			
+			// Click handler for wheels
+			canvas.onclick = (event) => {
+				const rect = canvas.getBoundingClientRect();
+				const x = event.clientX - rect.left;
+				const y = event.clientY - rect.top;
+				
+				Object.entries(WHEEL_POSITIONS).forEach(([name, pos]) => {
+					const wheelX = CENTER_X + pos.x;
+					const wheelY = CENTER_Y + pos.y;
+					const dist = Math.sqrt((x - wheelX) ** 2 + (y - wheelY) ** 2);
+					
+					if (dist < WHEEL_SIZE * 2) {
+						sendCommand("focus", name);
+						updatePresetsPanel();
+					}
+				});
+			};
+		}
+		
+		// ===== Angle Adjustment with Arrow Buttons =====
+		function adjustAngle(wheelName, delta) {
+			console.log(`[ADJUST] wheelName=${wheelName}, delta=${delta}`);
+			sendCommand("focus", wheelName);
+			const currentAngle = wheelAngles[wheelName] || 0;
+			let newAngle = Math.round(currentAngle) + delta;
+			if (newAngle < 0) newAngle += 360;
+			if (newAngle >= 360) newAngle -= 360;
+			console.log(`[ADJUST] currentAngle=${currentAngle}, newAngle=${newAngle}`);
+			sendCommand("set_wheel_angle", { wheel: wheelName, angle: newAngle });
+		}
+		
+		// ===== Editable Angle Function =====
+		function editCanvasAngle(wheelName, element) {
+			const currentValue = parseInt(element.textContent);
+			const input = document.createElement("input");
+			input.type = "number";
+			input.min = "0";
+			input.max = "359";
+			input.value = currentValue;
+			input.style.width = "50px";
+			input.style.textAlign = "center";
+			input.style.fontSize = "16px";
+			input.style.fontWeight = "bold";
+			input.style.padding = "6px 10px";
+			input.style.borderRadius = "8px";
+			input.style.border = "2px solid #667eea";
+			input.style.background = "white";
+			input.style.color = "#333";
+			
+			input.onblur = () => submitCanvasAngle(wheelName, input.value, element, currentValue);
+			
+			element.replaceWith(input);
+			input.focus();
+			input.select();
+		}
+		
+		function submitCanvasAngle(wheelName, newValue, element, oldValue) {
+			const angle = parseInt(newValue);
+			if (isNaN(angle) || angle < 0 || angle > 359) {
+				showError("Angle must be 0-359°");
+				const valueDiv = document.createElement("div");
+				const shortName = wheelName.substring(0, 1) + wheelName.substring(5, 6);
+				valueDiv.id = `canvas-${shortName}-angle`;
+				valueDiv.className = "canvas-angle-box value";
+				valueDiv.textContent = oldValue + "°";
+				valueDiv.onclick = () => editCanvasAngle(wheelName, valueDiv);
+				element.parentNode.replaceChild(valueDiv, element);
+				return;
+			}
+			
+			// Send command to set wheel to this angle
+			sendCommand("set_wheel_angle", { wheel: wheelName, angle: angle });
+			
+			// Update display
+			const valueDiv = document.createElement("div");
+			const shortName = wheelName.substring(0, 1) + wheelName.substring(5, 6);
+			valueDiv.id = `canvas-${shortName}-angle`;
+			valueDiv.className = "canvas-angle-box value";
+			valueDiv.textContent = angle + "°";
+			valueDiv.onclick = () => editCanvasAngle(wheelName, valueDiv);
+			element.parentNode.replaceChild(valueDiv, element);
+		}
+		
+		// ===== Utility Functions =====
+		function showError(message, isError = true) {
+			if (isError) {
+				console.error("[ERROR]", message);
+			} else {
+				console.log("[INFO]", message);
+			}
+			const display = document.getElementById("errorDisplay");
+			const msg = document.createElement("div");
+			msg.className = isError ? "error-message" : "success-message";
+			msg.textContent = new Date().toLocaleTimeString() + " - " + message;
+			display.appendChild(msg);
+			display.classList.add("show");
+			if (display.children.length > 10) {
+				display.removeChild(display.firstChild);
+			}
+		}
+		
+		function showSuccess(message) {
+			console.log("[SUCCESS]", message);
+			const display = document.getElementById("errorDisplay");
+			const msg = document.createElement("div");
+			msg.className = "success-message";
+			msg.textContent = new Date().toLocaleTimeString() + " - " + message;
+			display.appendChild(msg);
+			display.classList.add("show");
+			setTimeout(() => msg.remove(), 3000);
+		}
+		
+		function toggleDebugMode() {
+			debugMode = !debugMode;
+			const btn = document.getElementById('debugToggleBtn');
+			const status = document.getElementById('debugStatus');
+			
+			if (debugMode) {
+				btn.style.background = '#27ae60';
+				btn.textContent = '⏹️ Disable Debug Mode';
+				status.textContent = 'ON - Only Rear Right will move';
+				status.style.color = '#27ae60';
+				console.log('[DEBUG MODE] ENABLED - Only rear_right wheel will respond to commands');
+			} else {
+				btn.style.background = '#e74c3c';
+				btn.textContent = 'Enable Debug (Rear Right Only)';
+				status.textContent = 'OFF';
+				status.style.color = '#666';
+				console.log('[DEBUG MODE] DISABLED - All wheels will respond');
+			}
+		}
+		
+		// ===== Map Tab Variables =====
+		let currentUnit = 'cm';
+		let odometryData = {
+			x: 0,
+			y: 0,
+			heading: 0,
+			distance: 0
+		};
+		let waypointList = [];
+		let routeStartPos = null; // robot position when first waypoint was placed
+		let hoveredWaypoint = -1;
+		let selectedWaypoint = -1;
+		const WP_SIZE = 33.5;
+		
+		const unitConversions = {
+			'cm': { factor: 1, label: 'cm' },
+			'm': { factor: 0.01, label: 'm' },
+			'in': { factor: 0.3937, label: 'in' },
+			'ft': { factor: 0.0328084, label: 'ft' }
+		};
+		
+		const FIELD_WIDTH_CM = 310; // FRC standard field width
+		const FIELD_HEIGHT_CM = 240;  // FRC standard field height
+		
+		function switchTab(tabName) {
+			// Hide all tabs
+			document.querySelectorAll('.tab-content').forEach(tab => {
+				tab.classList.remove('active');
+			});
+			document.querySelectorAll('.tab-btn').forEach(btn => {
+				btn.classList.remove('active');
+			});
+			
+			// Show selected tab
+			document.getElementById(tabName).classList.add('active');
+			event.target.classList.add('active');
+			
+			// Redraw map if switching to map tab
+			if (tabName === 'map') {
+				setTimeout(drawFieldMap, 100);
+			}
+		}
+		
+		function changeUnits(unit) {
+			currentUnit = unit;
+			updateOdometryDisplay();
+			drawFieldMap();
+		}
+		
+		function convertValue(valueCm, toUnit) {
+			return (valueCm * unitConversions[toUnit].factor).toFixed(2);
+		}
+		
+		function drawFieldMap() {
+			const canvas = document.getElementById('mapCanvas');
+			if (!canvas) return;
+			
+			const ctx = canvas.getContext('2d');
+			const width = canvas.width;
+			const height = canvas.height;
+			const padding = 40;
+			const playableWidth = width - 2 * padding;
+			const playableHeight = height - 2 * padding;
+			
+			// Scale factors to fit field on canvas
+			const scaleX = playableWidth / FIELD_WIDTH_CM;
+			const scaleY = playableHeight / FIELD_HEIGHT_CM;
+			const scale = Math.min(scaleX, scaleY);
+			
+			// Clear canvas
+			ctx.fillStyle = '#ffffff';
+			ctx.fillRect(0, 0, width, height);
+			
+			// Draw background grid
+			ctx.strokeStyle = '#e0e0e0';
+			ctx.lineWidth = 0.5;
+			const gridSpacing = 50 * scale;
+			for (let i = 0; i < width; i += gridSpacing) {
+				ctx.beginPath();
+				ctx.moveTo(i, 0);
+				ctx.lineTo(i, height);
+				ctx.stroke();
+			}
+			for (let i = 0; i < height; i += gridSpacing) {
+				ctx.beginPath();
+				ctx.moveTo(0, i);
+				ctx.lineTo(width, i);
+				ctx.stroke();
+			}
+			
+			// Draw field border
+			const fieldX = padding;
+			const fieldY = padding;
+			const fieldDrawWidth = FIELD_WIDTH_CM * scale;
+			const fieldDrawHeight = FIELD_HEIGHT_CM * scale;
+			
+			ctx.strokeStyle = '#2c3e50';
+			ctx.lineWidth = 2;
+			ctx.strokeRect(fieldX, fieldY, fieldDrawWidth, fieldDrawHeight);
+			
+			// Draw axes
+			ctx.strokeStyle = '#bdc3c7';
+			ctx.lineWidth = 1;
+			ctx.setLineDash([5, 5]);
+			// Center line
+			ctx.beginPath();
+			ctx.moveTo(fieldX + fieldDrawWidth / 2, fieldY);
+			ctx.lineTo(fieldX + fieldDrawWidth / 2, fieldY + fieldDrawHeight);
+			ctx.stroke();
+			ctx.setLineDash([]);
+			
+			// Draw waypoint path
+			if (waypointList.length > 0) {
+				// Draw Catmull-Rom spline through waypoints
+				if (waypointList.length > 1) {
+					const loopOn = document.getElementById('loopCheck') && document.getElementById('loopCheck').checked;
+					
+// Build canvas-space points — use square CENTER (corner + WP_SIZE offset)
+				const pts = waypointList.map(wp => ({
+						x: fieldX + (wp.x * scale) + WP_SIZE,
+						y: fieldY + fieldDrawHeight - (wp.y * scale) - WP_SIZE
+					}));
+					
+					// Extend points for Catmull-Rom: duplicate ends (or wrap if looping)
+					let chain;
+					if (loopOn) {
+						chain = [pts[pts.length - 1], ...pts, pts[0], pts[1]];
+					} else {
+						chain = [pts[0], ...pts, pts[pts.length - 1]];
+					}
+					
+					ctx.strokeStyle = 'rgba(255, 159, 64, 0.85)';
+					ctx.lineWidth = 2;
+					ctx.setLineDash([]);
+					ctx.beginPath();
+					
+					const segments = loopOn ? pts.length : pts.length - 1;
+					for (let si = 0; si < segments; si++) {
+						const p0 = chain[si];
+						const p1 = chain[si + 1];
+						const p2 = chain[si + 2];
+						const p3 = chain[si + 3];
+						
+						// Catmull-Rom -> cubic bezier conversion (alpha = 0.5)
+						const cp1x = p1.x + (p2.x - p0.x) / 6;
+						const cp1y = p1.y + (p2.y - p0.y) / 6;
+						const cp2x = p2.x - (p3.x - p1.x) / 6;
+						const cp2y = p2.y - (p3.y - p1.y) / 6;
+						
+						if (si === 0) ctx.moveTo(p1.x, p1.y);
+						ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+					}
+					
+					if (loopOn) ctx.closePath();
+					ctx.stroke();
+				}
+				
+				// Draw each waypoint: square + heading arrow (same size/style as robot)
+				waypointList.forEach(function(wp, wi) {
+					const wpCornerX = fieldX + (wp.x * scale);
+					const wpCornerY = fieldY + fieldDrawHeight - (wp.y * scale);
+					const wpCenterX = wpCornerX + WP_SIZE;
+					const wpCenterY = wpCornerY - WP_SIZE;
+					
+					const isSelected = wi === selectedWaypoint;
+					const isHovered = wi === hoveredWaypoint && !isSelected;
+					
+					ctx.save();
+					ctx.translate(wpCenterX, wpCenterY);
+					const headRad = (wp.heading * Math.PI) / 180;
+					ctx.rotate(headRad);
+					
+					if (isSelected) {
+						// Glow effect
+						ctx.shadowColor = '#f39c12';
+						ctx.shadowBlur = 18;
+						ctx.fillStyle = 'rgba(255, 220, 100, 0.55)';
+						ctx.strokeStyle = '#f39c12';
+					} else if (isHovered) {
+						ctx.shadowColor = '#2ecc71';
+						ctx.shadowBlur = 12;
+						ctx.fillStyle = 'rgba(100, 220, 180, 0.55)';
+						ctx.strokeStyle = '#27ae60';
+					} else {
+						ctx.shadowBlur = 0;
+						ctx.fillStyle = 'rgba(130, 200, 255, 0.5)';
+						ctx.strokeStyle = '#2980b9';
+					}
+					
+					ctx.fillRect(-WP_SIZE, -WP_SIZE, WP_SIZE * 2, WP_SIZE * 2);
+					ctx.lineWidth = isSelected ? 3 : 2;
+					ctx.strokeRect(-WP_SIZE, -WP_SIZE, WP_SIZE * 2, WP_SIZE * 2);
+					ctx.shadowBlur = 0;
+					
+					// Forward arrow
+					ctx.strokeStyle = '#e74c3c';
+					ctx.lineWidth = 2;
+					ctx.beginPath();
+					ctx.moveTo(0, 0);
+					ctx.lineTo(0, -WP_SIZE * 1.5);
+					ctx.stroke();
+					
+					ctx.restore();
+					
+					// Number label (unrotated, centered in square)
+					ctx.fillStyle = isSelected ? '#7d6608' : '#1a5276';
+					ctx.font = 'bold 11px Arial';
+					ctx.textAlign = 'center';
+					ctx.textBaseline = 'middle';
+					ctx.fillText(wi + 1, wpCenterX, wpCenterY);
+					ctx.textBaseline = 'alphabetic';
+					
+					// Always show heading and dwell above the square
+					const dwell = wp.dwell || 0;
+					ctx.fillStyle = isSelected ? '#7d6608' : '#555';
+					ctx.font = (isSelected ? 'bold' : '') + ' 10px Arial';
+					ctx.fillText('Hdg: ' + Math.round(wp.heading) + 'deg', wpCenterX, wpCenterY - WP_SIZE - 18);
+					ctx.fillText('Pause: ' + dwell.toFixed(1) + 's', wpCenterX, wpCenterY - WP_SIZE - 6);
+				});
+			}
+			
+			// Draw line from robot current position to first waypoint
+			const robotSize = 33.5;
+			const robotCenterX = fieldX + (odometryData.x * scale) + robotSize;
+			const robotCenterY = fieldY + (fieldDrawHeight) - (odometryData.y * scale) - robotSize;
+			
+			if (waypointList.length > 0 && routeStartPos !== null) {
+				const firstWp = waypointList[0];
+				const startX = fieldX + (routeStartPos.x * scale) + robotSize;
+				const startY = fieldY + fieldDrawHeight - (routeStartPos.y * scale) - robotSize;
+				const firstWpX = fieldX + (firstWp.x * scale) + robotSize;
+				const firstWpY = fieldY + fieldDrawHeight - (firstWp.y * scale) - robotSize;
+				ctx.strokeStyle = 'rgba(52, 152, 219, 0.9)';
+				ctx.lineWidth = 2;
+				ctx.setLineDash([6, 4]);
+				ctx.beginPath();
+				ctx.moveTo(startX, startY);
+				ctx.lineTo(firstWpX, firstWpY);
+				ctx.stroke();
+				ctx.setLineDash([]);
+			}
+			
+			// Draw robot at odometry position (x,y is back-left corner)
+			
+			// Save canvas state for rotation
+			ctx.save();
+			ctx.translate(robotCenterX, robotCenterY);
+			const headingRad = (odometryData.heading * Math.PI) / 180;
+			ctx.rotate(headingRad);
+			
+			// Draw robot square centered at origin
+			ctx.fillStyle = '#3498db';
+			ctx.fillRect(-robotSize, -robotSize, robotSize * 2, robotSize * 2);
+			
+			// Draw heading indicator (arrow pointing forward)
+			ctx.strokeStyle = '#e74c3c';
+			ctx.lineWidth = 2;
+			ctx.beginPath();
+			ctx.moveTo(0, 0);
+			ctx.lineTo(0, -robotSize * 1.5);
+			ctx.stroke();
+			
+			// Restore canvas state
+			ctx.restore();
+			
+			// Draw position label (not rotated)
+			ctx.fillStyle = '#2c3e50';
+			ctx.font = 'bold 12px Arial';
+			ctx.textAlign = 'center';
+			ctx.fillText(`(${odometryData.x.toFixed(0)}, ${odometryData.y.toFixed(0)})`, robotCenterX, robotCenterY - robotSize - 5);
+			
+			// Update label
+			const fieldWidthDisplay = (FIELD_WIDTH_CM * unitConversions[currentUnit].factor).toFixed(1);
+			const fieldHeightDisplay = (FIELD_HEIGHT_CM * unitConversions[currentUnit].factor).toFixed(1);
+			document.getElementById('unitLabel').textContent = `Field: ${fieldWidthDisplay} × ${fieldHeightDisplay} ${unitConversions[currentUnit].label} | Click to set target`;
+			
+			// Store scale for click handler
+			canvas.mapScale = { scale, fieldX, fieldY, fieldDrawWidth, fieldDrawHeight };
+		}
+		
+		function updateOdometryDisplay() {
+			const convertedX = convertValue(odometryData.x, currentUnit);
+			const convertedY = convertValue(odometryData.y, currentUnit);
+			const convertedDistance = convertValue(odometryData.distance, currentUnit);
+			
+			document.getElementById('poseX').textContent = convertedX;
+			document.getElementById('poseY').textContent = convertedY;
+			document.getElementById('poseHeading').textContent = odometryData.heading.toFixed(1);
+			document.getElementById('poseDistance').textContent = convertedDistance;
+			
+			document.getElementById('unitX').textContent = unitConversions[currentUnit].label;
+			document.getElementById('unitY').textContent = unitConversions[currentUnit].label;
+			document.getElementById('unitDistance').textContent = unitConversions[currentUnit].label;
+		}
+		
+		function loadSquare() {
+			const side = parseFloat(document.getElementById('squareSide').value) || 67;
+			const headingDeg = parseFloat(document.getElementById('squareHeading').value) || 0;
+			const h = headingDeg * Math.PI / 180;
+			
+			// Snapshot robot position when route is loaded
+			routeStartPos = { x: odometryData.x, y: odometryData.y };
+			// Rotation: x' = x*cos(h) - y*sin(h),  y' = x*sin(h) + y*cos(h)
+			const corners = [
+				{rx: side, ry: 0},
+				{rx: side, ry: side},
+				{rx: 0,    ry: side},
+				{rx: 0,    ry: 0}
+			];
+			
+			waypointList = corners.map(c => ({
+				x: Math.round(c.rx * Math.cos(h) - c.ry * Math.sin(h)),
+				y: Math.round(c.rx * Math.sin(h) + c.ry * Math.cos(h)),
+				heading: Math.round(headingDeg)
+			}));
+			
+			// Auto-enable loop so the robot returns to start
+			const loopEl = document.getElementById('loopCheck');
+			if (loopEl) loopEl.checked = true;
+			
+			renderWaypointTable();
+			drawFieldMap();
+			showError('Square loaded: ' + side + 'cm, heading ' + Math.round(headingDeg) + 'deg, loop on', false);
+		}
+		
+		function resetOdometry() {
+			if (!ws || ws.readyState !== WebSocket.OPEN) {
+				showError("WebSocket not connected");
+				return;
+			}
+			odometryData = { x: 0, y: 0, heading: 0, distance: 0 };
+			updateOdometryDisplay();
+			drawFieldMap();
+			sendCommand("reset_odometry", {});
+		}
+		
+		function renderWaypointTable() {
+			const table = document.getElementById('waypointTable');
+			if (!table) return;
+			if (waypointList.length === 0) {
+				table.innerHTML = '<div style="padding: 15px; text-align: center; color: #aaa; font-size: 12px;">No waypoints added</div>';
+				return;
+			}
+			let html = '<table style="width: 100%; border-collapse: collapse; font-size: 11px;">';
+			html += '<thead><tr style="background: #3498db; color: white;">';
+			html += '<th style="padding: 4px 2px; text-align: center; width: 20px;">#</th>';
+			html += '<th style="padding: 4px 2px; text-align: center;">X cm</th>';
+			html += '<th style="padding: 4px 2px; text-align: center;">Y cm</th>';
+			html += '<th style="padding: 4px 2px; text-align: center;">Hdg</th>';
+			html += '<th style="padding: 4px 2px; text-align: center;">Pause s</th>';
+			html += '<th style="padding: 4px 2px; width: 24px;"></th>';
+			html += '</tr></thead><tbody>';
+			waypointList.forEach(function(wp, i) {
+				const bg = i === selectedWaypoint ? '#fff8dc' : (i % 2 === 0 ? '#fff' : '#f5f5f5');
+				html += '<tr style="background:' + bg + ';">';
+				html += '<td style="padding: 3px 2px; text-align: center; font-weight: bold; color: #3498db;">' + (i + 1) + '</td>';
+				html += '<td style="padding: 2px;"><input type="number" value="' + Math.round(wp.x) + '" onchange="updateWaypointField(' + i + ',\'x\',this.value)" style="width: 52px; padding: 2px 3px; border: 1px solid #ddd; border-radius: 3px; font-size: 11px;"></td>';
+				html += '<td style="padding: 2px;"><input type="number" value="' + Math.round(wp.y) + '" onchange="updateWaypointField(' + i + ',\'y\',this.value)" style="width: 52px; padding: 2px 3px; border: 1px solid #ddd; border-radius: 3px; font-size: 11px;"></td>';
+				html += '<td style="padding: 2px;"><input type="number" min="0" max="359" value="' + Math.round(wp.heading) + '" onchange="updateWaypointField(' + i + ',\'heading\',this.value)" style="width: 44px; padding: 2px 3px; border: 1px solid #ddd; border-radius: 3px; font-size: 11px;"></td>';
+				html += '<td style="padding: 2px;"><input type="number" min="0" step="0.5" value="' + (wp.dwell || 0).toFixed(1) + '" onchange="updateWaypointField(' + i + ',\'dwell\',this.value)" style="width: 44px; padding: 2px 3px; border: 1px solid #ddd; border-radius: 3px; font-size: 11px;"></td>';
+				html += '<td style="padding: 2px; text-align: center;"><button onclick="deleteWaypoint(' + i + ')" style="background:#e74c3c;color:white;border:none;border-radius:3px;padding:2px 5px;cursor:pointer;font-size:10px;font-weight:bold;">X</button></td>';
+				html += '</tr>';
+			});
+			html += '</tbody></table>';
+			table.innerHTML = html;
+		}
+		
+		function updateWaypointField(index, field, value) {
+			if (index < 0 || index >= waypointList.length) return;
+			let num = parseFloat(value);
+			if (isNaN(num)) return;
+			if (field === 'heading') num = ((Math.round(num) % 360) + 360) % 360;
+			if (field === 'dwell') num = Math.max(0, Math.round(num * 10) / 10);
+			waypointList[index][field] = num;
+			drawFieldMap();
+		}
+		
+		function deleteWaypoint(index) {
+			waypointList.splice(index, 1);
+			renderWaypointTable();
+			drawFieldMap();
+		}
+		
+		function clearAllWaypoints() {
+			waypointList = [];
+			routeStartPos = null;
+			renderWaypointTable();
+			drawFieldMap();
+		}
+		
+		function sampleSpline(waypoints, stepCm) {
+			// Samples the Catmull-Rom spline through waypoints into dense {x,y,heading,dwell} points.
+			// Heading is interpolated (shortest-path) between user-set waypoint headings so the
+			// robot arrives at each waypoint facing exactly the heading you dialed in.
+			stepCm = stepCm || 20;
+			if (waypoints.length < 2) return waypoints;
+			
+			const loopOn = document.getElementById('loopCheck') && document.getElementById('loopCheck').checked;
+			const pts = waypoints.map(wp => ({ x: wp.x, y: wp.y }));
+			
+			// Extend chain for Catmull-Rom boundary conditions
+			let chain;
+			if (loopOn) {
+				chain = [pts[pts.length - 1], ...pts, pts[0], pts[1]];
+			} else {
+				chain = [pts[0], ...pts, pts[pts.length - 1]];
+			}
+			
+			const segments = loopOn ? pts.length : pts.length - 1;
+			
+			// Evaluate Catmull-Rom at parameter t within segment si
+			function crPoint(si, t) {
+				const p0 = chain[si], p1 = chain[si+1], p2 = chain[si+2], p3 = chain[si+3];
+				const t2 = t*t, t3 = t2*t;
+				return {
+					x: 0.5 * ((2*p1.x) + (-p0.x+p2.x)*t + (2*p0.x-5*p1.x+4*p2.x-p3.x)*t2 + (-p0.x+3*p1.x-3*p2.x+p3.x)*t3),
+					y: 0.5 * ((2*p1.y) + (-p0.y+p2.y)*t + (2*p0.y-5*p1.y+4*p2.y-p3.y)*t2 + (-p0.y+3*p1.y-3*p2.y+p3.y)*t3)
+				};
+			}
+			
+			// Shortest-path angle lerp (always takes the short way around 360)
+			function lerpAngle(a, b, t) {
+				let diff = ((b - a) % 360 + 360) % 360;
+				if (diff > 180) diff -= 360;
+				return ((a + diff * t) % 360 + 360) % 360;
+			}
+			
+			// Build dense point cloud, tracking si, t, and forced dwell at user waypoint endpoints
+			const stepsPerSeg = 200;
+			const dense = [];
+			for (let si = 0; si < segments; si++) {
+				for (let i = 0; i < stepsPerSeg; i++) {
+					const t = i / stepsPerSeg;
+					const p = crPoint(si, t);
+					dense.push({ x: p.x, y: p.y, si: si, t: t, dwell: 0, forced: false });
+				}
+			}
+			// Always include final point; mark it with the final waypoint's dwell
+			{
+				const p = crPoint(segments - 1, 1.0);
+				const finalWpIdx = loopOn ? 0 : waypoints.length - 1;
+				dense.push({ x: p.x, y: p.y, si: segments - 1, t: 1.0, dwell: waypoints[finalWpIdx].dwell || 0, forced: true });
+			}
+			// Mark each intermediate segment endpoint (= user waypoint) with its dwell
+			for (let si = 0; si < segments - 1; si++) {
+				const wpIdx = (si + 1) % waypoints.length;
+				const dwell = waypoints[wpIdx].dwell || 0;
+				if (dwell > 0) {
+					// The endpoint of segment si is at dense index (si+1)*stepsPerSeg
+					const idx = (si + 1) * stepsPerSeg;
+					dense[idx].dwell = dwell;
+					dense[idx].forced = true;
+				}
+			}
+			
+			// Thin to stepCm arc-length spacing, always keeping forced (dwell) points
+			const thinned = [dense[0]];
+			let last = dense[0];
+			for (let i = 1; i < dense.length; i++) {
+				const d = Math.sqrt((dense[i].x - last.x)**2 + (dense[i].y - last.y)**2);
+				if (d >= stepCm || dense[i].forced) {
+					thinned.push(dense[i]);
+					last = dense[i];
+				}
+			}
+			
+			// Assign heading by interpolating user-set waypoint headings along each segment
+			return thinned.map(pt => {
+				const si = pt.si;
+				const t = pt.t;
+				const wpA = si % waypoints.length;
+				const wpB = (si + 1) % waypoints.length;
+				const heading = lerpAngle(waypoints[wpA].heading, waypoints[wpB].heading, t);
+				return { x: Math.round(pt.x), y: Math.round(pt.y), heading: Math.round(heading), dwell: pt.dwell || 0 };
+			});
+		}
+		
+		function runWaypoints() {
+			if (waypointList.length === 0) {
+				showError("No waypoints set. Click on the field to add points.");
+				return;
+			}
+			if (!ws || ws.readyState !== WebSocket.OPEN) {
+				showError("WebSocket not connected");
+				return;
+			}
+			const loopEl = document.getElementById('loopCheck');
+			const loop = loopEl ? loopEl.checked : false;
+			const speedEl = document.getElementById('routeSpeed');
+			const speed = speedEl ? parseFloat(speedEl.value) : 0.8;
+			
+			// Send only the control waypoints (not sampled spline).
+			// Python will use Catmull-Rom to calculate smooth path in real-time.
+			const useSpline = waypointList.length >= 2;
+			sendCommand("navigate_waypoints", { waypoints: waypointList, loop: loop, use_spline: useSpline, max_speed: speed });
+			showError("Route started: " + waypointList.length + " waypoints (spline=" + useSpline + "), loop=" + loop + ", speed=" + speed.toFixed(2), false);
+		}
+		
+		function stopNavigation() {
+			if (!ws || ws.readyState !== WebSocket.OPEN) {
+				showError("WebSocket not connected");
+				return;
+			}
+			sendCommand("stop_navigation", {});
+			showError("Stop command sent", false);
+		}
+		
+		// Returns the index of the waypoint under canvas point (cx, cy), or -1
+		function hitTestWaypoint(cx, cy) {
+			if (!document.getElementById('mapCanvas').mapScale) return -1;
+			const { scale, fieldX, fieldY, fieldDrawHeight } = document.getElementById('mapCanvas').mapScale;
+			for (let wi = waypointList.length - 1; wi >= 0; wi--) {
+				const wp = waypointList[wi];
+				const wcx = fieldX + (wp.x * scale) + WP_SIZE;
+				const wcy = fieldY + fieldDrawHeight - (wp.y * scale) - WP_SIZE;
+				// Transform click into square local space (unrotate)
+				const headRad = (wp.heading * Math.PI) / 180;
+				const lx = (cx - wcx) * Math.cos(-headRad) - (cy - wcy) * Math.sin(-headRad);
+				const ly = (cx - wcx) * Math.sin(-headRad) + (cy - wcy) * Math.cos(-headRad);
+				if (Math.abs(lx) <= WP_SIZE && Math.abs(ly) <= WP_SIZE) return wi;
+			}
+			return -1;
+		}
+		
+		function handleMapClick(event) {
+			const canvas = document.getElementById('mapCanvas');
+			if (!canvas || !canvas.mapScale) return;
+			
+			const rect = canvas.getBoundingClientRect();
+			const clickX = event.clientX - rect.left;
+			const clickY = event.clientY - rect.top;
+			
+			// Check if clicking an existing waypoint first
+			const hitIdx = hitTestWaypoint(clickX, clickY);
+			if (hitIdx >= 0) {
+				selectedWaypoint = (selectedWaypoint === hitIdx) ? -1 : hitIdx;
+				drawFieldMap();
+				return;
+			}
+			
+			// Deselect on click elsewhere
+			selectedWaypoint = -1;
+			
+			const { scale, fieldX, fieldY, fieldDrawHeight, fieldDrawWidth } = canvas.mapScale;
+			
+			const relX = clickX - fieldX;
+			const relY = clickY - fieldY;
+			
+			if (relX >= 0 && relX <= fieldDrawWidth && relY >= 0 && relY <= fieldDrawHeight) {
+				const fieldCoordsX = Math.round(relX / scale);
+				const fieldCoordsY = Math.round((fieldDrawHeight - relY) / scale);
+				
+				// First click: insert robot's current position as WP1, then the clicked point as WP2
+				if (waypointList.length === 0) {
+					routeStartPos = { x: odometryData.x, y: odometryData.y };
+					const robotX = Math.round(odometryData.x);
+					const robotY = Math.round(odometryData.y);
+					waypointList.push({ x: robotX, y: robotY, heading: 0 });
+				}
+				
+				waypointList.push({ x: fieldCoordsX, y: fieldCoordsY, heading: 0 });
+				renderWaypointTable();
+				drawFieldMap();
+				showError('WP ' + waypointList.length + ' added: (' + fieldCoordsX + ', ' + fieldCoordsY + ') cm', false);
+			}
+		}
+		
+		function handleWebSocketMessage(data) {
+			const type = data.type;
+			
+			if (type === "state") {
+				updateAngles(data);
+				if (data.odometry) {
+					odometryData.x = parseFloat(data.odometry.x) || 0;
+					odometryData.y = parseFloat(data.odometry.y) || 0;
+					odometryData.heading = parseFloat(data.odometry.heading) || 0;
+					odometryData.distance = parseFloat(data.odometry.distance) || 0;
+					updateOdometryDisplay();
+					drawFieldMap();
+				}
+			}
+			else if (type === "angles") {
+				updateAngles(data);
+			}
+			else if (type === "autotune_complete") {
+				handleAutotuneComplete(data);
+			}
+			else if (type === "autotune_rotation_complete") {
+				handleAutotuneRotationComplete(data);
+			}
+			else if (type === "autotune_progress") {
+				document.getElementById("autotuneStatus").textContent = `Tuning ${data.wheel}...`;
+			}
+			else if (type === "success") {
+				showError(data.message, false);
+			}
+			else if (type === "error") {
+				showError(data.message);
+			}
+		}
+		
+		// ===== Initialize =====
+		window.addEventListener("load", () => {
+			drawSwerve();
+			drawFieldMap();
+			updatePresetsPanel();
+			connectWebSocket();
+			
+			// Add map canvas event handlers
+			const mapCanvas = document.getElementById('mapCanvas');
+			if (mapCanvas) {
+				mapCanvas.addEventListener('click', handleMapClick);
+				mapCanvas.addEventListener('mousemove', function(event) {
+					const rect = mapCanvas.getBoundingClientRect();
+					const mx = event.clientX - rect.left;
+					const my = event.clientY - rect.top;
+					const hit = hitTestWaypoint(mx, my);
+					if (hit !== hoveredWaypoint) {
+						hoveredWaypoint = hit;
+						mapCanvas.style.cursor = hit >= 0 ? 'pointer' : 'crosshair';
+						drawFieldMap();
+					}
+				});
+				mapCanvas.addEventListener('mouseleave', function() {
+					hoveredWaypoint = -1;
+					drawFieldMap();
+				});
+				mapCanvas.style.cursor = 'crosshair';
+			}
+			
+			// Arrow key heading/dwell control for selected waypoint
+			window.addEventListener('keydown', function(event) {
+				if (selectedWaypoint < 0 || selectedWaypoint >= waypointList.length) return;
+				const step = event.shiftKey ? 1 : 5;
+				if (event.key === 'ArrowLeft') {
+					event.preventDefault();
+					waypointList[selectedWaypoint].heading = ((waypointList[selectedWaypoint].heading - step) % 360 + 360) % 360;
+					renderWaypointTable();
+					drawFieldMap();
+				} else if (event.key === 'ArrowRight') {
+					event.preventDefault();
+					waypointList[selectedWaypoint].heading = (waypointList[selectedWaypoint].heading + step) % 360;
+					renderWaypointTable();
+					drawFieldMap();
+				} else if (event.key === 'ArrowUp') {
+					event.preventDefault();
+					const dwellStep = event.shiftKey ? 0.1 : 0.5;
+					waypointList[selectedWaypoint].dwell = Math.round(((waypointList[selectedWaypoint].dwell || 0) + dwellStep) * 10) / 10;
+					renderWaypointTable();
+					drawFieldMap();
+				} else if (event.key === 'ArrowDown') {
+					event.preventDefault();
+					const dwellStep = event.shiftKey ? 0.1 : 0.5;
+					waypointList[selectedWaypoint].dwell = Math.max(0, Math.round(((waypointList[selectedWaypoint].dwell || 0) - dwellStep) * 10) / 10);
+					renderWaypointTable();
+					drawFieldMap();
+				} else if (event.key === 'Escape') {
+					selectedWaypoint = -1;
+					drawFieldMap();
+				}
+			});
+		});
+	</script>
+</body>
+</html>

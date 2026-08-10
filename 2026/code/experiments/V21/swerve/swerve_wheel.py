@@ -1,0 +1,155 @@
+"""Single swerve wheel module abstraction.
+
+Each swerve module contains a drive motor (for speed) and a turn motor (for angle),
+along with an absolute encoder to track the wheel's current orientation.
+
+Example:
+    wheel = SwerveWheel('front_right', drive_canid=10, turn_canid=11,
+                        encoder_dio=0, manual_offset=0.0)
+    wheel.set_drive_power(0.5)  # 50% speed
+    wheel.set_turn_power(0.1)   # Slight turn
+    print(wheel.get_angle())    # Current wheel angle 0-360°
+"""
+
+from typing import Optional
+import wpilib
+from rev import SparkMax, SparkLowLevel
+import math
+
+
+class SwerveWheel:
+	"""Represents one swerve module with drive and turn motors"""
+	
+	def __init__(
+		self,
+		name: str,
+		drive_canid: int,
+		turn_canid: int,
+		encoder_dio: int,
+		manual_offset: float,
+	) -> None:
+		"""Initialize a swerve wheel module.
+		
+		Args:
+			name: Wheel identifier (e.g., 'front_right')
+			drive_canid: CAN ID for drive motor
+			turn_canid: CAN ID for turn motor
+			encoder_dio: DIO port for absolute encoder
+			manual_offset: Physical rotation offset in degrees
+		"""
+		self.name = name
+		
+		# Initialize motors with error handling
+		try:
+			self.drive_motor = SparkMax(drive_canid, SparkLowLevel.MotorType.kBrushless)
+			if name == "rear_right":
+				print(f"[WHEEL] {name} drive motor initialized on CAN {drive_canid}", flush=True)
+		except Exception as e:
+			print(f"[WHEEL] ERROR - Failed to initialize drive motor for {name} (CAN ID {drive_canid}): {type(e).__name__}: {e}", flush=True)
+			self.drive_motor = None
+		
+		try:
+			self.turn_motor = SparkMax(turn_canid, SparkLowLevel.MotorType.kBrushless)
+			print(f"[WHEEL] {name} turn motor initialized on CAN {turn_canid}", flush=True)
+		except Exception as e:
+			print(f"[WHEEL] ERROR - Failed to initialize turn motor for {name} (CAN ID {turn_canid}): {type(e).__name__}: {e}", flush=True)
+			self.turn_motor = None
+		
+		# Direction is handled via speed flip in drive_wheel_to_angle
+		
+		self.encoder = wpilib.DutyCycleEncoder(encoder_dio)
+		self.manual_offset = manual_offset
+		self.offset = 0.0
+		self.current_drive_power = 0.0  # Track current drive power for dashboard
+		self._turn_motor_error_logged = False  # Track if we've already logged a turn motor error
+	
+	def set_drive_power(self, power: float) -> None:
+		"""Set drive motor power (-1.0 to 1.0)"""
+		self.current_drive_power = power
+		if self.name == "rear_left":
+			if self.drive_motor:
+				self.drive_motor.set(-power)
+		if self.name == "rear_right":
+			if self.drive_motor:
+				self.drive_motor.set(-power)
+		if self.name == "front_left":
+			if self.drive_motor:
+				self.drive_motor.set(-power)
+		if self.name == "front_right":
+			if self.drive_motor:
+				self.drive_motor.set(-power)
+	
+	def set_turn_power(self, power: float) -> None:
+		"""Set turn motor power (-1.0 to 1.0)"""
+		if not self.turn_motor:
+			# Log error once only, don't spam every cycle
+			if not self._turn_motor_error_logged:
+				print(f"[TURN] ERROR: {self.name} turn motor is NULL - cannot send command", flush=True)
+				self._turn_motor_error_logged = True
+			return
+		
+		if self.name == "rear_left":
+			self.turn_motor.set(-power)
+		if self.name == "rear_right":
+			self.turn_motor.set(-power)
+		if self.name == "front_left":
+			self.turn_motor.set(-power)
+		if self.name == "front_right":
+			self.turn_motor.set(-power)
+	
+	def stop(self) -> None:
+		"""Stop both motors immediately."""
+		if self.drive_motor:
+			self.drive_motor.set(0.0)
+		if self.turn_motor:
+			self.turn_motor.set(0.0)
+	
+	def get_raw_angle(self) -> float:
+		"""Get raw encoder angle in degrees (0-360)."""
+		return self.encoder.get() * 360.0
+	
+	def get_angle(self) -> int:
+		"""Get adjusted angle accounting for offset (0-360)."""
+		raw = self.get_raw_angle()
+		angle = (raw - self.offset) % 360.0
+		return int(round(angle)) % 360
+	
+	def set_zero_offset(self, raw_angle: float) -> None:
+		"""Save this raw angle as zero point."""
+		self.offset = raw_angle
+	
+	def get_zero_offset(self) -> float:
+		"""Get the saved zero offset in degrees."""
+		return self.offset
+	
+	def get_drive_power(self) -> float:
+		"""Get current drive motor power (-1.0 to 1.0)."""
+		return self.current_drive_power
+	
+	def get_drive_position(self) -> float:
+		"""Get drive motor encoder position in rotations."""
+		if self.drive_motor:
+			try:
+				return self.drive_motor.getEncoder().getPosition()
+			except:
+				return 0.0
+		return 0.0
+	
+	def get_drive_velocity(self) -> float:
+		"""Get drive motor encoder velocity in RPM."""
+		if self.drive_motor:
+			try:
+				return self.drive_motor.getEncoder().getVelocity()
+			except:
+				return 0.0
+		return 0.0
+	
+	def get_drive_distance(self, wheel_diameter_cm: float = 10.16) -> float:
+		"""Get total distance traveled in centimeters (10.16 cm = 4 inch wheels)."""
+		position = self.get_drive_position()
+		# Convert rotations to distance: distance = rotations * pi * diameter
+		import math
+		# Account for front_right motor inversion in set_drive_power
+		if self.name == "front_right":
+			position = -position
+		return position * math.pi * wheel_diameter_cm
