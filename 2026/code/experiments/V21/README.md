@@ -127,10 +127,14 @@ waypoints = [
 # Create smooth path
 path = CatmullRomSpline(waypoints)
 
-# Query position at distance along path
-segment, t, distance = path.find_segment_for_distance(150.0)
-target = path.evaluate(segment, t)
-target_heading = path.interpolate_heading(segment, t)
+# Query any point along the path
+state = path.get_state_at_distance(150.0)  # At 150cm
+print(f"Go to ({state['x']:.1f}, {state['y']:.1f}) facing {state['heading']:.1f}°")
+
+# Or iterate through the entire path
+for state in path.sample_path(step_cm=10.0):  # Every 10cm
+    print(f"Waypoint at {state['distance']:.1f}cm")
+    robot_move_to(state['x'], state['y'], state['heading'])
 ```
 
 ## Calibration & Tuning

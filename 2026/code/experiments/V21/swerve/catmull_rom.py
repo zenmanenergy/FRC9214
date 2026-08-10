@@ -1,26 +1,38 @@
 """Catmull-Rom spline implementation for smooth autonomous path following.
 
-Provides C1-continuous curves through waypoints with:
-  - Arc-length distance queries for speed profiling
-  - Tangent-based heading calculation
-  - Waypoint-based heading interpolation for field alignment
+Provides C1-continuous curves through waypoints with arc-length distance queries
+for speed profiling and heading interpolation for field alignment.
 
-Example:
+Simple Usage:
     waypoints = [
         {'x': 0, 'y': 0, 'heading': 0},
         {'x': 100, 'y': 50, 'heading': 45},
         {'x': 200, 'y': 100, 'heading': 90},
     ]
-    spline = CatmullRomSpline(waypoints)
+    path = CatmullRomSpline(waypoints)
     
-    # Find position at 50cm along path
-    seg_idx, t, _ = spline.find_segment_for_distance(50.0)
-    pos = spline.evaluate(seg_idx, t)
-    heading = spline.interpolate_heading(seg_idx, t)
-    print(f"At 50cm: ({pos['x']:.1f}, {pos['y']:.1f}) @ {heading:.1f}°")
+    # Query path at any distance
+    state = path.get_state_at_distance(150.0)  # At 150cm along path
+    print(f"Position: ({state['x']:.1f}, {state['y']:.1f})")
+    print(f"Heading: {state['heading']:.1f}°")
+    print(f"Total path length: {path.get_total_distance():.1f}cm")
+    
+    # Iterate through path at regular intervals
+    for state in path.sample_path(step_cm=10.0):  # Every 10cm
+        target_x = state['x']
+        target_y = state['y']
+        target_heading = state['heading']
+        print(f"Waypoint at {state['distance']:.1f}cm")
+
+Advanced Usage:
+    For fine-grained control over spline evaluation:
+    
+    segment, t, _ = path.find_segment_for_distance(50.0)
+    pos = path.evaluate(segment, t)
+    heading = path.interpolate_heading(segment, t)
 """
 
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Iterator
 import math
 
 
@@ -250,3 +262,80 @@ class CatmullRomSpline:
 				total += segment_length
 		
 		return total
+	
+	def get_state_at_distance(self, distance_cm: float) -> Dict:
+		"""Query complete state at a distance along the path.
+		
+		This is the recommended way to sample the path during autonomous.
+		
+		Args:
+			distance_cm: Distance along path in centimeters (0.0 to total_distance)
+		
+		Returns:
+			Dict with keys:
+			  - 'x': X position in cm
+			  - 'y': Y position in cm
+			  - 'heading': Heading in degrees (0-360)
+			  - 'distance': Actual distance queried (may be clamped)
+			  - 'segment': Segment index (0 to num_segments-1)
+			  - 't': Parameter within segment (0.0 to 1.0)
+		
+		Example:
+			path = CatmullRomSpline(waypoints)
+			state = path.get_state_at_distance(50.0)
+			robot.move_to(state['x'], state['y'], state['heading'])
+		"""
+		segment, t, actual_distance = self.find_segment_for_distance(distance_cm)
+		pos = self.evaluate(segment, t)
+		heading = self.interpolate_heading(segment, t)
+		
+		return {
+			'x': pos['x'],
+			'y': pos['y'],
+			'heading': heading,
+			'distance': actual_distance,
+			'segment': segment,
+			't': t,
+		}
+	
+	def sample_path(self, step_cm: float = 10.0) -> Iterator[Dict]:
+		"""Iterate through path at regular distance intervals.
+		
+		Yields complete state at each step, making it easy to generate
+		motion profiles or debug waypoint trajectories.
+		
+		Args:
+			step_cm: Distance between samples in centimeters
+		
+		Yields:
+			Dict with keys: 'x', 'y', 'heading', 'distance', 'segment', 't'
+		
+		Example:
+			path = CatmullRomSpline(waypoints)
+			for state in path.sample_path(step_cm=5.0):
+				print(f"At {state['distance']:.1f}cm: "
+					  f"({state['x']:.1f}, {state['y']:.1f}) @ {state['heading']:.1f}°")
+		"""
+		total_distance = self.get_total_distance()
+		distance = 0.0
+		
+		while distance <= total_distance:
+			yield self.get_state_at_distance(distance)
+			distance += step_cm
+	
+	def get_waypoint(self, index: int) -> Dict:
+		"""Get a waypoint by index.
+		
+		Args:
+			index: Waypoint index (0 to len(waypoints)-1)
+		
+		Returns:
+			Dict with keys: 'x', 'y', 'heading'
+		
+		Example:
+			first = path.get_waypoint(0)
+			last = path.get_waypoint(len(path.waypoints) - 1)
+		"""
+		if index < 0 or index >= len(self.waypoints):
+			raise IndexError(f"Waypoint index {index} out of range [0, {len(self.waypoints)-1}]")
+		return self.waypoints[index].copy()

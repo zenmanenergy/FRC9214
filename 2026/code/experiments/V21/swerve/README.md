@@ -88,12 +88,13 @@ waypoints = [
 path = CatmullRomSpline(waypoints)
 
 # Query any point along the path
-total_distance = path.get_total_distance()  # Total arc length in cm
-segment, t, distance = path.find_segment_for_distance(50.0)  # At 50cm
-target_pos = path.evaluate(segment, t)      # Position dict
-target_heading = path.interpolate_heading(segment, t)  # Heading at that point
+state = path.get_state_at_distance(50.0)  # At 50cm
+print(f"Target: ({state['x']:.1f}, {state['y']:.1f}) @ {state['heading']:.1f}°")
 
-print(f"Target: ({target_pos['x']:.1f}, {target_pos['y']:.1f}) @ {target_heading:.1f}°")
+# Or sample the entire path
+for state in path.sample_path(step_cm=10.0):  # Every 10cm
+    print(f"Waypoint at {state['distance']:.1f}cm: "
+          f"({state['x']:.1f}, {state['y']:.1f}) facing {state['heading']:.1f}°")
 ```
 
 ## Core Classes
@@ -277,7 +278,7 @@ tuner.publish_tuning_history()                         # Post to SmartDashboard
 
 ### CatmullRomSpline
 
-Smooth C1-continuous curves through waypoints.
+Smooth C1-continuous curves through waypoints with simple distance-based queries.
 
 ```python
 waypoints = [
@@ -288,21 +289,40 @@ waypoints = [
 
 spline = CatmullRomSpline(waypoints)
 
-# Position at distance along curve
-segment, t, distance = spline.find_segment_for_distance(50.0)  # At 50cm
-pos = spline.evaluate(segment, t)                             # Get (x, y)
-print(f"Position: ({pos['x']:.1f}, {pos['y']:.1f})")
+# Query any point directly (recommended)
+state = spline.get_state_at_distance(50.0)                # At 50cm
+print(f"({state['x']:.1f}, {state['y']:.1f}) @ {state['heading']:.1f}°")
 
-# Heading at distance
-heading = spline.interpolate_heading(segment, t)              # Get heading°
+# Iterate through path at regular intervals
+for state in spline.sample_path(step_cm=10.0):            # Every 10cm
+    print(f"Distance {state['distance']:.1f}cm: "
+          f"({state['x']:.1f}, {state['y']:.1f}) @ {state['heading']:.1f}°")
 
-# Total path length
-total = spline.get_total_distance()                           # Arc length in cm
+# Get total path length
+total = spline.get_total_distance()                        # Arc length in cm
 
-# Tangent for custom heading calculation
-tangent = spline.evaluate_tangent(segment, t)                 # Get (dx, dy)
-tangent_heading = spline.get_heading_from_tangent(tangent['dx'], tangent['dy'])
+# Access individual waypoints
+waypoint = spline.get_waypoint(0)                          # First waypoint
+
+# Advanced: Lower-level access for fine control
+segment, t, distance = spline.find_segment_for_distance(50.0)
+pos = spline.evaluate(segment, t)
+heading = spline.interpolate_heading(segment, t)
+tangent = spline.evaluate_tangent(segment, t)
 ```
+
+**Recommended Methods:**
+- `get_state_at_distance(distance_cm)` - Query complete state (x, y, heading) at any distance
+- `sample_path(step_cm)` - Iterator through path at regular intervals
+- `get_waypoint(index)` - Get original waypoint by index
+- `get_total_distance()` - Total arc-length of path in cm
+
+**Advanced Methods (lower-level):**
+- `find_segment_for_distance()` - Segment lookup for fine control
+- `evaluate()` - Position evaluation
+- `interpolate_heading()` - Heading calculation
+- `evaluate_tangent()` - Tangent vector
+- `get_heading_from_tangent()` - Custom heading from tangent
 
 ## Configuration
 
