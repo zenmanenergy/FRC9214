@@ -1,4 +1,3 @@
-numpy
 pupil-apriltags
 pynetworktables
 robotpy
