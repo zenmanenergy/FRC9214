@@ -350,6 +350,64 @@ class SwerveDrive:
 			print(f"[RECORDING] Failed to export path: {e}", flush=True)
 			return False
 	
+	def publish_path_to_dashboard(self) -> None:
+		"""Publish recorded and planned paths to SmartDashboard for visualization.
+		
+		This sends both the actual path taken and the planned path to SmartDashboard,
+		allowing your dashboard to display them together for comparison.
+		
+		Call this after autonomous completes to see comparison data:
+		
+		Example:
+			swerve.start_recording()
+			swerve.follow_path(waypoints, speed=0.6)
+			
+			while not swerve.is_path_complete():
+				swerve.update_autonomous()
+			
+			swerve.publish_path_to_dashboard()  # Send to dashboard
+		
+		Publishes to SmartDashboard:
+			- path/recorded/count: Number of recorded positions
+			- path/recorded/x: Array of X coordinates
+			- path/recorded/y: Array of Y coordinates
+			- path/recorded/heading: Array of headings
+			- path/planned/count: Number of planned waypoints
+			- path/planned/x: Array of planned X coordinates
+			- path/planned/y: Array of planned Y coordinates
+			- path/planned/heading: Array of planned headings
+		"""
+		try:
+			import json
+			
+			# Publish recorded path
+			if self.recorded_positions:
+				recorded_x = [p['x'] for p in self.recorded_positions]
+				recorded_y = [p['y'] for p in self.recorded_positions]
+				recorded_heading = [p['heading'] for p in self.recorded_positions]
+				
+				SmartDashboard.putNumber("path/recorded/count", len(self.recorded_positions))
+				SmartDashboard.putString("path/recorded/x", json.dumps(recorded_x))
+				SmartDashboard.putString("path/recorded/y", json.dumps(recorded_y))
+				SmartDashboard.putString("path/recorded/heading", json.dumps(recorded_heading))
+				print(f"[DASHBOARD] Published {len(self.recorded_positions)} recorded positions", flush=True)
+			
+			# Publish planned path
+			if self.path:
+				planned_positions = list(self.path.sample_path(step_cm=5.0))
+				planned_x = [p['x'] for p in planned_positions]
+				planned_y = [p['y'] for p in planned_positions]
+				planned_heading = [p['heading'] for p in planned_positions]
+				
+				SmartDashboard.putNumber("path/planned/count", len(planned_positions))
+				SmartDashboard.putString("path/planned/x", json.dumps(planned_x))
+				SmartDashboard.putString("path/planned/y", json.dumps(planned_y))
+				SmartDashboard.putString("path/planned/heading", json.dumps(planned_heading))
+				print(f"[DASHBOARD] Published {len(planned_positions)} planned positions", flush=True)
+			
+		except Exception as e:
+			print(f"[DASHBOARD] Failed to publish paths: {e}", flush=True)
+	
 	# ========== END AUTONOMOUS ==========
 	
 	def _apply_smooth_acceleration(self, wheel_name: str, target_power: float) -> float:

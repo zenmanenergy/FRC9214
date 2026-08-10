@@ -144,19 +144,28 @@ swerve.follow_path(waypoints, speed=0.6)
 while not swerve.is_path_complete():
     swerve.update_autonomous()  # Automatically records position each loop
 
-# Get recorded path
-actual_path = swerve.get_recorded_path()  # List of {'x', 'y', 'heading', 'timestamp', 'distance'}
+# Send both planned and recorded paths to dashboard for visualization
+swerve.publish_path_to_dashboard()
 
-# Export for analysis
+# Or export to JSON file for external analysis
 swerve.export_recorded_path("/home/lvuser/path_run.json")
 
-# Compare with planned path
-planned_path = list(swerve.path.sample_path(step_cm=10.0))
+# Get data programmatically
+actual_path = swerve.get_recorded_path()
 ```
+
+**Dashboard Integration:**
+The recorded and planned paths are published to NetworkTables:
+- `path/recorded/count` - Number of positions recorded
+- `path/recorded/x`, `path/recorded/y`, `path/recorded/heading` - Recorded path arrays (JSON)
+- `path/planned/count` - Number of planned waypoints
+- `path/planned/x`, `path/planned/y`, `path/planned/heading` - Planned path arrays (JSON)
+
+Your field map dashboard can read these values and display both paths overlaid to visualize accuracy.
 
 Use this to:
 - Debug odometry drift
-- Verify path accuracy
+- Verify path accuracy in your dashboard
 - Tune PID gains for smoother tracking
 - Analyze motor performance
 

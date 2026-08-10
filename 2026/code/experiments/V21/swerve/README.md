@@ -113,14 +113,14 @@ swerve.follow_path(waypoints, speed=0.6)
 while not swerve.is_path_complete():
     swerve.update_autonomous()  # Positions recorded automatically each loop
 
+# Publish both paths to dashboard for side-by-side visualization
+swerve.publish_path_to_dashboard()
+
 # Get recorded path (list of dicts with x, y, heading, timestamp, distance)
 actual_path = swerve.get_recorded_path()
 
 # Export to JSON for external analysis
 swerve.export_recorded_path("/home/lvuser/path_run1.json")
-
-# Compare with planned path
-planned_path = list(swerve.path.sample_path(step_cm=10.0))
 ```
 
 **Recording Methods:**
@@ -129,7 +129,25 @@ planned_path = list(swerve.path.sample_path(step_cm=10.0))
 - `record_position()` - Manually record current position (called automatically in update_autonomous)
 - `get_recorded_path()` - Retrieve all recorded positions as list of dicts
 - `export_recorded_path(filename)` - Write recorded path to JSON file
+- `publish_path_to_dashboard()` - Send both planned and recorded paths to SmartDashboard
 - `clear_recording()` - Clear recorded data
+
+**Dashboard Integration:**
+Call `publish_path_to_dashboard()` after autonomous to send data to NetworkTables:
+
+```
+path/recorded/count         - Number of recorded positions
+path/recorded/x             - JSON array of X coordinates
+path/recorded/y             - JSON array of Y coordinates
+path/recorded/heading       - JSON array of headings
+
+path/planned/count          - Number of planned waypoints
+path/planned/x              - JSON array of planned X coordinates
+path/planned/y              - JSON array of planned Y coordinates
+path/planned/heading        - JSON array of planned headings
+```
+
+Your field map dashboard can subscribe to these values and display both paths overlaid.
 
 **Recorded Position Format:**
 ```python
@@ -143,7 +161,7 @@ planned_path = list(swerve.path.sample_path(step_cm=10.0))
 ```
 
 **Use Cases:**
-- Compare planned vs actual path to identify odometry drift
+- Compare planned vs actual path in your field map to identify odometry drift
 - Detect undershoot/overshoot in waypoint navigation
 - Verify PID tuning effectiveness
 - Analyze mechanical issues (wheel slip, binding)

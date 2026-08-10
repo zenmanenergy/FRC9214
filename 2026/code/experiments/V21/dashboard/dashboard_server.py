@@ -1,10 +1,11 @@
 """Swerve Drive Dashboard Server - WebSocket Server for Teleop and Test Modes"""
-from flask import Flask, render_template, request, Response
+from flask import Flask, render_template, request, Response, send_file
 import ntcore
 import threading
 import time
 import json
 import os
+from datetime import datetime
 
 try:
 	from flask_sock import Sock
@@ -14,6 +15,13 @@ except ImportError:
 	print("[ERROR] flask-sock not installed. Run: pip install flask-sock")
 
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
+paths_dir = os.path.join(os.path.dirname(__file__), 'recorded_paths')
+
+# Create paths directory if it doesn't exist
+if not os.path.exists(paths_dir):
+	os.makedirs(paths_dir)
+	print(f"[PATHS] Created recorded_paths directory at {paths_dir}")
+
 app = Flask(__name__, template_folder=template_dir)
 
 if HAS_FLASK_SOCK:
@@ -143,7 +151,8 @@ class DashboardServer:
 						self.robot_enabled = new_robot_enabled
 						self.robot_mode = new_robot_mode
 					
-					self._broadcast_to_all({
+					# Read path data from NetworkTables
+					state_dict = {
 						"type": "state",
 						"angles": self.wheel_angles,
 						"power": self.wheel_power,
@@ -151,7 +160,23 @@ class DashboardServer:
 						"counter": self.counter,
 						"robot_enabled": self.robot_enabled,
 						"robot_mode": self.robot_mode
-					})
+					}
+					
+					# Add recorded path if available
+					path_recorded_x = self.table.getString("path/recorded/x", "")
+					if path_recorded_x:
+						state_dict["path_recorded_x"] = path_recorded_x
+						state_dict["path_recorded_y"] = self.table.getString("path/recorded/y", "[]")
+						state_dict["path_recorded_heading"] = self.table.getString("path/recorded/heading", "[]")
+					
+					# Add planned path if available
+					path_planned_x = self.table.getString("path/planned/x", "")
+					if path_planned_x:
+						state_dict["path_planned_x"] = path_planned_x
+						state_dict["path_planned_y"] = self.table.getString("path/planned/y", "[]")
+						state_dict["path_planned_heading"] = self.table.getString("path/planned/heading", "[]")
+					
+					self._broadcast_to_all(state_dict)
 					
 					if first_read and self.counter > 0:
 						print(f"[NT] Connected to NetworkTables - broadcasting updates")
@@ -175,6 +200,27 @@ def serve_dashboard():
 def history():
 	"""Serve tuning history page"""
 	return render_template("history.html")
+
+@app.route("/download_path")
+def download_path():
+	"""Download a recorded path file"""
+	filename = request.args.get('filename', '')
+	if not filename or not filename.endswith('.json'):
+		return "Invalid filename", 400
+	
+	filepath = os.path.join(paths_dir, filename)
+	
+	# Security check: ensure the file is in the paths directory
+	if not os.path.abspath(filepath).startswith(os.path.abspath(paths_dir)):
+		return "Unauthorized", 403
+	
+	if not os.path.exists(filepath):
+		return "File not found", 404
+	
+	try:
+		return send_file(filepath, as_attachment=True, download_name=filename)
+	except Exception as e:
+		return f"Error downloading file: {str(e)}", 500
 
 if HAS_FLASK_SOCK:
 	@sock.route("/ws")
@@ -281,13 +327,65 @@ if HAS_FLASK_SOCK:
 					elif cmd == "toggle_imu_invert":
 						dashboard.table.putBoolean("toggle_imu_invert_command", True)
 						ws.send(json.dumps({"type": "success", "message": "IMU invert toggle sent"}))
+					elif cmd == "export_path":
+						# Export recorded path to file
+						try:
+							recorded_x = value.get("recorded_x", [])
+							recorded_y = value.get("recorded_y", [])
+							recorded_heading = value.get("recorded_heading", [])
+							timestamp = value.get("timestamp", datetime.now().isoformat())
+							
+							# Create filename from timestamp
+							dt = datetime.fromisoformat(timestamp).strftime("%Y%m%d_%H%M%S")
+							filename = f"path_{dt}.json"
+							filepath = os.path.join(paths_dir, filename)
+							
+							# Save path data
+							path_data = {
+								"timestamp": timestamp,
+								"point_count": len(recorded_x),
+								"positions": [
+									{"x": recorded_x[i], "y": recorded_y[i], "heading": recorded_heading[i]}
+									for i in range(len(recorded_x))
+								]
+							}
+							
+							with open(filepath, 'w') as f:
+								json.dump(path_data, f, indent=2)
+							
+							print(f"[PATHS] Exported path with {len(recorded_x)} points to {filepath}")
+							ws.send(json.dumps({"type": "success", "message": f"Path exported to {filename}"}))
+						except Exception as e:
+							print(f"[PATHS] Error exporting path: {e}")
+							ws.send(json.dumps({"type": "error", "message": f"Failed to export path: {str(e)}"}))
+					elif cmd == "list_paths":
+						# List all saved paths
+						try:
+							paths_list = []
+							if os.path.exists(paths_dir):
+								for filename in sorted(os.listdir(paths_dir), reverse=True)[:20]:  # Last 20
+									if filename.endswith('.json'):
+										filepath = os.path.join(paths_dir, filename)
+										try:
+											with open(filepath, 'r') as f:
+												data = json.load(f)
+												paths_list.append({
+													"filename": filename,
+													"timestamp": data.get("timestamp", "unknown"),
+													"points": data.get("point_count", 0)
+												})
+										except:
+											pass
+							
+							ws.send(json.dumps({"type": "paths_list", "paths": paths_list}))
+							print(f"[PATHS] Listed {len(paths_list)} saved paths")
+						except Exception as e:
+							print(f"[PATHS] Error listing paths: {e}")
+							ws.send(json.dumps({"type": "error", "message": f"Failed to list paths: {str(e)}"}))
 				except json.JSONDecodeError:
 					ws.send(json.dumps({"type": "error", "message": "Invalid JSON"}))
 				except Exception as e:
 					ws.send(json.dumps({"type": "error", "message": str(e)}))
-		
-		except Exception as e:
-			print(f"[WS-ERR] WebSocket error: {e}")
 		finally:
 			dashboard.unregister_ws_client(ws)
 

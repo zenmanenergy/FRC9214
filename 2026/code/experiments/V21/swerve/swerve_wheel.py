@@ -42,6 +42,7 @@ class SwerveWheel:
 		# Initialize motors with error handling
 		try:
 			self.drive_motor = SparkMax(drive_canid, SparkLowLevel.MotorType.kBrushless)
+			self.drive_motor.setIdleMode(SparkMax.IdleMode.kBrake)  # ← ADD HERE
 			if name == "rear_right":
 				print(f"[WHEEL] {name} drive motor initialized on CAN {drive_canid}", flush=True)
 		except Exception as e:
@@ -50,6 +51,7 @@ class SwerveWheel:
 		
 		try:
 			self.turn_motor = SparkMax(turn_canid, SparkLowLevel.MotorType.kBrushless)
+			self.drive_motor.setIdleMode(SparkMax.IdleMode.kBrake)  # ← ADD HERE
 			print(f"[WHEEL] {name} turn motor initialized on CAN {turn_canid}", flush=True)
 		except Exception as e:
 			print(f"[WHEEL] ERROR - Failed to initialize turn motor for {name} (CAN ID {turn_canid}): {type(e).__name__}: {e}", flush=True)
