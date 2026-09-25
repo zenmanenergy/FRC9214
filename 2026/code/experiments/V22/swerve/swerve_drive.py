@@ -27,7 +27,7 @@ Example - Autonomous with Recording:
     
     # Export for analysis
     actual = swerve.get_recorded_path()
-    planned = list(swerve.path.sample_path(step_cm=5.0))
+    planned = swerve.path_waypoints
     swerve.export_recorded_path("/home/lvuser/path_run1.json")
 """
 
@@ -40,7 +40,7 @@ from .pid_controller import PIDController
 from .swerve_odometry import SwerveOdometry
 from .swerve_imu import SwerveIMU
 from .swerve_tune import SwerveTuner
-from .catmull_rom import CatmullRomSpline
+from .heading_math import shortest_angle_diff, lerp_angle
 from . import swerve_config as config
 import math
 
@@ -114,8 +114,12 @@ class SwerveDrive:
 		self.motor_current_alerts = {name: False for name in self.wheels.keys()}
 		
 		# Autonomous path following state
-		self.path = None
-		self.path_current_distance = 0.0
+		self.path_waypoints = None
+		self.path_leg_index = 0
+		self.path_leg_start_x = 0.0
+		self.path_leg_start_y = 0.0
+		self.path_leg_start_heading = 0.0
+		self.path_leg_total_distance = 0.0
 		self.path_speed = 0.5
 		self.following_path = False
 		
@@ -133,10 +137,12 @@ class SwerveDrive:
 	# ========== AUTONOMOUS PATH FOLLOWING ==========
 	
 	def follow_path(self, waypoints: List[Dict], speed: float = 0.5) -> None:
-		"""Start following a path defined by waypoints.
+		"""Start following a straight-line path defined by waypoints.
 		
 		Waypoints should have 'x', 'y', and 'heading' keys in centimeters and degrees.
-		Call update_autonomous() in the main loop to drive along the path.
+		Call update_autonomous() in the main loop to drive along the path. The robot
+		drives a straight line to each waypoint in turn, gradually rotating from its
+		heading at the start of each leg to that waypoint's heading as it translates.
 		
 		Args:
 			waypoints: List of {'x': cm, 'y': cm, 'heading': degrees}
@@ -155,13 +161,22 @@ class SwerveDrive:
 				odometry.update()
 				imu.fuse_heading(odometry)
 		"""
-		self.path = CatmullRomSpline(waypoints)
-		self.path_current_distance = 0.0
+		self.path_waypoints = waypoints
+		self.path_leg_index = 0
 		self.path_speed = speed
 		self.following_path = True
 		self.movement_state = "moving"
-		print(f"[AUTONOMOUS] Following path with {len(waypoints)} waypoints, "
-			  f"total distance {self.path.get_total_distance():.1f}cm", flush=True)
+		self._begin_path_leg()
+		print(f"[AUTONOMOUS] Following path with {len(waypoints)} waypoints", flush=True)
+	
+	def _begin_path_leg(self) -> None:
+		"""Capture the robot's actual pose at the start of a leg for heading blending"""
+		self.path_leg_start_x, self.path_leg_start_y = self.odometry.get_position()
+		self.path_leg_start_heading = self.odometry.get_heading()
+		target = self.path_waypoints[self.path_leg_index]
+		self.path_leg_total_distance = math.sqrt(
+			(target['x'] - self.path_leg_start_x)**2 + (target['y'] - self.path_leg_start_y)**2
+		)
 	
 	def update_autonomous(self) -> None:
 		"""Update robot position along the current path.
@@ -173,63 +188,56 @@ class SwerveDrive:
 			while not swerve.is_path_complete():
 				swerve.update_autonomous()
 		"""
-		if not self.following_path or self.path is None:
+		if not self.following_path or not self.path_waypoints:
 			self.stop_all()
 			return
 		
-		# Get target position at current distance
-		state = self.path.get_state_at_distance(self.path_current_distance)
-		target_x = state['x']
-		target_y = state['y']
-		target_heading = state['heading']
-		
-		# Get current position
+		target = self.path_waypoints[self.path_leg_index]
 		current_x, current_y = self.odometry.get_position()
 		current_heading = self.odometry.get_heading()
 		
-		# Calculate vector to target
-		dx = target_x - current_x
-		dy = target_y - current_y
+		dx = target['x'] - current_x
+		dy = target['y'] - current_y
 		distance_to_target = math.sqrt(dx * dx + dy * dy)
 		
-		# If we're close enough to waypoint, advance distance
+		# Advance to the next waypoint once this leg is reached
 		if distance_to_target < 10.0:  # Within 10cm
-			self.path_current_distance += 10.0
-			# Check if path is complete
-			if self.path_current_distance >= self.path.get_total_distance():
+			self.path_leg_index += 1
+			if self.path_leg_index >= len(self.path_waypoints):
 				self.following_path = False
 				self.stop_all()
 				print("[AUTONOMOUS] Path complete!", flush=True)
 				return
-			# Re-query with new distance
-			state = self.path.get_state_at_distance(self.path_current_distance)
-			target_x = state['x']
-			target_y = state['y']
-			target_heading = state['heading']
-			dx = target_x - current_x
-			dy = target_y - current_y
+			self._begin_path_leg()
+			target = self.path_waypoints[self.path_leg_index]
+			dx = target['x'] - current_x
+			dy = target['y'] - current_y
+			distance_to_target = math.sqrt(dx * dx + dy * dy)
 		
-		# Calculate heading toward target
-		target_movement_angle = math.degrees(math.atan2(dy, dx))
-		if target_movement_angle < 0:
-			target_movement_angle += 360
+		# Gradually blend from the heading captured at leg start toward this
+		# waypoint's heading as translation progresses
+		if self.path_leg_total_distance > 1e-6:
+			progress = max(0.0, min(1.0, 1.0 - (distance_to_target / self.path_leg_total_distance)))
+		else:
+			progress = 1.0
+		desired_heading = lerp_angle(self.path_leg_start_heading, target['heading'], progress)
+		heading_error = shortest_angle_diff(current_heading, desired_heading)
 		
-		# Drive toward target and maintain path heading
-		# Use drive_swerve with computed forward/strafe
-		forward = min(self.path_speed, self.path_speed * (distance_to_target / 50.0))
+		# Field-oriented translation toward target position
+		if distance_to_target > 1e-6:
+			norm_dx = dx / distance_to_target
+			norm_dy = dy / distance_to_target
+		else:
+			norm_dx = norm_dy = 0.0
+		h = math.radians(current_heading)
+		robot_forward = norm_dx * math.sin(h) + norm_dy * math.cos(h)
+		robot_strafe = norm_dx * math.cos(h) - norm_dy * math.sin(h)
 		
-		# Convert field-frame target to robot-relative
-		angle_diff = target_movement_angle - current_heading
-		if angle_diff > 180:
-			angle_diff -= 360
-		elif angle_diff < -180:
-			angle_diff += 360
+		drive_speed = min(self.path_speed, self.path_speed * (distance_to_target / 50.0))
+		rotate = max(-1.0, min(1.0, heading_error / 45.0)) * self.path_speed
 		
-		strafe = 0.0  # Keep forward motion
-		rotate = 0.0  # Use heading from path
-		
-		# Drive and maintain target heading
-		self.drive_swerve(forward, strafe, rotate)
+		# Drive and blend toward the target heading (negate strafe: drive_swerve negates it)
+		self.drive_swerve(robot_forward * drive_speed, -robot_strafe * drive_speed, rotate)
 		self.odometry.update()
 		self.imu.fuse_heading(self.odometry)
 		self.record_position()  # Record actual position if recording enabled
@@ -250,7 +258,7 @@ class SwerveDrive:
 	def stop_path(self) -> None:
 		"""Cancel path following immediately."""
 		self.following_path = False
-		self.path = None
+		self.path_waypoints = None
 		self.stop_all()
 		print("[AUTONOMOUS] Path cancelled", flush=True)
 	
@@ -306,7 +314,7 @@ class SwerveDrive:
 		
 		Example:
 			actual = swerve.get_recorded_path()
-			planned = swerve.path.sample_path(step_cm=5.0)  # or from follow_path
+			planned = swerve.path_waypoints  # or from follow_path
 		"""
 		return self.recorded_positions.copy()
 	
@@ -392,9 +400,9 @@ class SwerveDrive:
 				SmartDashboard.putString("path/recorded/heading", json.dumps(recorded_heading))
 				print(f"[DASHBOARD] Published {len(self.recorded_positions)} recorded positions", flush=True)
 			
-			# Publish planned path
-			if self.path:
-				planned_positions = list(self.path.sample_path(step_cm=5.0))
+			# Publish planned path - straight legs only need their waypoint corners to render
+			if self.path_waypoints:
+				planned_positions = self.path_waypoints
 				planned_x = [p['x'] for p in planned_positions]
 				planned_y = [p['y'] for p in planned_positions]
 				planned_heading = [p['heading'] for p in planned_positions]
@@ -863,13 +871,13 @@ class SwerveDrive:
 			at_target = abs(error) < tolerance
 			
 			if at_target:
-				wheel.turn_motor.set(0.0)
+				wheel.set_turn_power(0.0)
 				pid.reset()
 				wheels_to_remove.append(wheel_name)
 				continue
 			
 			if elapsed > 30:
-				wheel.turn_motor.set(0.0)
+				wheel.set_turn_power(0.0)
 				wheels_to_remove.append(wheel_name)
 				continue
 			

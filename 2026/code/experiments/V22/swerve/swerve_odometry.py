@@ -89,7 +89,7 @@ class SwerveOdometry:
 	# Pose getters
 	# ------------------------------------------------------------------
 
-def get_position(self) -> Tuple[float, float]:
+	def get_position(self) -> Tuple[float, float]:
 		"""Get current position as (x, y) in centimeters."""
 		return (self._x, self._y)
 	

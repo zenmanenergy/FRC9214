@@ -215,8 +215,7 @@ class EncoderCalibration:
 	
 	@staticmethod
 	def _linear_regression(x: List[float], y: List[float]) -> Tuple[float, float]:
-		"""Calculate linear regression coefficients (y = mx + b).""
-		"""Calculate linear regression coefficients (y = mx + b)"""
+		"""Calculate linear regression coefficients (y = mx + b)."""
 		n = len(x)
 		if n < 2:
 			return 0, y[0] if y else 0

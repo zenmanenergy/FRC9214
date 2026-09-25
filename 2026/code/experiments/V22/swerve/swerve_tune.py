@@ -1,4 +1,29 @@
-\"\"\"Automated PID tuning system for swerve drive wheels.\n\nRuns relay-based autotuning on each wheel sequentially, measuring oscillation\nresponse at multiple angles (0°, 90°, 180°, 270°) to determine per-wheel gains.\n\nThe tuning results are stored with battery voltage, allowing for adaptive\ngain interpolation based on current battery state.\n\nExample:\n    tuner = SwerveTuner(wheels, pid_controllers, calibration)\n    tuner.start()  # Begin autotuning sequence\n    \n    while tuner.is_active():\n        tuner.update()  # Call in main robot loop\n    \n    # Tuning complete, gains saved to calibration file\n\"\"\"\n\nfrom typing import Dict, Optional, List\nimport wpilib\nfrom wpilib import SmartDashboard, RobotController\nimport json\nimport traceback\n\n\nclass SwerveTuner:
+"""Automated PID tuning system for swerve drive wheels.
+
+Runs relay-based autotuning on each wheel sequentially, measuring oscillation
+response at multiple angles (0°, 90°, 180°, 270°) to determine per-wheel gains.
+
+The tuning results are stored with battery voltage, allowing for adaptive
+gain interpolation based on current battery state.
+
+Example:
+    tuner = SwerveTuner(wheels, pid_controllers, calibration)
+    tuner.start()  # Begin autotuning sequence
+    
+    while tuner.is_active():
+        tuner.update()  # Call in main robot loop
+    
+    # Tuning complete, gains saved to calibration file
+"""
+
+from typing import Dict, Optional, List
+import wpilib
+from wpilib import SmartDashboard, RobotController
+import json
+import traceback
+
+
+class SwerveTuner:
 	
 	def __init__(self, wheels: Dict, pid_controllers: Dict, calibration) -> None:
 		"""Initialize tuner with references to wheels and controllers.

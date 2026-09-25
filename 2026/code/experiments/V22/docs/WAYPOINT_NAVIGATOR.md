@@ -1,16 +1,14 @@
 # Waypoint Navigator System
 
 ## Overview
-The Waypoint Navigator is a stage-based autonomous navigation system that guides the robot through a series of waypoints. It plans a path between waypoints (either as discrete points or smooth splines) and autonomously executes the movement using the swerve drive.
+The Waypoint Navigator is a stage-based autonomous navigation system that guides the robot through a series of waypoints. It drives a straight-line vector to each waypoint in turn and autonomously executes the movement using the swerve drive.
 
 ## Architecture
 
 ### Core Navigation Loop
-The navigator operates as a finite state machine with 4 stages per waypoint:
-1. **Stage 0: Initialize** - Get ready for next waypoint
-2. **Stage 1: Rotate** - Turn to face the target waypoint
-3. **Stage 2: Move** - Drive forward to reach the target position
-4. **Stage 3: Complete** - Transition to the next waypoint
+The navigator operates as a finite state machine with 2 stages per waypoint:
+1. **Stage 1: Drive + Rotate** - Drive a straight line to the target waypoint while gradually blending heading from the robot's actual heading at the start of the leg toward the waypoint's target heading
+2. **Stage 2: Dwell** - Pause for the waypoint's configured dwell time, then advance to the next waypoint (or loop/finish)
 
 ### Key Components
 
@@ -18,54 +16,37 @@ The navigator operates as a finite state machine with 4 stages per waypoint:
 - Main controller for autonomous path following
 - Manages waypoint list, current index, and stage progression
 - Handles velocity profiling and PID-based movement
-- Supports both discrete waypoints and smooth spline following
+- Drives a single straight-line leg at a time; no curve fitting
 
-**CatmullRomSpline** (`catmull_rom.py`)
-- Smooth continuous curve interpolation through waypoints
-- Reduces jerky movements and creates natural paths
-- Calculates look-ahead points for smooth heading tracking
-- Total distance computation for progress monitoring
+**heading_math** (`swerve/heading_math.py`)
+- `shortest_angle_diff(a, b)` / `lerp_angle(a, b, t)` - shared angle-wrap and blend helpers
+- Used to gradually blend heading from the leg's start heading to its target heading as translation progresses, so rotation and translation finish together
 
-## Navigation Modes
-
-### Discrete Waypoint Mode
-- Robot visits each waypoint as a discrete target
-- Simple, predictable behavior
-- Each waypoint has its own heading target
-- Ideal for game positions or precise stopping points
-
-### Spline Following Mode
-- Smooth interpolation creates a continuous curve through waypoints
-- Robot follows the curve smoothly without sharp turns
-- Heading calculated from curve tangent (always facing forward)
-- Better for long autonomous routines or field traversal
-- Reduces mechanical stress and improves speed consistency
+## Heading Blend
+- At the start of each leg, the robot's actual current heading and position are captured (`leg_start_heading`, `leg_start_x/y`) along with the straight-line distance to the target (`leg_total_distance`)
+- Every update tick, `progress = 1 - (distance_to_target / leg_total_distance)` and `desired_heading = lerp_angle(leg_start_heading, target_heading, progress)`
+- The rotation PID drives toward `desired_heading` instead of snapping directly to the final heading, so the robot always arrives exactly on-heading regardless of where it started the leg
 
 ## Stage Details
 
-### Stage 1: Rotation
-- Calculate desired heading to face next waypoint
-- Use PID controller (`pid_rotate`) to reach target angle
-- **Rotation Tolerance**: 5° (configurable)
-- **Max Rotation Speed**: 0.8 power (configurable)
-- **Timeout**: 10 seconds per stage
-- Once rotation error < tolerance, advance to Stage 2
-
-### Stage 2: Movement
-- Drive forward using PID controller (`pid_drive`)
-- Maintain target heading from Stage 1
+### Stage 1: Drive + Rotate (combined)
+- Calculate desired heading by blending from the leg's start heading toward the target waypoint heading, proportional to translation progress
+- Use PID controller (`pid_rotate`) to reach the blended desired heading
+- Drive forward using PID controller (`pid_drive`), toward the target position, simultaneously - a single combined movement
 - **Velocity Profiling**: Smooth acceleration and deceleration
   - Acceleration: +0.03 power per loop (~50Hz)
   - Deceleration: +0.05 power per loop (harder braking)
   - Starts braking 150cm before target
+- **Rotation Tolerance**: 5° (configurable)
 - **Position Tolerance**: 25cm (configurable)
+- **Max Rotation Speed**: 0.8 power (configurable)
 - **Min Drive Speed**: 0.15 power (above joystick deadzone)
-- Once position error < tolerance, advance to Stage 3
+- **Timeout**: 10 seconds per stage
+- Once position error < tolerance, advance to Stage 2 (dwell)
 
-### Stage 3: Complete
-- Waypoint reached
-- Optionally rotate to final waypoint heading
-- Transition to next waypoint or stop if none remain
+### Stage 2: Dwell / Advance
+- Waypoint reached; pause for the waypoint's configured dwell time
+- Transition to next waypoint (capturing a fresh heading blend for the new leg), loop back to the first waypoint, or stop if none remain
 
 ## Velocity Profiling
 
@@ -110,7 +91,6 @@ if distance_to_target < decel_distance:
   "navigate_waypoints_command": true,
   "navigation_waypoints_json": "[{\"x\": 0, \"y\": 0, \"heading\": 0}, ...]",
   "navigation_loop": false,
-  "navigation_use_spline": true,
   "navigation_max_speed": 0.8
 }
 ```
@@ -151,10 +131,6 @@ PID gains can be adjusted real-time via SmartDashboard:
 ### Loop Mode
 - `loop=true` - Restart at first waypoint after reaching last
 - `loop=false` - Stop after final waypoint
-
-### Spline Control
-- `use_spline=true` - Follow smooth interpolated path
-- `use_spline=false` - Visit discrete waypoints
 
 ## State Management
 

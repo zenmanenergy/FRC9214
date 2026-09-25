@@ -1,4 +1,28 @@
-"""Swerve drive configuration constants.\n\nContains all hardware-specific configuration including:\n  - CAN IDs for all drive and turn motors\n  - DIO ports for absolute encoders\n  - Physical dimensions (trackwidth, wheelbase)\n  - Control parameters (speed limits, alignment tolerances)\n  - Wheel positions and rotation angles\n\nEdit this file to match your robot's hardware setup.\nAll distances are in centimeters.\n\"\"\"\n\nimport sys\nimport os\nfrom typing import Dict, Any\n\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom CANID import CANID\n\n# Motor and encoder pin assignments with manual offsets and rotation angles\n# Manual offsets represent physical mounting rotation (added to zero calibration)\n# Front wheels are physically 180° rotated from rear wheels\n# Rotation angles are used for 360° in-place spin\nWHEELS: Dict[str, Dict[str, Any]] = {
+"""Swerve drive configuration constants.
+
+Contains all hardware-specific configuration including:
+  - CAN IDs for all drive and turn motors
+  - DIO ports for absolute encoders
+  - Physical dimensions (trackwidth, wheelbase)
+  - Control parameters (speed limits, alignment tolerances)
+  - Wheel positions and rotation angles
+
+Edit this file to match your robot's hardware setup.
+All distances are in centimeters.
+"""
+
+import sys
+import os
+from typing import Dict, Any
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from CANID import CANID
+
+# Motor and encoder pin assignments with manual offsets and rotation angles
+# Manual offsets represent physical mounting rotation (added to zero calibration)
+# Front wheels are physically 180° rotated from rear wheels
+# Rotation angles are used for 360° in-place spin
+WHEELS: Dict[str, Dict[str, Any]] = {
 	"front_right": {
 		"drive_canid": CANID.SWERVE_FRONT_RIGHT_DRIVE,
 		"turn_canid": CANID.SWERVE_FRONT_RIGHT_TURN,

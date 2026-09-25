@@ -10,7 +10,7 @@ This is Team 9214's **V21 experimental swerve drive** featuring:
 - **Field-relative movement** - Drive using field coordinates, not robot-relative
 - **Odometry & IMU fusion** - Dead reckoning with gyro sensor fusion for accurate positioning
 - **Adaptive PID tuning** - Auto-calibrated wheel control with battery voltage compensation
-- **Autonomous paths** - Catmull-Rom spline path following with smooth acceleration
+- **Autonomous paths** - Straight-line waypoint following with smooth acceleration and gradual heading blending
 - **Production library** - Type-hinted, documented, reusable swerve module
 - **Collision detection** - Motor current monitoring for impact safety
 
@@ -49,7 +49,7 @@ V21/
 │   ├── pid_controller.py      PID control & autotuning
 │   ├── encoder_calibration.py Persistent offset storage
 │   ├── swerve_tune.py         Automated tuning system
-│   ├── catmull_rom.py         Smooth path following
+│   ├── heading_math.py        Angle-wrap & heading-blend helpers
 │   ├── swerve_config.py       Hardware configuration
 │   └── README.md              Swerve library docs
 ├── dashboard/                 Web control interface
@@ -68,7 +68,7 @@ V21/
 | `SwerveOdometry` | Position tracking from wheel encoders |
 | `SwerveIMU` | Gyro fusion for heading correction |
 | `PIDController` | Smooth wheel alignment & autotuning |
-| `CatmullRomSpline` | Smooth autonomous path curves |
+| `shortest_angle_diff` / `lerp_angle` | Angle-wrap & heading-blend helpers |
 | `EncoderCalibration` | Persistent tuning & offset storage |
 
 ## Configuration

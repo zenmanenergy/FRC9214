@@ -11,7 +11,7 @@ A production-ready, type-hinted Python library for FRC swerve drive control with
 ✅ **Field-Relative Movement** - Drive using field coordinates, not robot orientation  
 ✅ **Odometry with IMU Fusion** - Dead reckoning + gyro sensor fusion for accuracy  
 ✅ **Adaptive PID Tuning** - Auto-calibrated gains correlated to battery voltage  
-✅ **Smooth Path Following** - Catmull-Rom splines with arc-length queries  
+✅ **Straight-Line Path Following** - Gradual heading blend from current heading to each waypoint's heading  
 ✅ **Motor Safety** - Current monitoring for collision detection  
 ✅ **Persistent Calibration** - Encoder offsets and tuning stored in JSON  
 ✅ **Type Hints** - Full type annotations for IDE support  
@@ -352,53 +352,23 @@ while tuner.is_active():
 tuner.publish_tuning_history()                         # Post to SmartDashboard
 ```
 
-### CatmullRomSpline
+### heading_math
 
-Smooth C1-continuous curves through waypoints with simple distance-based queries.
+Shared angle-wrapping and heading-blend helpers used by path following.
 
 ```python
-waypoints = [
-    {'x': 0, 'y': 0, 'heading': 0},
-    {'x': 100, 'y': 50, 'heading': 45},
-    {'x': 200, 'y': 100, 'heading': 90},
-]
+from swerve import shortest_angle_diff, lerp_angle
 
-spline = CatmullRomSpline(waypoints)
+# Signed shortest difference between two headings, wrapped to [-180, 180]
+error = shortest_angle_diff(current_heading, desired_heading)
 
-# Query any point directly (recommended)
-state = spline.get_state_at_distance(50.0)                # At 50cm
-print(f"({state['x']:.1f}, {state['y']:.1f}) @ {state['heading']:.1f}°")
-
-# Iterate through path at regular intervals
-for state in spline.sample_path(step_cm=10.0):            # Every 10cm
-    print(f"Distance {state['distance']:.1f}cm: "
-          f"({state['x']:.1f}, {state['y']:.1f}) @ {state['heading']:.1f}°")
-
-# Get total path length
-total = spline.get_total_distance()                        # Arc length in cm
-
-# Access individual waypoints
-waypoint = spline.get_waypoint(0)                          # First waypoint
-
-# Advanced: Lower-level access for fine control
-segment, t, distance = spline.find_segment_for_distance(50.0)
-pos = spline.evaluate(segment, t)
-heading = spline.interpolate_heading(segment, t)
-tangent = spline.evaluate_tangent(segment, t)
+# Shortest-path interpolation from a to b as progress goes 0.0 -> 1.0
+desired_heading = lerp_angle(leg_start_heading, target_heading, progress)
 ```
 
-**Recommended Methods:**
-- `get_state_at_distance(distance_cm)` - Query complete state (x, y, heading) at any distance
-- `sample_path(step_cm)` - Iterator through path at regular intervals
-- `get_waypoint(index)` - Get original waypoint by index
-- `get_total_distance()` - Total arc-length of path in cm
-
-**Advanced Methods (lower-level):**
-- `find_segment_for_distance()` - Segment lookup for fine control
-- `evaluate()` - Position evaluation
-- `interpolate_heading()` - Heading calculation
-- `evaluate_tangent()` - Tangent vector
-- `get_heading_from_tangent()` - Custom heading from tangent
+**Methods:**
+- `shortest_angle_diff(a, b)` - Signed shortest difference `b - a`, wrapped to [-180, 180]
+- `lerp_angle(a, b, t)` - Shortest-path interpolation from heading `a` to `b`, wrapped to [0, 360)
 
 ## Configuration
 

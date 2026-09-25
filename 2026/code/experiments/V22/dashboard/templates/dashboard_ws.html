@@ -1080,46 +1080,24 @@
 			
 			// Draw waypoint path
 			if (waypointList.length > 0) {
-				// Draw Catmull-Rom spline through waypoints
+				// Draw straight-line path through waypoints
 				if (waypointList.length > 1) {
 					const loopOn = document.getElementById('loopCheck') && document.getElementById('loopCheck').checked;
 					
-// Build canvas-space points — use square CENTER (corner + WP_SIZE offset)
-				const pts = waypointList.map(wp => ({
+					// Build canvas-space points - use square CENTER (corner + WP_SIZE offset)
+					const pts = waypointList.map(wp => ({
 						x: fieldX + (wp.x * scale) + WP_SIZE,
 						y: fieldY + fieldDrawHeight - (wp.y * scale) - WP_SIZE
 					}));
-					
-					// Extend points for Catmull-Rom: duplicate ends (or wrap if looping)
-					let chain;
-					if (loopOn) {
-						chain = [pts[pts.length - 1], ...pts, pts[0], pts[1]];
-					} else {
-						chain = [pts[0], ...pts, pts[pts.length - 1]];
-					}
 					
 					ctx.strokeStyle = 'rgba(255, 159, 64, 0.85)';
 					ctx.lineWidth = 2;
 					ctx.setLineDash([]);
 					ctx.beginPath();
-					
-					const segments = loopOn ? pts.length : pts.length - 1;
-					for (let si = 0; si < segments; si++) {
-						const p0 = chain[si];
-						const p1 = chain[si + 1];
-						const p2 = chain[si + 2];
-						const p3 = chain[si + 3];
-						
-						// Catmull-Rom -> cubic bezier conversion (alpha = 0.5)
-						const cp1x = p1.x + (p2.x - p0.x) / 6;
-						const cp1y = p1.y + (p2.y - p0.y) / 6;
-						const cp2x = p2.x - (p3.x - p1.x) / 6;
-						const cp2y = p2.y - (p3.y - p1.y) / 6;
-						
-						if (si === 0) ctx.moveTo(p1.x, p1.y);
-						ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+					ctx.moveTo(pts[0].x, pts[0].y);
+					for (let pi = 1; pi < pts.length; pi++) {
+						ctx.lineTo(pts[pi].x, pts[pi].y);
 					}
-					
 					if (loopOn) ctx.closePath();
 					ctx.stroke();
 				}
@@ -1405,93 +1383,6 @@
 			drawFieldMap();
 		}
 		
-		function sampleSpline(waypoints, stepCm) {
-			// Samples the Catmull-Rom spline through waypoints into dense {x,y,heading,dwell} points.
-			// Heading is interpolated (shortest-path) between user-set waypoint headings so the
-			// robot arrives at each waypoint facing exactly the heading you dialed in.
-			stepCm = stepCm || 20;
-			if (waypoints.length < 2) return waypoints;
-			
-			const loopOn = document.getElementById('loopCheck') && document.getElementById('loopCheck').checked;
-			const pts = waypoints.map(wp => ({ x: wp.x, y: wp.y }));
-			
-			// Extend chain for Catmull-Rom boundary conditions
-			let chain;
-			if (loopOn) {
-				chain = [pts[pts.length - 1], ...pts, pts[0], pts[1]];
-			} else {
-				chain = [pts[0], ...pts, pts[pts.length - 1]];
-			}
-			
-			const segments = loopOn ? pts.length : pts.length - 1;
-			
-			// Evaluate Catmull-Rom at parameter t within segment si
-			function crPoint(si, t) {
-				const p0 = chain[si], p1 = chain[si+1], p2 = chain[si+2], p3 = chain[si+3];
-				const t2 = t*t, t3 = t2*t;
-				return {
-					x: 0.5 * ((2*p1.x) + (-p0.x+p2.x)*t + (2*p0.x-5*p1.x+4*p2.x-p3.x)*t2 + (-p0.x+3*p1.x-3*p2.x+p3.x)*t3),
-					y: 0.5 * ((2*p1.y) + (-p0.y+p2.y)*t + (2*p0.y-5*p1.y+4*p2.y-p3.y)*t2 + (-p0.y+3*p1.y-3*p2.y+p3.y)*t3)
-				};
-			}
-			
-			// Shortest-path angle lerp (always takes the short way around 360)
-			function lerpAngle(a, b, t) {
-				let diff = ((b - a) % 360 + 360) % 360;
-				if (diff > 180) diff -= 360;
-				return ((a + diff * t) % 360 + 360) % 360;
-			}
-			
-			// Build dense point cloud, tracking si, t, and forced dwell at user waypoint endpoints
-			const stepsPerSeg = 200;
-			const dense = [];
-			for (let si = 0; si < segments; si++) {
-				for (let i = 0; i < stepsPerSeg; i++) {
-					const t = i / stepsPerSeg;
-					const p = crPoint(si, t);
-					dense.push({ x: p.x, y: p.y, si: si, t: t, dwell: 0, forced: false });
-				}
-			}
-			// Always include final point; mark it with the final waypoint's dwell
-			{
-				const p = crPoint(segments - 1, 1.0);
-				const finalWpIdx = loopOn ? 0 : waypoints.length - 1;
-				dense.push({ x: p.x, y: p.y, si: segments - 1, t: 1.0, dwell: waypoints[finalWpIdx].dwell || 0, forced: true });
-			}
-			// Mark each intermediate segment endpoint (= user waypoint) with its dwell
-			for (let si = 0; si < segments - 1; si++) {
-				const wpIdx = (si + 1) % waypoints.length;
-				const dwell = waypoints[wpIdx].dwell || 0;
-				if (dwell > 0) {
-					// The endpoint of segment si is at dense index (si+1)*stepsPerSeg
-					const idx = (si + 1) * stepsPerSeg;
-					dense[idx].dwell = dwell;
-					dense[idx].forced = true;
-				}
-			}
-			
-			// Thin to stepCm arc-length spacing, always keeping forced (dwell) points
-			const thinned = [dense[0]];
-			let last = dense[0];
-			for (let i = 1; i < dense.length; i++) {
-				const d = Math.sqrt((dense[i].x - last.x)**2 + (dense[i].y - last.y)**2);
-				if (d >= stepCm || dense[i].forced) {
-					thinned.push(dense[i]);
-					last = dense[i];
-				}
-			}
-			
-			// Assign heading by interpolating user-set waypoint headings along each segment
-			return thinned.map(pt => {
-				const si = pt.si;
-				const t = pt.t;
-				const wpA = si % waypoints.length;
-				const wpB = (si + 1) % waypoints.length;
-				const heading = lerpAngle(waypoints[wpA].heading, waypoints[wpB].heading, t);
-				return { x: Math.round(pt.x), y: Math.round(pt.y), heading: Math.round(heading), dwell: pt.dwell || 0 };
-			});
-		}
-		
 		function runWaypoints() {
 			if (waypointList.length === 0) {
 				showError("No waypoints set. Click on the field to add points.");
@@ -1506,11 +1397,10 @@
 			const speedEl = document.getElementById('routeSpeed');
 			const speed = speedEl ? parseFloat(speedEl.value) : 0.8;
 			
-			// Send only the control waypoints (not sampled spline).
-			// Python will use Catmull-Rom to calculate smooth path in real-time.
-			const useSpline = waypointList.length >= 2;
-			sendCommand("navigate_waypoints", { waypoints: waypointList, loop: loop, use_spline: useSpline, max_speed: speed });
-			showError("Route started: " + waypointList.length + " waypoints (spline=" + useSpline + "), loop=" + loop + ", speed=" + speed.toFixed(2), false);
+			// Send the waypoints - the robot drives straight legs between them,
+			// blending heading gradually from its current heading to each target.
+			sendCommand("navigate_waypoints", { waypoints: waypointList, loop: loop, max_speed: speed });
+			showError("Route started: " + waypointList.length + " waypoints, loop=" + loop + ", speed=" + speed.toFixed(2), false);
 		}
 		
 		function stopNavigation() {

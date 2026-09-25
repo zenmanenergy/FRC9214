@@ -65,7 +65,6 @@ A Flask-based web server that provides a real-time browser interface with WebSoc
 - `navigate_waypoints_command` - Start navigation (boolean)
 - `navigation_waypoints_json` - Waypoint list (JSON string)
 - `navigation_loop` - Loop at final waypoint (boolean)
-- `navigation_use_spline` - Use smooth curve interpolation (boolean)
 - `navigation_max_speed` - Speed limit 0.0-1.0 (float)
 - `stop_navigation_command` - Stop navigation (boolean)
 
@@ -162,7 +161,7 @@ FRC Dashboard  Teleop Web Server
 3. Compare `IMU Heading (0-360)` with `Odometry Heading` - should track closely
 
 ### Verifying Navigation
-1. Check `navigation_use_spline` and waypoint JSON format
+1. Check `navigation_waypoints_json` format and waypoint headings
 2. Monitor `robot_mode` to confirm "Autonomous" when running route
 3. Track `Odometry X/Y` against expected waypoint locations
 

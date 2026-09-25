@@ -5,7 +5,7 @@ A complete, production-ready swerve drive system for FRC robots featuring:
 - Field-relative and robot-relative drive modes
 - Dead reckoning odometry with IMU sensor fusion
 - Adaptive PID tuning with battery voltage correlation
-- Autonomous path following with Catmull-Rom splines
+- Autonomous path following with straight-line waypoint legs and gradual heading blending
 - Motor current monitoring for collision detection
 - Persistent encoder offset and tuning calibration
 
@@ -60,7 +60,7 @@ from .swerve_imu import SwerveIMU
 from .pid_controller import PIDController
 from .encoder_calibration import EncoderCalibration
 from .swerve_tune import SwerveTuner
-from .catmull_rom import CatmullRomSpline
+from .heading_math import shortest_angle_diff, lerp_angle
 
 __all__ = [
 	# Core drive system
@@ -69,7 +69,8 @@ __all__ = [
 	# Navigation & odometry
 	'SwerveOdometry',
 	'SwerveIMU',
-	'CatmullRomSpline',
+	'shortest_angle_diff',
+	'lerp_angle',
 	# Control & tuning
 	'PIDController',
 	'EncoderCalibration',

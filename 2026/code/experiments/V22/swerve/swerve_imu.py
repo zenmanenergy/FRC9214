@@ -45,7 +45,7 @@ class SwerveIMU:
 	# Status
 	# ------------------------------------------------------------------
 
-def is_calibrating(self) -> bool:
+	def is_calibrating(self) -> bool:
 		"""True if IMU is still calibrating on startup."""
 		return self.ahrs.isCalibrating()
 	
@@ -79,7 +79,7 @@ def is_calibrating(self) -> bool:
 	# Other axes (available for tilt detection, etc.)
 	# ------------------------------------------------------------------
 
-def get_pitch(self) -> float:
+	def get_pitch(self) -> float:
 		"""Get pitch angle in degrees."""
 		return self.ahrs.getPitch()
 	

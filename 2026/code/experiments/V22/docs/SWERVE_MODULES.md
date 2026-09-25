@@ -93,15 +93,12 @@ This document provides an overview of each file in the `swerve/` folder and its 
 - Stores tuning results with battery voltage for later interpolation
 - Provides safe tuning boundaries to prevent unsafe motor speeds
 
-### `catmull_rom.py`
-**Purpose**: Smooth spline interpolation for path following.
+### `heading_math.py`
+**Purpose**: Shared angle-wrapping and heading-blend helpers for path following.
 
-- Implements Catmull-Rom spline evaluation through waypoint sequences
-- Generates smooth curves between waypoints with automatic tangent calculation
-- Supports parametric evaluation along the spline (segment and t parameter)
-- Returns interpolated position (x, y) in centimeters
-- Can be extended to support heading interpolation
-- Used by navigator and autonomous path planning
+- `shortest_angle_diff(a, b)` - signed shortest difference between two headings, wrapped to [-180, 180]
+- `lerp_angle(a, b, t)` - shortest-path interpolation between two headings
+- Used by the navigator (and `SwerveDrive`) to gradually blend heading from the robot's actual heading at the start of a leg toward the target waypoint's heading as translation progresses
 
 ## Package Initialization
 
@@ -124,7 +121,7 @@ swerve_drive.py (main orchestrator)
   ├── swerve_odometry.py (position tracking)
   ├── swerve_imu.py (heading measurement)
   ├── swerve_tune.py (auto-tuning)
-  ├── catmull_rom.py (path splines)
+  ├── heading_math.py (angle-wrap & heading-blend helpers)
   └── swerve_config.py (shared configuration)
 ```
 
@@ -138,7 +135,7 @@ swerve_drive.py (main orchestrator)
    - SwerveOdometry accumulates distance and position from encoder counts
    - SwerveIMU provides absolute heading for field-relative commands
 5. **Tuning**: SwerveTuner can auto-discover PID gains if in-field tuning is triggered
-6. **Path Following**: CatmullRomSpline generates smooth reference trajectory
+6. **Path Following**: The navigator drives a straight-line leg to each waypoint, gradually blending heading from the robot's current heading toward the target heading as it translates
 
 ---
 
