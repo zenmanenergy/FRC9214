@@ -162,6 +162,14 @@ class DashboardServer:
 						"robot_mode": self.robot_mode
 					}
 					
+					# Odometry/IMU calibration status (see docs/plans/odometry_imu_calibration_plan.md)
+					rotation_status = self.table.getString("rotation_calibration_status", "")
+					if rotation_status:
+						state_dict["rotation_calibration_status"] = rotation_status
+					translation_status = self.table.getString("translation_calibration_status", "")
+					if translation_status:
+						state_dict["translation_calibration_status"] = translation_status
+					
 					# Add recorded path if available
 					path_recorded_x = self.table.getString("path/recorded/x", "")
 					if path_recorded_x:
@@ -196,6 +204,11 @@ def serve_dashboard():
 def calibration():
 	"""Serve the wheel calibration wizard"""
 	return render_template("calibration.html")
+
+@app.route("/odometry_calibration")
+def odometry_calibration():
+	"""Serve the odometry + IMU dead-reckoning calibration page"""
+	return render_template("odometry_calibration.html")
 
 @app.route("/download_path")
 def download_path():
@@ -277,6 +290,47 @@ if HAS_FLASK_SOCK:
 						print("[WS] reset_odometry_command sent to robot")
 						ws.send(json.dumps({"type": "success", "message": "Odometry reset command sent"}))
 					
+					# ===== ODOMETRY + IMU CALIBRATION COMMANDS (mode-gated, Test/Calibration only) =====
+					elif cmd == "start_rotation_calibration":
+						dashboard.table.putNumber("rotcal_n", value.get("n", 3))
+						dashboard.table.putNumber("rotcal_speed_pct", value.get("speed_pct", 50))
+						dashboard.table.putBoolean("rotcal_start_command", True)
+					elif cmd == "submit_rotation_residual":
+						dashboard.table.putNumber("rotcal_residual_deg", value.get("residual_deg", 0.0))
+						dashboard.table.putBoolean("rotcal_submit_residual_command", True)
+					elif cmd == "confirm_reset_rotation":
+						dashboard.table.putBoolean("rotcal_confirm_reset_command", True)
+					elif cmd == "cancel_rotation_calibration":
+						dashboard.table.putBoolean("rotcal_cancel_command", True)
+					elif cmd == "apply_rotation_calibration":
+						dashboard.table.putBoolean("rotcal_apply_command", True)
+					elif cmd == "discard_rotation_calibration":
+						dashboard.table.putBoolean("rotcal_discard_command", True)
+					elif cmd == "set_rotation_accuracy_target":
+						dashboard.table.putNumber("rotcal_accuracy_target_deg", value.get("target_deg", 2.0))
+						dashboard.table.putBoolean("rotcal_set_accuracy_target_command", True)
+					elif cmd == "start_translation_calibration":
+						dashboard.table.putNumber("transcal_level", value.get("level", 1))
+						dashboard.table.putNumber("transcal_x_meters", value.get("x_meters", 1.0))
+						dashboard.table.putNumber("transcal_speed_pct", value.get("speed_pct", 50))
+						dashboard.table.putBoolean("transcal_start_command", True)
+					elif cmd == "submit_translation_result":
+						dashboard.table.putNumber("transcal_measured_distance_m", value.get("measured_distance_m", 0.0))
+						dashboard.table.putNumber("transcal_perp_drift_cm", value.get("perpendicular_drift_cm", 0.0))
+						dashboard.table.putNumber("transcal_measured_x_cm", value.get("measured_x_cm", 0.0))
+						dashboard.table.putNumber("transcal_measured_y_cm", value.get("measured_y_cm", 0.0))
+						dashboard.table.putBoolean("transcal_submit_command", True)
+					elif cmd == "confirm_reset_translation":
+						dashboard.table.putBoolean("transcal_confirm_reset_command", True)
+					elif cmd == "cancel_translation_calibration":
+						dashboard.table.putBoolean("transcal_cancel_command", True)
+					elif cmd == "apply_translation_calibration":
+						dashboard.table.putBoolean("transcal_apply_command", True)
+					elif cmd == "discard_translation_calibration":
+						dashboard.table.putBoolean("transcal_discard_command", True)
+					elif cmd == "set_translation_accuracy_target":
+						dashboard.table.putNumber("transcal_accuracy_target_pct", value.get("target_pct", 1.5))
+						dashboard.table.putBoolean("transcal_set_accuracy_target_command", True)
 					# ===== TEST MODE COMMANDS (mode-gated) =====
 					elif cmd == "autotune":
 						robot_mode = dashboard.table.getString("robot_mode", "Unknown")

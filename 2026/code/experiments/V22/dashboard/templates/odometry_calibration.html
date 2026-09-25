@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Odometry + IMU Calibration - Team 9214</title>
+	<style>
+		* { margin: 0; padding: 0; box-sizing: border-box; }
+
+		body {
+			font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+			background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+			padding: 16px;
+			min-height: 100vh;
+		}
+
+		.container {
+			background: white;
+			border-radius: 15px;
+			box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+			padding: 20px;
+			max-width: 1200px;
+			margin: 0 auto;
+		}
+
+		h1 { color: #333; font-size: 24px; margin-bottom: 4px; }
+		.subtitle { color: #888; font-size: 13px; margin-bottom: 15px; }
+
+		.top-bar {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: 10px;
+			margin-bottom: 15px;
+		}
+
+		.status-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+		.pill {
+			padding: 5px 12px;
+			border-radius: 20px;
+			font-size: 12px;
+			font-weight: bold;
+			background: #eee;
+			color: #555;
+		}
+		.pill.ok { background: #d4edda; color: #155724; }
+		.pill.bad { background: #f8d7da; color: #721c24; }
+
+		a.back-link { color: #667eea; text-decoration: none; font-size: 13px; }
+
+		.tabs { display: flex; gap: 8px; margin-bottom: 15px; border-bottom: 2px solid #eee; }
+		.tab-btn {
+			padding: 8px 18px;
+			border: none;
+			background: none;
+			font-size: 14px;
+			font-weight: bold;
+			color: #999;
+			cursor: pointer;
+			border-bottom: 3px solid transparent;
+		}
+		.tab-btn.active { color: #667eea; border-bottom-color: #667eea; }
+
+		.tab-content { display: none; }
+		.tab-content.active { display: block; }
+
+		.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+		@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+		.card {
+			background: #f8f9fa;
+			border: 1px solid #ddd;
+			border-radius: 10px;
+			padding: 15px;
+			margin-bottom: 15px;
+		}
+		.card h3 { font-size: 14px; color: #333; margin-bottom: 10px; }
+
+		.row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+		label { font-size: 12px; color: #555; min-width: 90px; }
+		input[type="number"], select {
+			padding: 6px 8px;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			font-size: 13px;
+			width: 90px;
+		}
+
+		button {
+			padding: 8px 14px;
+			border: none;
+			border-radius: 6px;
+			font-size: 13px;
+			font-weight: bold;
+			cursor: pointer;
+			color: white;
+			background: #667eea;
+		}
+		button:disabled { background: #ccc; cursor: not-allowed; }
+		button.secondary { background: #999; }
+		button.danger { background: #e74c3c; }
+		button.success { background: #2ecc71; }
+
+		.instruction {
+			background: #fff5e6;
+			border: 2px solid #ff9800;
+			border-radius: 8px;
+			padding: 12px;
+			font-size: 13px;
+			color: #555;
+			margin-bottom: 10px;
+		}
+
+		.readout { font-size: 12px; color: #333; line-height: 1.7; }
+		.readout b { color: #667eea; }
+
+		table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
+		th, td { padding: 4px 6px; text-align: right; border-bottom: 1px solid #eee; }
+		th:first-child, td:first-child { text-align: left; }
+
+		canvas { background: white; border: 1px solid #ccc; border-radius: 5px; max-width: 100%; }
+
+		.warning { color: #c0392b; font-size: 12px; font-weight: bold; }
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="top-bar">
+			<div>
+				<h1>Odometry + IMU Calibration</h1>
+				<div class="subtitle">docs/plans/odometry_imu_calibration_plan.md</div>
+			</div>
+			<div class="status-pills">
+				<span class="pill" id="wsStatus">Connecting...</span>
+				<span class="pill" id="modeStatus">Mode: Unknown</span>
+				<span class="pill" id="enabledStatus">Disabled</span>
+				<a class="back-link" href="/">&larr; Back to Dashboard</a>
+			</div>
+		</div>
+
+		<div class="warning" style="margin-bottom: 10px;">
+			Run this only in Test/Calibration mode, robot on the ground (NOT elevated - that's the
+			separate rotation PID autotune). Keep the test area clear.
+		</div>
+
+		<div class="tabs">
+			<button class="tab-btn active" onclick="switchTab('rotation')">1. Rotation (N-spin)</button>
+			<button class="tab-btn" onclick="switchTab('translation')">2. Translation (7 levels)</button>
+		</div>
+
+		<!-- ============ ROTATION TAB ============ -->
+		<div class="tab-content active" id="rotation">
+			<div class="grid">
+				<div>
+					<div class="card">
+						<h3>Setup</h3>
+						<div class="instruction">
+							Mark the robot's front and a matching mark on the floor. Pick a whole
+							number of rotations and a speed, then press Run. The robot spins that
+							many full turns; you eyeball how far off the marks ended up.
+						</div>
+						<div class="row">
+							<label>Rotations (N)</label>
+							<input type="number" id="rotN" value="3" min="1" step="1">
+							<label>Speed %</label>
+							<input type="number" id="rotSpeed" value="50" min="5" max="100" step="5">
+							<button id="rotRunBtn" onclick="startRotationCalibration()">Run</button>
+							<button class="danger" onclick="sendCommand('cancel_rotation_calibration', {})">Cancel</button>
+						</div>
+					</div>
+
+					<div class="card" id="rotInputCard" style="display:none;">
+						<h3>Enter result</h3>
+						<div class="instruction">
+							Robot stopped. Check the marks: if the robot undershot, enter a negative
+							residual angle; if it overshot, enter a positive one.
+						</div>
+						<div class="row">
+							<label>Residual (deg)</label>
+							<input type="number" id="rotResidual" value="0" step="0.5">
+							<button onclick="submitRotationResidual()">Submit</button>
+						</div>
+					</div>
+
+					<div class="card" id="rotResetCard" style="display:none;">
+						<h3>Reset robot</h3>
+						<div class="instruction">Physically re-align the robot to its starting orientation, then click Ready.</div>
+						<button onclick="sendCommand('confirm_reset_rotation', {})">Ready - Run Again</button>
+					</div>
+
+					<div class="card">
+						<h3>Accuracy target</h3>
+						<div class="row">
+							<label>Target (deg)</label>
+							<input type="number" id="rotAccuracyTarget" value="2.0" step="0.5">
+							<button class="secondary" onclick="setRotationAccuracyTarget()">Set</button>
+						</div>
+					</div>
+
+					<div class="card">
+						<h3>Save</h3>
+						<div class="row">
+							<button class="success" onclick="sendCommand('apply_rotation_calibration', {})">Apply &amp; Save</button>
+							<button class="secondary" onclick="sendCommand('discard_rotation_calibration', {})">Discard</button>
+						</div>
+					</div>
+				</div>
+
+				<div>
+					<div class="card">
+						<h3>Live status</h3>
+						<div class="readout" id="rotReadout">No data yet.</div>
+					</div>
+					<div class="card">
+						<h3>Trial history (this session)</h3>
+						<table id="rotHistoryTable">
+							<thead><tr><th>N</th><th>Speed%</th><th>IMU total</th><th>Odom total</th><th>Residual</th><th>IMU scale</th><th>Odom scale</th></tr></thead>
+							<tbody></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- ============ TRANSLATION TAB ============ -->
+		<div class="tab-content" id="translation">
+			<div class="grid">
+				<div>
+					<div class="card">
+						<h3>Setup</h3>
+						<div class="row">
+							<label>Level</label>
+							<select id="transLevel">
+								<option value="1">1 - Forward</option>
+								<option value="2">2 - Right (strafe)</option>
+								<option value="3">3 - Diagonal 45</option>
+								<option value="4">4 - Forward -&gt; Backward (backlash)</option>
+								<option value="5">5 - Right -&gt; Left (backlash)</option>
+								<option value="6">6 - Diagonal -&gt; return (backlash)</option>
+								<option value="7">7 - Forward -&gt; Right (validation)</option>
+							</select>
+						</div>
+						<div class="row">
+							<label>Distance X (m)</label>
+							<input type="number" id="transX" value="1.0" min="0.1" step="0.1">
+							<label>Speed %</label>
+							<input type="number" id="transSpeed" value="50" min="5" max="100" step="5">
+						</div>
+						<div class="row">
+							<button id="transRunBtn" onclick="startTranslationCalibration()">Run</button>
+							<button class="danger" onclick="sendCommand('cancel_translation_calibration', {})">Cancel</button>
+						</div>
+					</div>
+
+					<div class="card" id="transInputCard" style="display:none;">
+						<h3>Enter result</h3>
+						<div id="transInputNormal">
+							<div class="instruction">Measure with a tape measure: how far the robot actually
+								travelled along the commanded line, and how far it drifted sideways
+								(signed - positive/negative as you prefer, just be consistent).</div>
+							<div class="row">
+								<label>Measured (m)</label>
+								<input type="number" id="transMeasuredDistance" value="1.0" step="0.01">
+								<label>Drift (cm)</label>
+								<input type="number" id="transDrift" value="0" step="0.5">
+							</div>
+						</div>
+						<div id="transInputValidation" style="display:none;">
+							<div class="instruction">Level 7 validation: measure the final local position
+								(x = sideways, y = forward) relative to the start box, in cm.</div>
+							<div class="row">
+								<label>Measured X (cm)</label>
+								<input type="number" id="transMeasuredX" value="0" step="0.5">
+								<label>Measured Y (cm)</label>
+								<input type="number" id="transMeasuredY" value="0" step="0.5">
+							</div>
+						</div>
+						<button onclick="submitTranslationResult()">Submit</button>
+					</div>
+
+					<div class="card" id="transResetCard" style="display:none;">
+						<h3>Reset robot</h3>
+						<div class="instruction">Physically move the robot back to the start box shown on the map, then click Ready.</div>
+						<button onclick="sendCommand('confirm_reset_translation', {})">Ready - Run Again</button>
+					</div>
+
+					<div class="card">
+						<h3>Accuracy target</h3>
+						<div class="row">
+							<label>Target (%)</label>
+							<input type="number" id="transAccuracyTarget" value="1.5" step="0.1">
+							<button class="secondary" onclick="setTranslationAccuracyTarget()">Set</button>
+						</div>
+					</div>
+
+					<div class="card">
+						<h3>Save</h3>
+						<div class="row">
+							<button class="success" onclick="sendCommand('apply_translation_calibration', {})">Apply &amp; Save</button>
+							<button class="secondary" onclick="sendCommand('discard_translation_calibration', {})">Discard</button>
+						</div>
+					</div>
+				</div>
+
+				<div>
+					<div class="card">
+						<canvas id="calFieldCanvas" width="480" height="480"></canvas>
+					</div>
+					<div class="card">
+						<h3>Live status</h3>
+						<div class="readout" id="transReadout">No data yet.</div>
+					</div>
+					<div class="card">
+						<h3>Trial history (this session)</h3>
+						<table id="transHistoryTable">
+							<thead><tr><th>Lvl</th><th>Speed%</th><th>X(m)</th><th>Result</th></tr></thead>
+							<tbody></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		let ws = null;
+		let robotEnabled = false;
+		let robotMode = "Unknown";
+		let rotStatus = {};
+		let transStatus = {};
+
+		const WS_URL = `ws://${window.location.hostname}:${window.location.port}/ws`;
+
+		function connectWebSocket() {
+			ws = new WebSocket(WS_URL);
+			ws.onopen = () => {
+				document.getElementById("wsStatus").textContent = "Connected";
+				document.getElementById("wsStatus").className = "pill ok";
+			};
+			ws.onmessage = (event) => {
+				try {
+					const data = JSON.parse(event.data);
+					handleMessage(data);
+				} catch (e) {
+					console.error("[WS] parse error", e);
+				}
+			};
+			ws.onerror = () => {
+				document.getElementById("wsStatus").textContent = "Error";
+				document.getElementById("wsStatus").className = "pill bad";
+			};
+			ws.onclose = () => {
+				document.getElementById("wsStatus").textContent = "Reconnecting...";
+				document.getElementById("wsStatus").className = "pill";
+				setTimeout(connectWebSocket, 2000);
+			};
+		}
+
+		function sendCommand(cmd, value) {
+			if (!ws || ws.readyState !== WebSocket.OPEN) {
+				alert("Not connected to robot");
+				return;
+			}
+			ws.send(JSON.stringify({ cmd, value }));
+		}
+
+		function handleMessage(data) {
+			if (data.type !== "state") return;
+
+			robotEnabled = !!data.robot_enabled;
+			robotMode = data.robot_mode || "Unknown";
+			const modeEl = document.getElementById("modeStatus");
+			modeEl.textContent = "Mode: " + robotMode;
+			modeEl.className = robotMode === "Calibration" ? "pill ok" : "pill";
+			const enEl = document.getElementById("enabledStatus");
+			enEl.textContent = robotEnabled ? "Enabled" : "Disabled";
+			enEl.className = robotEnabled ? "pill ok" : "pill bad";
+
+			if (data.rotation_calibration_status) {
+				try { rotStatus = JSON.parse(data.rotation_calibration_status); } catch (e) {}
+				updateRotationUI();
+			}
+			if (data.translation_calibration_status) {
+				try { transStatus = JSON.parse(data.translation_calibration_status); } catch (e) {}
+				updateTranslationUI();
+			}
+		}
+
+		function switchTab(name) {
+			document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+			document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+			document.getElementById(name).classList.add('active');
+			event.target.classList.add('active');
+			if (name === 'translation') drawFieldMap();
+		}
+
+		function canRun() {
+			if (robotMode !== "Calibration") { alert("Switch the robot to Test/Calibration mode first"); return false; }
+			if (!robotEnabled) { alert("Enable the robot first"); return false; }
+			return true;
+		}
+
+		// ---------------- Rotation ----------------
+
+		function startRotationCalibration() {
+			if (!canRun()) return;
+			sendCommand('start_rotation_calibration', {
+				n: parseFloat(document.getElementById('rotN').value) || 1,
+				speed_pct: parseFloat(document.getElementById('rotSpeed').value) || 50
+			});
+		}
+
+		function submitRotationResidual() {
+			sendCommand('submit_rotation_residual', {
+				residual_deg: parseFloat(document.getElementById('rotResidual').value) || 0
+			});
+		}
+
+		function setRotationAccuracyTarget() {
+			sendCommand('set_rotation_accuracy_target', {
+				target_deg: parseFloat(document.getElementById('rotAccuracyTarget').value) || 2.0
+			});
+		}
+
+		function updateRotationUI() {
+			const s = rotStatus;
+			const state = s.state || "idle";
+			document.getElementById('rotInputCard').style.display = (state === 'awaiting_input') ? 'block' : 'none';
+			document.getElementById('rotResetCard').style.display = (state === 'awaiting_reset') ? 'block' : 'none';
+			document.getElementById('rotRunBtn').disabled = (state !== 'idle');
+
+			document.getElementById('rotReadout').innerHTML =
+				`State: <b>${state}</b><br>` +
+				`Target: <b>${(s.target_total_deg||0).toFixed(1)}</b> deg (N=${s.n||0} @ ${s.speed_pct||0}%)<br>` +
+				`IMU traveled: <b>${(s.traveled_imu||0).toFixed(1)}</b> deg<br>` +
+				`Odometry traveled: <b>${(s.traveled_odom||0).toFixed(1)}</b> deg<br>` +
+				`Current IMU scale factor: <b>${(s.imu_scale_factor||1).toFixed(5)}</b><br>` +
+				`Current odometry rotation scale factor: <b>${(s.odometry_rotation_scale_factor||1).toFixed(5)}</b><br>` +
+				`Accuracy target: <b>${s.accuracy_target_deg||2}</b> deg`;
+
+			const tbody = document.querySelector('#rotHistoryTable tbody');
+			tbody.innerHTML = '';
+			(s.history || []).slice().reverse().forEach(h => {
+				const tr = document.createElement('tr');
+				tr.innerHTML = `<td>${h.n}</td><td>${h.speed_pct}</td><td>${h.imu_reported_total.toFixed(1)}</td>` +
+					`<td>${h.odometry_reported_total.toFixed(1)}</td><td>${h.residual_deg}</td>` +
+					`<td>${h.imu_scale_factor.toFixed(5)}</td><td>${h.odometry_rotation_scale_factor.toFixed(5)}</td>`;
+				tbody.appendChild(tr);
+			});
+		}
+
+		// ---------------- Translation ----------------
+
+		function startTranslationCalibration() {
+			if (!canRun()) return;
+			sendCommand('start_translation_calibration', {
+				level: parseInt(document.getElementById('transLevel').value) || 1,
+				x_meters: parseFloat(document.getElementById('transX').value) || 1.0,
+				speed_pct: parseFloat(document.getElementById('transSpeed').value) || 50
+			});
+		}
+
+		function submitTranslationResult() {
+			const level = (transStatus.level || 1);
+			if (level === 7) {
+				sendCommand('submit_translation_result', {
+					measured_x_cm: parseFloat(document.getElementById('transMeasuredX').value) || 0,
+					measured_y_cm: parseFloat(document.getElementById('transMeasuredY').value) || 0
+				});
+			} else {
+				sendCommand('submit_translation_result', {
+					measured_distance_m: parseFloat(document.getElementById('transMeasuredDistance').value) || 0,
+					perpendicular_drift_cm: parseFloat(document.getElementById('transDrift').value) || 0
+				});
+			}
+		}
+
+		function setTranslationAccuracyTarget() {
+			sendCommand('set_translation_accuracy_target', {
+				target_pct: parseFloat(document.getElementById('transAccuracyTarget').value) || 1.5
+			});
+		}
+
+		function updateTranslationUI() {
+			const s = transStatus;
+			const state = s.state || "idle";
+			const level = s.level || 1;
+
+			document.getElementById('transInputCard').style.display = (state === 'awaiting_input') ? 'block' : 'none';
+			document.getElementById('transResetCard').style.display = (state === 'awaiting_reset') ? 'block' : 'none';
+			document.getElementById('transRunBtn').disabled = (state !== 'idle');
+			document.getElementById('transInputNormal').style.display = (level === 7) ? 'none' : 'block';
+			document.getElementById('transInputValidation').style.display = (level === 7) ? 'block' : 'none';
+
+			const wsf = s.wheel_scale_factors || {};
+			const bl = s.backlash_cm || {};
+			document.getElementById('transReadout').innerHTML =
+				`State: <b>${state}</b><br>` +
+				`Level: <b>${s.level_name || ''}</b> (leg ${(s.leg_index||0)+1}/${s.leg_count||1})<br>` +
+				`X: <b>${s.x_meters||0}</b> m @ <b>${s.speed_pct||0}</b>%<br>` +
+				`Wheel scale @ this speed - FL:${(wsf.front_left||1).toFixed(4)} FR:${(wsf.front_right||1).toFixed(4)} ` +
+				`RL:${(wsf.rear_left||1).toFixed(4)} RR:${(wsf.rear_right||1).toFixed(4)}<br>` +
+				`Backlash (cm) - fwd:${(bl.forward_axis||0).toFixed(2)} strafe:${(bl.strafe_axis||0).toFixed(2)} diag:${(bl.diagonal_axis||0).toFixed(2)}<br>` +
+				`Accuracy target: <b>${s.accuracy_target_pct||1.5}</b>%`;
+
+			const tbody = document.querySelector('#transHistoryTable tbody');
+			tbody.innerHTML = '';
+			(s.history || []).slice().reverse().forEach(h => {
+				const tr = document.createElement('tr');
+				let result;
+				if (h.level === 7) {
+					result = `error ${h.error_cm.toFixed(1)}cm`;
+				} else if (h.level >= 4 && h.level <= 6) {
+					result = `backlash ${h.backlash_cm.toFixed(2)}cm`;
+				} else {
+					result = `drift ${h.perpendicular_drift_cm}cm`;
+				}
+				tr.innerHTML = `<td>${h.level}</td><td>${h.speed_pct}</td><td>${h.x_meters}</td><td>${result}</td>`;
+				tbody.appendChild(tr);
+			});
+
+			drawFieldMap();
+		}
+
+		function drawFieldMap() {
+			const canvas = document.getElementById('calFieldCanvas');
+			if (!canvas) return;
+			const ctx = canvas.getContext('2d');
+			const W = canvas.width, H = canvas.height;
+			ctx.fillStyle = '#ffffff';
+			ctx.fillRect(0, 0, W, H);
+
+			const planned = transStatus.planned_path_cm || [[0, 0]];
+			const actual = transStatus.actual_path_cm || [[0, 0]];
+
+			// Flip local (x,y) into intuitive display space: forward=up, test-axis=right.
+			const toDisplay = (p) => [-p[0], -p[1]];
+			const allDisp = planned.concat(actual).map(toDisplay).concat([[0, 0]]);
+
+			let minX = 0, maxX = 0, minY = 0, maxY = 0;
+			allDisp.forEach(([x, y]) => {
+				minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+				minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+			});
+			const rangeX = Math.max(30, maxX - minX) * 1.3;
+			const rangeY = Math.max(30, maxY - minY) * 1.3;
+			const margin = 40;
+			const scale = Math.min((W - 2 * margin) / rangeX, (H - 2 * margin) / rangeY);
+
+			const originX = margin - (minX - (rangeX - (maxX - minX)) / 2) * scale;
+			const originY = H - margin + (minY - (rangeY - (maxY - minY)) / 2) * scale;
+
+			const toCanvas = ([x, y]) => [originX + x * scale, originY - y * scale];
+
+			// Axes
+			ctx.strokeStyle = '#e0e0e0';
+			ctx.lineWidth = 1;
+			ctx.beginPath();
+			ctx.moveTo(0, originY); ctx.lineTo(W, originY);
+			ctx.moveTo(originX, 0); ctx.lineTo(originX, H);
+			ctx.stroke();
+
+			// Start box (lower-left reference)
+			const [sx, sy] = toCanvas([0, 0]);
+			ctx.fillStyle = '#2c3e50';
+			ctx.fillRect(sx - 8, sy - 8, 16, 16);
+			ctx.fillStyle = '#333';
+			ctx.font = '11px sans-serif';
+			ctx.fillText('start', sx + 10, sy + 4);
+
+			// Planned path (dashed orange)
+			ctx.strokeStyle = '#ff9800';
+			ctx.lineWidth = 2;
+			ctx.setLineDash([6, 4]);
+			ctx.beginPath();
+			planned.map(toDisplay).map(toCanvas).forEach(([x, y], i) => {
+				if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+			});
+			ctx.stroke();
+			ctx.setLineDash([]);
+			planned.map(toDisplay).map(toCanvas).forEach(([x, y]) => {
+				ctx.fillStyle = '#ff9800';
+				ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+			});
+
+			// Actual path (solid blue)
+			if (actual.length > 1) {
+				ctx.strokeStyle = '#3498db';
+				ctx.lineWidth = 2;
+				ctx.beginPath();
+				actual.map(toDisplay).map(toCanvas).forEach(([x, y], i) => {
+					if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+				});
+				ctx.stroke();
+			}
+
+			// Legend
+			ctx.fillStyle = '#ff9800'; ctx.fillRect(10, 10, 12, 4);
+			ctx.fillStyle = '#333'; ctx.fillText('planned', 26, 15);
+			ctx.fillStyle = '#3498db'; ctx.fillRect(10, 26, 12, 4);
+			ctx.fillStyle = '#333'; ctx.fillText('actual', 26, 31);
+		}
+
+		connectWebSocket();
+		drawFieldMap();
+	</script>
+</body>
+</html>

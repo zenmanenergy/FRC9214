@@ -93,7 +93,9 @@ class SwerveDrive:
 			)
 		
 		self.odometry = SwerveOdometry(self.wheels)
+		self.odometry.load_calibration(self.calibration)
 		self.imu = SwerveIMU()
+		self.imu.set_scale_factor(self.calibration.get_rotation_calibration().get("imu_scale_factor", 1.0))
 		self.tuner = SwerveTuner(self.wheels, self.pid_controllers, self.calibration)
 		self.tuner.publish_tuning_history()
 		

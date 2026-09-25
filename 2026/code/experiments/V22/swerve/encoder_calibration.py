@@ -24,6 +24,8 @@ import os
 from datetime import datetime
 from .swerve_config import OFFSET_FILE
 
+WHEEL_NAMES = ["front_left", "front_right", "rear_left", "rear_right"]
+
 
 class EncoderCalibration:
 	"""Handle loading and saving encoder zero offsets and PID gains with battery level tracking"""
@@ -34,6 +36,8 @@ class EncoderCalibration:
 		self.pid_gains = self.full_data.get("pid_gains", {})
 		self.pid_tuning_history = self.full_data.get("pid_tuning_history", [])
 		self.navigator_rotation_gains = self.full_data.get("navigator_rotation_gains", {})
+		self.rotation_calibration = self.full_data.get("rotation_calibration", self._default_rotation_calibration())
+		self.translation_calibration = self.full_data.get("translation_calibration", self._default_translation_calibration())
 		
 		# Initialize regression data (will be calculated from history if it exists)
 		self.pid_regression = {}
@@ -64,7 +68,9 @@ class EncoderCalibration:
 				"ki": 0.0,
 				"kd": 0.0001
 			},
-			"pid_tuning_history": []
+			"pid_tuning_history": [],
+			"rotation_calibration": self._default_rotation_calibration(),
+			"translation_calibration": self._default_translation_calibration()
 		}
 		try:
 			path = self.get_calibration_path()
@@ -99,6 +105,8 @@ class EncoderCalibration:
 			self.full_data["pid_gains"] = self.pid_gains
 			self.full_data["navigator_rotation_gains"] = self.navigator_rotation_gains
 			self.full_data["pid_tuning_history"] = self.pid_tuning_history
+			self.full_data["rotation_calibration"] = self.rotation_calibration
+			self.full_data["translation_calibration"] = self.translation_calibration
 			path = self.get_calibration_path()
 			with open(path, "w") as f:
 				json.dump(self.full_data, f, indent=2)
@@ -324,3 +332,117 @@ class EncoderCalibration:
 		if not gains:
 			print("[WARNING] Alignment gains not found - should be loaded from RoboRIO calibration file")
 		return gains
+
+	# ------------------------------------------------------------------
+	# Odometry + IMU dead-reckoning calibration (docs/plans/odometry_imu_calibration_plan.md)
+	# ------------------------------------------------------------------
+
+	@staticmethod
+	def _default_rotation_calibration() -> Dict:
+		return {
+			"imu_scale_factor": 1.0,
+			"odometry_rotation_scale_factor": 1.0,
+			"accuracy_target_deg": 2.0,
+			"trial_history": []
+		}
+
+	@staticmethod
+	def _default_translation_calibration() -> Dict:
+		return {
+			"wheel_scale_curve": {name: {"points": [], "m": 0.0, "b": 1.0} for name in WHEEL_NAMES},
+			"reversal_backlash_cm": {"forward_axis": 0.0, "strafe_axis": 0.0, "diagonal_axis": 0.0},
+			"accuracy_target_pct": 1.5,
+			"trial_history": []
+		}
+
+	def get_rotation_calibration(self) -> Dict:
+		"""Get the current rotation (N-spin) calibration state."""
+		return self.rotation_calibration
+
+	def add_rotation_trial(self, entry: Dict) -> None:
+		"""Record one N-spin trial and multiplicatively update the current scale
+		factors: new_factor = old_factor * (true_total / measured_total), where
+		measured_total was itself measured under the old_factor. This converges
+		correctly across repeated iterative trials (see
+		docs/plans/odometry_imu_calibration_plan.md section 5) - a plain average
+		of per-trial ratios would double-correct once a factor other than 1.0
+		is already active.
+		"""
+		history = self.rotation_calibration.setdefault("trial_history", [])
+		history.append(entry)
+
+		imu_ratio = entry.get("imu_correction_ratio")
+		if imu_ratio:
+			self.rotation_calibration["imu_scale_factor"] = self.rotation_calibration.get("imu_scale_factor", 1.0) * imu_ratio
+
+		odom_ratio = entry.get("odometry_correction_ratio")
+		if odom_ratio:
+			self.rotation_calibration["odometry_rotation_scale_factor"] = (
+				self.rotation_calibration.get("odometry_rotation_scale_factor", 1.0) * odom_ratio
+			)
+
+		print(f"[ROT-CAL] Trial recorded: {entry}")
+		print(f"[ROT-CAL] Current factors: imu={self.rotation_calibration['imu_scale_factor']:.5f} "
+			f"odom={self.rotation_calibration['odometry_rotation_scale_factor']:.5f}")
+
+	def set_rotation_accuracy_target(self, target_deg: float) -> None:
+		self.rotation_calibration["accuracy_target_deg"] = target_deg
+
+	def clear_rotation_calibration(self) -> None:
+		self.rotation_calibration = self._default_rotation_calibration()
+
+	def get_translation_calibration(self) -> Dict:
+		"""Get the current translation (7-level) calibration state."""
+		return self.translation_calibration
+
+	def add_wheel_scale_point(self, wheel_name: str, speed_pct: float, scale_factor: float) -> None:
+		"""Record one (speed, scale_factor) data point for a wheel and refit
+		the linear speed -> scale_factor curve (same regression used for
+		PID-gain-vs-battery-voltage).
+		"""
+		curve_data = self.translation_calibration.setdefault("wheel_scale_curve", {})
+		wheel_curve = curve_data.setdefault(wheel_name, {"points": [], "m": 0.0, "b": 1.0})
+		wheel_curve["points"].append({"speed_pct": speed_pct, "scale_factor": scale_factor})
+
+		speeds = [p["speed_pct"] for p in wheel_curve["points"]]
+		factors = [p["scale_factor"] for p in wheel_curve["points"]]
+		m, b = self._linear_regression(speeds, factors)
+		wheel_curve["m"] = m
+		wheel_curve["b"] = b
+
+	def get_wheel_scale_curve(self, wheel_name: str) -> Dict:
+		curve_data = self.translation_calibration.get("wheel_scale_curve", {})
+		return curve_data.get(wheel_name, {"points": [], "m": 0.0, "b": 1.0})
+
+	def set_reversal_backlash(self, axis: str, backlash_cm: float) -> None:
+		backlash = self.translation_calibration.setdefault("reversal_backlash_cm", {})
+		backlash[axis] = backlash_cm
+
+	def get_reversal_backlash(self) -> Dict:
+		return self.translation_calibration.get("reversal_backlash_cm", {})
+
+	def add_translation_trial(self, entry: Dict) -> None:
+		history = self.translation_calibration.setdefault("trial_history", [])
+		history.append(entry)
+		print(f"[TRANS-CAL] Trial recorded: {entry}")
+
+	def set_translation_accuracy_target(self, target_pct: float) -> None:
+		self.translation_calibration["accuracy_target_pct"] = target_pct
+
+	def clear_translation_calibration(self) -> None:
+		self.translation_calibration = self._default_translation_calibration()
+
+	def discard_odometry_calibration_changes(self) -> None:
+		"""Reload the rotation/translation calibration sections from disk, discarding
+		any in-memory changes made during an unsaved calibration session.
+		"""
+		on_disk = {}
+		try:
+			path = self.get_calibration_path()
+			if os.path.exists(path):
+				with open(path, "r") as f:
+					on_disk = json.load(f)
+		except Exception as e:
+			print(f"[DISCARD] Error reloading calibration: {e}")
+		self.rotation_calibration = on_disk.get("rotation_calibration", self._default_rotation_calibration())
+		self.translation_calibration = on_disk.get("translation_calibration", self._default_translation_calibration())

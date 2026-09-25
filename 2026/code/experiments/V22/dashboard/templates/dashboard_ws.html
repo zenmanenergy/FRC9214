@@ -366,6 +366,7 @@
 				<div class="section">
 					<div class="section-title">Calibration</div>
 					<button class="button btn-primary" onclick="if(isRobotEnabled) window.location.href='/calibration'; else showError('Bot must be enabled to calibrate')">🔧 Calibration Wizard</button>
+					<button class="button btn-primary" onclick="window.location.href='/odometry_calibration'">Odometry + IMU Calibration</button>
 					<button class="button btn-primary" onclick="if(isRobotEnabled) sendCommand('align', ''); else showError('Bot must be enabled to command wheels')">→ Align All</button>
 				</div>
 				

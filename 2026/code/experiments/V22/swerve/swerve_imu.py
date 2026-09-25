@@ -41,6 +41,13 @@ class SwerveIMU:
 		self.invert = invert
 		self._debug_counter = 0
 
+		# Rotation scale-factor correction from the N-spin calibration routine
+		# (see docs/plans/odometry_imu_calibration_plan.md section 5). Defaults to
+		# 1.0 (no correction) so behavior is unchanged until calibrated.
+		self.scale_factor = 1.0
+		self._last_raw_yaw = None
+		self._scaled_yaw_accum = 0.0
+
 	# ------------------------------------------------------------------
 	# Status
 	# ------------------------------------------------------------------
@@ -64,16 +71,39 @@ class SwerveIMU:
 	def get_heading(self) -> float:
 		"""
 		Returns heading in degrees, 0-360, CCW positive.
-		Converts navX yaw (-180..180) to 0..360.
+		Converts navX yaw (-180..180) to 0..360, applying the calibrated
+		rotation scale factor to each incremental change (see set_scale_factor).
+		Safe to call multiple times per loop - repeated calls between actual
+		sensor updates compute a zero delta and are a no-op.
 		"""
-		yaw = self.ahrs.getYaw()
+		raw = self.ahrs.getYaw()
 		if self.invert:
-			yaw = -yaw
-		return yaw % 360
+			raw = -raw
+		raw = raw % 360
+
+		if self._last_raw_yaw is None:
+			self._last_raw_yaw = raw
+			self._scaled_yaw_accum = raw
+		else:
+			delta = raw - self._last_raw_yaw
+			if delta > 180:
+				delta -= 360
+			elif delta < -180:
+				delta += 360
+			self._last_raw_yaw = raw
+			self._scaled_yaw_accum += delta * self.scale_factor
+
+		return self._scaled_yaw_accum % 360
+
+	def set_scale_factor(self, factor: float) -> None:
+		"""Set the rotation scale factor from the N-spin calibration routine."""
+		self.scale_factor = factor
 
 	def zero_heading(self) -> None:
 		"""Zero the yaw at the robot's current orientation."""
 		self.ahrs.zeroYaw()
+		self._last_raw_yaw = None
+		self._scaled_yaw_accum = 0.0
 
 	# ------------------------------------------------------------------
 	# Other axes (available for tilt detection, etc.)

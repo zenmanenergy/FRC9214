@@ -1,5 +1,7 @@
 """Calibration Mode Handler - Manages dashboard control and calibration mode logic"""
 from wpilib import SmartDashboard
+import json
+from swerve.odometry_calibrator import RotationCalibrator, TranslationCalibrator
 
 
 class CalibrationModeHandler:
@@ -25,6 +27,10 @@ class CalibrationModeHandler:
 		self.driving_wheel_target_angle = None
 		self.autotune_rotation_active = False
 		
+		# Odometry + IMU calibration routines (see docs/plans/odometry_imu_calibration_plan.md)
+		self.rotation_calibrator = RotationCalibrator(drive, drive.calibration)
+		self.translation_calibrator = TranslationCalibrator(drive, drive.calibration)
+		
 		# Initialize NetworkTables values
 		self._init_network_tables()
 	
@@ -47,6 +53,16 @@ class CalibrationModeHandler:
 		if self.autotune_rotation_active and self.navigator:
 			# Autotune runs asynchronously - we just skip other controls
 			SmartDashboard.putString("autotune_status", "Tuning rotation...")
+			return
+		
+		# Odometry/IMU calibration routines run exclusively - see
+		# docs/plans/odometry_imu_calibration_plan.md section 9.
+		self._handle_rotation_calibration_command()
+		self._handle_translation_calibration_command()
+		self._publish_calibration_status()
+		if self.rotation_calibrator.state != "idle" or self.translation_calibrator.state != "idle":
+			self.rotation_calibrator.update()
+			self.translation_calibrator.update()
 			return
 		
 		# Read all control commands from NetworkTables
@@ -218,3 +234,103 @@ class CalibrationModeHandler:
 				self.drive.stop_all()
 				self.driving_wheel_to_angle = None
 				self.driving_wheel_target_angle = None
+
+	# ------------------------------------------------------------------
+	# Odometry + IMU calibration (docs/plans/odometry_imu_calibration_plan.md)
+	# ------------------------------------------------------------------
+
+	def _handle_rotation_calibration_command(self):
+		"""Handle N-spin rotation calibration commands from the dashboard."""
+		cal = self.rotation_calibrator
+
+		if SmartDashboard.getBoolean("rotcal_start_command", False):
+			SmartDashboard.putBoolean("rotcal_start_command", False)
+			n = SmartDashboard.getNumber("rotcal_n", 3)
+			speed_pct = SmartDashboard.getNumber("rotcal_speed_pct", 50)
+			cal.start_trial(n, speed_pct)
+
+		if SmartDashboard.getBoolean("rotcal_submit_residual_command", False):
+			SmartDashboard.putBoolean("rotcal_submit_residual_command", False)
+			residual_deg = SmartDashboard.getNumber("rotcal_residual_deg", 0.0)
+			if cal.state == "awaiting_input":
+				cal.submit_residual(residual_deg)
+
+		if SmartDashboard.getBoolean("rotcal_confirm_reset_command", False):
+			SmartDashboard.putBoolean("rotcal_confirm_reset_command", False)
+			cal.confirm_reset()
+
+		if SmartDashboard.getBoolean("rotcal_cancel_command", False):
+			SmartDashboard.putBoolean("rotcal_cancel_command", False)
+			cal.cancel()
+
+		if SmartDashboard.getBoolean("rotcal_apply_command", False):
+			SmartDashboard.putBoolean("rotcal_apply_command", False)
+			self.drive.calibration.save_calibration()
+			cal.reset_session()
+
+		if SmartDashboard.getBoolean("rotcal_discard_command", False):
+			SmartDashboard.putBoolean("rotcal_discard_command", False)
+			self.drive.calibration.discard_odometry_calibration_changes()
+			self.drive.odometry.load_calibration(self.drive.calibration)
+			self.drive.imu.set_scale_factor(self.drive.calibration.get_rotation_calibration()["imu_scale_factor"])
+			cal.reset_session()
+
+		if SmartDashboard.getBoolean("rotcal_set_accuracy_target_command", False):
+			SmartDashboard.putBoolean("rotcal_set_accuracy_target_command", False)
+			target = SmartDashboard.getNumber("rotcal_accuracy_target_deg", 2.0)
+			self.drive.calibration.set_rotation_accuracy_target(target)
+
+	def _handle_translation_calibration_command(self):
+		"""Handle 7-level translation calibration commands from the dashboard."""
+		cal = self.translation_calibrator
+
+		if SmartDashboard.getBoolean("transcal_start_command", False):
+			SmartDashboard.putBoolean("transcal_start_command", False)
+			level = int(SmartDashboard.getNumber("transcal_level", 1))
+			x_meters = SmartDashboard.getNumber("transcal_x_meters", 1.0)
+			speed_pct = SmartDashboard.getNumber("transcal_speed_pct", 50)
+			cal.start_trial(level, x_meters, speed_pct)
+
+		if SmartDashboard.getBoolean("transcal_submit_command", False):
+			SmartDashboard.putBoolean("transcal_submit_command", False)
+			if cal.state == "awaiting_input":
+				measured_distance_m = SmartDashboard.getNumber("transcal_measured_distance_m", cal.x_meters)
+				perp_drift_cm = SmartDashboard.getNumber("transcal_perp_drift_cm", 0.0)
+				measured_x_cm = SmartDashboard.getNumber("transcal_measured_x_cm", 0.0)
+				measured_y_cm = SmartDashboard.getNumber("transcal_measured_y_cm", 0.0)
+				cal.submit_result(
+					measured_distance_m=measured_distance_m,
+					perpendicular_drift_cm=perp_drift_cm,
+					measured_x_cm=measured_x_cm,
+					measured_y_cm=measured_y_cm,
+				)
+
+		if SmartDashboard.getBoolean("transcal_confirm_reset_command", False):
+			SmartDashboard.putBoolean("transcal_confirm_reset_command", False)
+			cal.confirm_reset()
+
+		if SmartDashboard.getBoolean("transcal_cancel_command", False):
+			SmartDashboard.putBoolean("transcal_cancel_command", False)
+			cal.cancel()
+
+		if SmartDashboard.getBoolean("transcal_apply_command", False):
+			SmartDashboard.putBoolean("transcal_apply_command", False)
+			self.drive.calibration.save_calibration()
+			cal.reset_session()
+
+		if SmartDashboard.getBoolean("transcal_discard_command", False):
+			SmartDashboard.putBoolean("transcal_discard_command", False)
+			self.drive.calibration.discard_odometry_calibration_changes()
+			self.drive.odometry.load_calibration(self.drive.calibration)
+			cal.reset_session()
+
+		if SmartDashboard.getBoolean("transcal_set_accuracy_target_command", False):
+			SmartDashboard.putBoolean("transcal_set_accuracy_target_command", False)
+			target = SmartDashboard.getNumber("transcal_accuracy_target_pct", 1.5)
+			self.drive.calibration.set_translation_accuracy_target(target)
+
+	def _publish_calibration_status(self):
+		"""Publish both calibrators' status as JSON for the dashboard to poll."""
+		SmartDashboard.putString("rotation_calibration_status", json.dumps(self.rotation_calibrator.status()))
+		SmartDashboard.putString("translation_calibration_status", json.dumps(self.translation_calibrator.status()))
+

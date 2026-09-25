@@ -60,6 +60,13 @@ class SwerveOdometry:
 		self._prev_positions = {}
 		self._snapshot_encoders()
 
+		# Odometry/IMU calibration corrections (see docs/plans/odometry_imu_calibration_plan.md).
+		# Defaults are neutral (scale=1.0, no backlash) so behavior is unchanged until calibrated.
+		self._wheel_scale_curve = {name: {"m": 0.0, "b": 1.0} for name in self.wheels}
+		self._prev_power_sign = {name: 0 for name in self.wheels}
+		self._rotation_scale_factor = 1.0
+		self._axis_backlash_cm = {"forward_axis": 0.0, "strafe_axis": 0.0, "diagonal_axis": 0.0}
+
 	def _snapshot_encoders(self):
 		for name, wheel in self.wheels.items():
 			self._prev_positions[name] = wheel.get_drive_position()
@@ -84,6 +91,51 @@ class SwerveOdometry:
 		self._heading = 0.0
 		self._total_distance_cm = 0.0
 		self._snapshot_encoders()
+
+	# ------------------------------------------------------------------
+	# Odometry/IMU calibration corrections
+	# ------------------------------------------------------------------
+
+	def set_wheel_scale_curve(self, wheel_name: str, m: float, b: float) -> None:
+		"""Set the linear speed(0-1) -> distance-scale-factor curve for one wheel."""
+		if wheel_name in self._wheel_scale_curve:
+			self._wheel_scale_curve[wheel_name] = {"m": m, "b": b}
+
+	def get_wheel_scale(self, wheel_name: str, speed_frac: float) -> float:
+		"""Evaluate a wheel's distance-scale curve at the given speed fraction (0-1)."""
+		curve = self._wheel_scale_curve.get(wheel_name, {"m": 0.0, "b": 1.0})
+		return curve["m"] * speed_frac + curve["b"]
+
+	def get_average_wheel_scale(self, speed_frac: float) -> float:
+		"""Average distance-scale factor across all wheels at the given speed fraction."""
+		if not self.wheels:
+			return 1.0
+		scales = [self.get_wheel_scale(name, speed_frac) for name in self.wheels]
+		return sum(scales) / len(scales)
+
+	def set_axis_backlash(self, axis: str, backlash_cm: float) -> None:
+		"""Set the distance (cm) added once whenever a wheel on this axis reverses direction."""
+		if axis in self._axis_backlash_cm:
+			self._axis_backlash_cm[axis] = backlash_cm
+
+	def set_rotation_scale_factor(self, factor: float) -> None:
+		"""Set the correction factor applied to wheel-kinematics rotation (N-spin calibration)."""
+		self._rotation_scale_factor = factor
+
+	def load_calibration(self, calibration) -> None:
+		"""Load persisted odometry corrections from an EncoderCalibration instance."""
+		rotation_cal = calibration.get_rotation_calibration()
+		self.set_rotation_scale_factor(rotation_cal.get("odometry_rotation_scale_factor", 1.0))
+
+		for wheel_name in self.wheels:
+			curve = calibration.get_wheel_scale_curve(wheel_name)
+			self.set_wheel_scale_curve(wheel_name, curve.get("m", 0.0), curve.get("b", 1.0))
+
+		backlash = calibration.get_reversal_backlash()
+		# Backlash is stored per-axis; applied identically to whichever wheel reverses
+		# since all 4 wheels share the same steer angle during pure translation.
+		for axis, value in backlash.items():
+			self.set_axis_backlash(axis, value)
 
 	# ------------------------------------------------------------------
 	# Pose getters
@@ -163,6 +215,28 @@ class SwerveOdometry:
 			self._prev_positions[wheel_name] = cur
 
 			dist_cm = (delta_motor / self.DRIVE_GEAR_RATIO) * self.WHEEL_CIRCUMFERENCE_CM
+
+			# Speed-dependent per-wheel distance-scale correction from translation calibration
+			# (see docs/plans/odometry_imu_calibration_plan.md section 6.5).
+			speed_frac = abs(wheel.get_drive_power())
+			curve = self._wheel_scale_curve.get(wheel_name)
+			if curve is not None:
+				scale = curve["m"] * speed_frac + curve["b"]
+				if scale > 0:
+					dist_cm *= scale
+
+			# Reversal backlash: add a one-time distance correction whenever this
+			# wheel's commanded drive direction flips sign (see section 6.2).
+			power = wheel.get_drive_power()
+			sign = 1 if power > 1e-3 else (-1 if power < -1e-3 else 0)
+			prev_sign = self._prev_power_sign.get(wheel_name, 0)
+			if sign != 0 and prev_sign != 0 and sign != prev_sign:
+				axis = self._axis_for_angle(wheel.get_angle())
+				backlash_cm = self._axis_backlash_cm.get(axis, 0.0)
+				dist_cm += backlash_cm * sign
+			if sign != 0:
+				self._prev_power_sign[wheel_name] = sign
+
 			total_abs_dist += abs(dist_cm)
 
 			# Wheel angle -> robot-frame displacement vector
@@ -192,7 +266,7 @@ class SwerveOdometry:
 
 		# Update heading from wheel kinematics (will be fused with IMU)
 		if rot_den > 0:
-			omega_deg = math.degrees(rot_num / rot_den)
+			omega_deg = math.degrees(rot_num / rot_den) * self._rotation_scale_factor
 			self._last_heading_delta = omega_deg
 			self._heading = (self._heading + omega_deg) % 360
 		else:
@@ -213,3 +287,13 @@ class SwerveOdometry:
 		self._total_distance_cm += avg_dist
 
 		return avg_dist
+
+	@staticmethod
+	def _axis_for_angle(angle_deg: float) -> str:
+		"""Classify a wheel steer angle into the nearest translation-calibration axis."""
+		bucket = round((angle_deg % 360) / 45.0) % 8
+		if bucket in (0, 4):
+			return "forward_axis"
+		elif bucket in (2, 6):
+			return "strafe_axis"
+		return "diagonal_axis"
