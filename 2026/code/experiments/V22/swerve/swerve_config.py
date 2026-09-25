@@ -11,12 +11,25 @@ Edit this file to match your robot's hardware setup.
 All distances are in centimeters.
 """
 
-import sys
-import os
 from typing import Dict, Any
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from CANID import CANID
+
+class CANID:
+	"""CAN ID configuration for swerve drive motor controllers"""
+
+	# Front Right
+	SWERVE_FRONT_RIGHT_TURN = 2
+	SWERVE_FRONT_RIGHT_DRIVE = 3
+	# Rear Right
+	SWERVE_REAR_RIGHT_TURN = 4
+	SWERVE_REAR_RIGHT_DRIVE = 5
+	# Rear Left
+	SWERVE_REAR_LEFT_TURN = 6
+	SWERVE_REAR_LEFT_DRIVE = 7
+	# Front Left
+	SWERVE_FRONT_LEFT_TURN = 8
+	SWERVE_FRONT_LEFT_DRIVE = 9
+
 
 # Motor and encoder pin assignments with manual offsets and rotation angles
 # Manual offsets represent physical mounting rotation (added to zero calibration)

@@ -1,12 +1,9 @@
 """Waypoint Navigator - Stage-based autonomous navigation system"""
 import math
 import time
-import sys
-import os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from swerve.pid_controller import PIDController
-from swerve.encoder_calibration import EncoderCalibration
-from swerve.heading_math import shortest_angle_diff, lerp_angle
+from .pid_controller import PIDController
+from .encoder_calibration import EncoderCalibration
+from .heading_math import shortest_angle_diff, lerp_angle
 try:
 	from wpilib import SmartDashboard
 	_HAS_SD = True

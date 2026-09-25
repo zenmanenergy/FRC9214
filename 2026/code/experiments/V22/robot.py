@@ -4,11 +4,11 @@ import threading
 import wpilib
 from wpilib import SmartDashboard, DriverStation
 from swerve.swerve_drive import SwerveDrive
-from pilotJoystick import PilotJoystick
-from pilot_controls import PilotControls
+from pilot.pilotJoystick import PilotJoystick
+from pilot.pilot_controls import PilotControls
 from dashboard.dashboard_updater import DashboardUpdater
 from dashboard.calibration_mode_handler import CalibrationModeHandler
-from waypoint_navigator import WaypointNavigator
+from swerve.waypoint_navigator import WaypointNavigator
 from swerve.encoder_calibration import EncoderCalibration
 class Robot(wpilib.TimedRobot):
 	def robotInit(self):

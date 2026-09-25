@@ -1,10 +1,10 @@
-# FRC 9214 Team - V21 Swerve Drive Experiment
+# FRC 9214 Team - V22 Swerve Drive Experiment
 
 A production-ready swerve drive system with field-relative control, autonomous path following, and adaptive tuning.
 
 ## Overview
 
-This is Team 9214's **V21 experimental swerve drive** featuring:
+This is Team 9214's **V22 experimental swerve drive** featuring:
 
 - **4-wheel swerve modules** - Each wheel can rotate and drive independently
 - **Field-relative movement** - Drive using field coordinates, not robot-relative
@@ -38,7 +38,7 @@ print(f"Position: ({x:.1f}, {y:.1f}) @ {heading:.1f}°")
 ## Folder Structure
 
 ```
-V21/
+V22/
 ├── robot.py                    Main robot entry point
 ├── swerve/                     Production swerve drive library
 │   ├── __init__.py            Public API
@@ -50,13 +50,18 @@ V21/
 │   ├── encoder_calibration.py Persistent offset storage
 │   ├── swerve_tune.py         Automated tuning system
 │   ├── heading_math.py        Angle-wrap & heading-blend helpers
-│   ├── swerve_config.py       Hardware configuration
+│   ├── swerve_config.py       Hardware configuration (incl. CAN IDs)
+│   ├── waypoint_navigator.py  Autonomous navigation
+│   ├── unit_tests/            Unit tests (pure-python, no hardware needed)
 │   └── README.md              Swerve library docs
-├── dashboard/                 Web control interface
-├── tests/                     Unit & integration tests
-├── pilot_controls.py          Joystick input handling
-├── waypoint_navigator.py      Autonomous navigation
-└── networktables.json         Configuration file
+├── pilot/                      Joystick input handling
+│   ├── pilotJoystick.py       Raw joystick reading
+│   └── pilot_controls.py      Joystick -> swerve control bindings
+├── dashboard/                  Web control interface
+├── tools/                      Standalone dev/tuning scripts
+│   └── autotune_rotation.py   Rotation PID autotune script
+├── docs/                       Documentation
+└── networktables.json          Configuration file
 ```
 
 ## Core Components
@@ -207,7 +212,7 @@ To enable brake mode on motors, modify `swerve/swerve_wheel.py`.
 
 Run unit tests:
 ```bash
-python -m pytest tests/
+python -m pytest swerve/unit_tests
 ```
 
 Dashboard available at: `http://roboRIO-9214-frc.local:5800`
@@ -215,6 +220,11 @@ Dashboard available at: `http://roboRIO-9214-frc.local:5800`
 ## Documentation
 
 - [Swerve Library API](swerve/README.md) - Detailed component documentation
+- [docs/SWERVE_MODULES.md](docs/SWERVE_MODULES.md) - Swerve module hardware/wiring notes
+- [docs/DASHBOARDS.md](docs/DASHBOARDS.md) - Web dashboard overview
+- [docs/WAYPOINT_NAVIGATOR.md](docs/WAYPOINT_NAVIGATOR.md) - Autonomous navigation details
+- [docs/V20_SWERVE.md](docs/V20_SWERVE.md) - Prior swerve revision notes
+- [docs/Run this.txt](docs/Run%20this.txt) - Environment setup commands
 - Main code entry point: `robot.py`
 
 ---

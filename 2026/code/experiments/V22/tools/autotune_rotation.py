@@ -6,13 +6,13 @@ Run this during robot testing to automatically tune the heading (rotation) PID g
 The robot will perform controlled oscillations to measure system response characteristics.
 
 Usage:
-	python autotune_rotation.py
+	python tools/autotune_rotation.py
 """
 import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from waypoint_navigator import WaypointNavigator
+from swerve.waypoint_navigator import WaypointNavigator
 from swerve.swerve_drive import SwerveDrive
 
 
