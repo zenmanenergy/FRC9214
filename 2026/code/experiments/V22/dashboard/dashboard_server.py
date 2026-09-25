@@ -189,17 +189,13 @@ class DashboardServer:
 
 @app.route("/")
 def serve_dashboard():
-	"""Serve the dashboard - teleop or test mode"""
-	mode = request.args.get("mode", "teleop")
-	if mode == 'test':
-		return render_template("test_dashboard.html")
-	else:
-		return render_template("dashboard_ws.html")
+	"""Serve the dashboard"""
+	return render_template("dashboard_ws.html")
 
-@app.route("/history")
-def history():
-	"""Serve tuning history page"""
-	return render_template("history.html")
+@app.route("/calibration")
+def calibration():
+	"""Serve the wheel calibration wizard"""
+	return render_template("calibration.html")
 
 @app.route("/download_path")
 def download_path():
@@ -296,29 +292,6 @@ if HAS_FLASK_SOCK:
 							print(f"[WS] autotune_rotation_command = true (TEST MODE)")
 						else:
 							ws.send(json.dumps({"type": "error", "message": "Autotune Rotation only allowed in TEST mode"}))
-					elif cmd == "tuning_history":
-						try:
-							history_json_str = dashboard.table.getString("autotune_history_json", "[]")
-							regression_json_str = dashboard.table.getString("autotune_regression_json", "{}")
-							history = json.loads(history_json_str)
-							regression = json.loads(regression_json_str)
-							ws.send(json.dumps({
-								"type": "tuning_history",
-								"history": history,
-								"regression": regression
-							}))
-						except Exception as e:
-							ws.send(json.dumps({"type": "error", "message": f"Failed to load tuning history: {str(e)}"}))
-					elif cmd == "clear_tuning":
-						robot_mode = dashboard.table.getString("robot_mode", "Unknown")
-						if robot_mode in ["Test", "Calibration"]:
-							try:
-								dashboard.table.putBoolean("clear_tuning_history_command", True)
-								ws.send(json.dumps({"type": "success", "message": "Tuning history cleared"}))
-							except Exception as e:
-								ws.send(json.dumps({"type": "error", "message": f"Failed to clear history: {str(e)}"}))
-						else:
-							ws.send(json.dumps({"type": "error", "message": "Clear history only allowed in TEST mode"}))
 					elif cmd == "zero_imu":
 						dashboard.table.putBoolean("zero_imu_command", True)
 						ws.send(json.dumps({"type": "success", "message": "IMU zero command sent"}))
@@ -395,7 +368,5 @@ dashboard.start_nt_listener()
 
 if __name__ == "__main__":
 	print("[WEB] Dashboard on http://localhost:5000")
-	print("[WEB] Teleop: http://localhost:5000/")
-	print("[WEB] Test: http://localhost:5000/?mode=test")
-	print("[WEB] History: http://localhost:5000/history")
+	print("[WEB] Calibration: http://localhost:5000/calibration")
 	app.run(host="0.0.0.0", port=5000, debug=True)
