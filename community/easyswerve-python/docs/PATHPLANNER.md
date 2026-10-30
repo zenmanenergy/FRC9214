@@ -13,7 +13,7 @@
 > | easyswerve_vision, its config.py cameras and VISION_ENABLED | easyswerve/vision/; cameras and VISION_ENABLED are in robot_settings.py |
 > | self.drivetrain, DriveSubsystem() | self.drivetrain, Drivetrain() |
 > | robotcontainer.py, RobotContainer | robot.py (built in robotInit; no separate container) |
-> | examples/robotcontainer.py, examples/deploy/pathplanner/ | examples/<name>/robot.py: 10 setup steps (00_01 to 00_10) and 35 small examples (examples/README.md) |
+> | examples/robotcontainer.py, examples/deploy/pathplanner/ | examples/<name>/robot.py: 11 setup steps (00_00 to 00_10) and 35 small examples (examples/README.md) |
 >
 > Autotune and calibration buttons are created by Drivetrain() automatically.
 

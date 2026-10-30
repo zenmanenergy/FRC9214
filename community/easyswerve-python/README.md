@@ -72,9 +72,9 @@ In the PathPlanner app, add a Named Command to an auto and type printHello.
 
 ## Day 4: Set up the real robot
 
-Before driving, go through the setup steps in examples/, in order: 00_01_checkup to 00_10_wheeldiameter. Each one tests one thing (every motor and sensor one at a time, then the zeros, the tuning, the gyro, the wheel size) and tells you exactly which line of robot_settings.py to change when something is wrong. Each step's README.md has the steps.
+Before driving, go through the setup steps in examples/, in order: 00_00_robotsettings to 00_10_wheeldiameter. Each one tests one thing (every motor and sensor one at a time, then the zeros, the tuning, the gyro, the wheel size) and tells you exactly which line of robot_settings.py to change when something is wrong. Each step's README.md has the steps.
 
-1. Fill in robot_settings.py: CAN IDs, encoder DIO ports, wheel spacing. Not sure about the motor and encoder directions? Leave them; steps 2, 3 and 6 work them out.
+1. Start with step 0 (examples/00_00_robotsettings/README.md): it explains the robot's parts and every line of robot_settings.py, then you fill it in and deploy for the first time. Not sure about the motor and encoder directions? Leave them; steps 2, 3 and 6 work them out.
 2. For each step: copy its robot.py over robot.py, then connect to the robot and deploy from the VS Code terminal:
 
 ```
@@ -93,7 +93,7 @@ Deploy again any time you change robot.py or robot_settings.py.
 
 | Where | What |
 |---|---|
-| examples/ | 10 setup steps (00_01 to 00_10), then 35 small examples, one robot.py each: autos, buttons, dashboard, mechanisms, cameras (list in examples/README.md) |
+| examples/ | 11 setup steps (00_00 to 00_10), then 35 small examples, one robot.py each: autos, buttons, dashboard, mechanisms, cameras (list in examples/README.md) |
 | docs/DRIVETRAIN.md | full drivetrain guide: wiring, calibration, autotune, simulator (for coaches) |
 | docs/PATHPLANNER.md | full PathPlanner guide |
 | docs/VISION.md | setting up cameras (PhotonVision on the Orange Pi); then try examples 32 to 35 |

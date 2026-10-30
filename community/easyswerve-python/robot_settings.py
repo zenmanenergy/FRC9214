@@ -4,6 +4,9 @@ ROBOT SETTINGS
 Everything that is specific to YOUR robot is in this file. Measure, check
 the wiring, and fill in the values. Lengths are in meters.
 
+New to this? examples/00_00_robotsettings/README.md explains every line
+and how to find each value on your robot.
+
 (Advanced settings that rarely change live in
 easyswerve/drivetrain/constants.py. You shouldn't need them.)
 """

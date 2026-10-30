@@ -4,7 +4,7 @@ Each folder has a robot.py that shows one idea, and a README.md that explains it
 
 To try one on the robot:
 
-1. Do the setup steps (00_01 to 00_10) first, once, on a new robot.
+1. Do the setup steps (00_00 to 00_10) first, once, on a new robot.
 2. Copy the example's robot.py over robot.py in the project folder (the one next to robot_settings.py). In VS Code: right-click the example's robot.py, Copy, then right-click the project folder, Paste, and choose Replace.
 3. Connect to the robot and deploy: py -m robotpy deploy
 4. Clear space around the robot, have someone ready to disable (Enter disables, space bar is the emergency stop), then enable in the mode the example's README says.
@@ -14,12 +14,13 @@ To go back to the start: copy examples/01_basic/robot.py over robot.py and deplo
 
 Every example's auto uses gentle speeds (about 2 meters per move), but the robot still moves: give it about 3 m of clear floor.
 
-## Setup: do these first, in order (00_01 to 00_10)
+## Setup: do these first, in order (00_00 to 00_10)
 
 On a new robot, or after rebuilding a module, go through these before driving. They check every motor and sensor one at a time, then tune and calibrate. Each step's README has the exact steps for the robot and for the simulator, and ends with which step is next.
 
 | Step | Folder | What it does | Robot |
 |---|---|---|---|
+| 0 | [00_00_robotsettings](00_00_robotsettings/README.md) | the robot's parts, the tools, filling in robot_settings.py, first deploy | disabled |
 | 1 | [00_01_checkup](00_01_checkup/README.md) | check every SPARK MAX, encoder, the navX and the settings | disabled |
 | 2 | [00_02_encodersbyhand](00_02_encodersbyhand/README.md) | turn wheels by hand: right encoder, right direction? | disabled |
 | 3 | [00_03_steeronebyone](00_03_steeronebyone/README.md) | each steering motor alone: motor and encoder agree? | on blocks |
