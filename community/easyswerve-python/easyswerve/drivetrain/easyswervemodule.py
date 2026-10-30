@@ -32,6 +32,7 @@ class EasySwerveModule:
         name: str = "",
         steeringEncoderDio: typing.Optional[int] = None,
         steeringEncoderOffset: float = 0.0,
+        steeringEncoderReversed: bool = False,
     ) -> None:
         """Constructs an EasySwerveModule and configures the driving and turning
         motor, encoder, and PID controller. This configuration is specific to the
@@ -52,7 +53,8 @@ class EasySwerveModule:
                     "no DIO channel was given (DriveConstants.k...SteeringEncoderDio)"
                 )
             self.turningEncoder = RioSteeringEncoder(
-                self.turningSpark, steeringEncoderDio, steeringEncoderOffset, name
+                self.turningSpark, steeringEncoderDio, steeringEncoderOffset, name,
+                reversed=steeringEncoderReversed,
             )
         else:
             self.turningEncoder = SparkSteeringEncoder(self.turningSpark)
@@ -67,6 +69,8 @@ class EasySwerveModule:
         self.gains = gains if gains is not None else TunedGains()
         self.drivingInverted = drivingMotorOnBottom
         self.turningInverted = not turningMotorOnBottom
+        self.encoderReversed = steeringEncoderReversed
+        self.fastSteeringSignals = False
 
         # While autotune runs a motor open-loop these hold the commanded
         # volts; None means normal closed-loop control.
@@ -85,7 +89,7 @@ class EasySwerveModule:
             PersistMode.kPersistParameters,
         )
         self.turningSpark.configure(
-            configs.turningConfig(self.turningInverted, self.gains),
+            self._turningConfig(self.gains),
             ResetMode.kResetSafeParameters,
             PersistMode.kPersistParameters,
         )
@@ -126,7 +130,15 @@ class EasySwerveModule:
         )
 
         # Optimize the reference state to avoid spinning further than 90 degrees.
-        correctedDesiredState.optimize(Rotation2d(self.turningEncoder.getPosition()))
+        current = self.turningEncoder.getPosition()
+        correctedDesiredState.optimize(Rotation2d(current))
+
+        # Cosine scaling (WPILib's recommendation; not in REV's template): while
+        # a wheel is still turning toward its angle, slow it down by how far off
+        # it is, so wheels don't push the robot sideways or twist it while they
+        # steer. Pointing right = full speed; 60 degrees off = half speed.
+        error = correctedDesiredState.angle.radians() - current
+        correctedDesiredState.speed *= max(0.0, math.cos(error))
 
         # Command driving and turning SPARKS towards their respective setpoints.
         self.drivingVoltage = None
@@ -201,7 +213,71 @@ class EasySwerveModule:
             PersistMode.kNoPersistParameters,
         )
         self.turningSpark.configure(
-            configs.turningConfig(self.turningInverted, gains),
+            self._turningConfig(gains),
             ResetMode.kResetSafeParameters,
             PersistMode.kNoPersistParameters,
         )
+
+    def _turningConfig(self, gains: TunedGains):
+        return configs.turningConfig(
+            self.turningInverted, gains, self.encoderReversed, self.fastSteeringSignals
+        )
+
+    def setFastSteeringSignals(self, fast: bool) -> None:
+        """Send the steering angle to the roboRIO every 5 ms instead of 20 ms
+        (Ziegler-Nichols tuning only: it adds CAN traffic)."""
+        self.fastSteeringSignals = fast
+        self.turningSpark.configure(
+            self._turningConfig(self.gains),
+            ResetMode.kResetSafeParameters,
+            PersistMode.kNoPersistParameters,
+        )
+
+    # ---- simple helpers for the setup examples (00_...) ---------------------------
+    # Angles in degrees, + = counterclockwise seen from above.
+
+    def steeringDeg(self) -> float:
+        """Steering angle the SPARK steers by, degrees (0 = hex-key zero)."""
+        return math.degrees(self.turningEncoder.getPosition())
+
+    def absoluteDeg(self) -> typing.Optional[float]:
+        """The Through Bore Encoder's angle, degrees with the zero applied, or
+        None if it isn't sending a signal. (Encoders on the SPARK: same as
+        steeringDeg.)"""
+        if self.turningEncoder.location != "rio":
+            return self.steeringDeg()
+        a = self.turningEncoder.absoluteAngle()
+        return None if a is None else math.degrees(a)
+
+    def wheelMeters(self) -> float:
+        """How far the wheel has rolled, meters (+ = forward)."""
+        return self.drivingEncoder.getPosition()
+
+    def wheelSpeed(self) -> float:
+        """Wheel speed, meters per second."""
+        return self.drivingEncoder.getVelocity()
+
+    def spinSteering(self, volts: float) -> None:
+        """Turn the steering motor at a fixed voltage, no PID
+        (+ should turn the wheel counterclockwise seen from above)."""
+        self.setTurningVoltage(volts)
+
+    def spinWheel(self, volts: float) -> None:
+        """Spin the drive wheel at a fixed voltage, no PID (+ should roll forward)."""
+        self.setDrivingVoltage(volts)
+
+    def stopMotors(self) -> None:
+        """Both motors off (0 volts)."""
+        self.setTurningVoltage(0.0)
+        self.setDrivingVoltage(0.0)
+
+    def pointAt(self, degrees: float) -> None:
+        """Steer to an angle relative to the robot (0 = straight ahead,
+        90 = pointing left), with the PID, and keep the wheel still."""
+        self.setDrivingVoltage(0.0)
+        self.holdAngle(Rotation2d.fromDegrees(degrees))
+
+    def angleRelativeToRobotDeg(self) -> float:
+        """Which way the wheel points relative to the robot, degrees
+        (0 = straight ahead, 90 = left), -180 to 180."""
+        return self.getState().angle.degrees()

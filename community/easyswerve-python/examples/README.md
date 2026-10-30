@@ -12,6 +12,25 @@ To go back to the start: copy examples/01_basic/robot.py over robot.py.
 
 Every example's auto uses gentle speeds (about 2 meters per move), so they're safe to try on the real robot too, with room to move.
 
+## Setup: do these first, in order (00_01 to 00_10)
+
+On a new robot, or after rebuilding a module, go through these before driving. They check every motor and sensor one at a time, then tune and calibrate. Each step's README has the exact steps for the robot and for the simulator, and ends with which step is next.
+
+| Step | Folder | What it does | Robot |
+|---|---|---|---|
+| 1 | [00_01_checkup](00_01_checkup/README.md) | check every SPARK MAX, encoder, the navX and the settings | disabled |
+| 2 | [00_02_encodersbyhand](00_02_encodersbyhand/README.md) | turn wheels by hand: right encoder, right direction? | disabled |
+| 3 | [00_03_steeronebyone](00_03_steeronebyone/README.md) | each steering motor alone: motor and encoder agree? | on blocks |
+| 4 | [00_04_zerosteering](00_04_zerosteering/README.md) | zero the steering with the hex keys | disabled |
+| 5 | [00_05_steeringangles](00_05_steeringangles/README.md) | all four wheels to the same angles, in sync? | on blocks |
+| 6 | [00_06_driveonebyone](00_06_driveonebyone/README.md) | each drive motor alone: forward? same speed? | on blocks |
+| 7 | [00_07_zieglernichols](00_07_zieglernichols/README.md) | tune the steering PID (Ziegler-Nichols) | on the floor |
+| 8 | [00_08_autotunedrive](00_08_autotunedrive/README.md) | tune the drive motors (drives 2 m) | on the floor, Test mode |
+| 9 | [00_09_gyrocheck](00_09_gyrocheck/README.md) | check the gyro: calibrating, drift, turning test | on the floor |
+| 10 | [00_10_wheeldiameter](00_10_wheeldiameter/README.md) | measure the real wheel size so distances are right | on the floor |
+
+Practice in the simulator first: set SIM_PRACTICE_MISTAKES = True near the top of easyswerve/sim/physics.py, and the simulated robot is wired with mistakes for these steps to find. Set it back to False when you're done.
+
 ## Start here
 
 | # | Folder | What it shows |
@@ -73,10 +92,13 @@ Every example's auto uses gentle speeds (about 2 meters per move), so they're sa
 | 30 | [30_motor](30_motor/README.md) | spin one motor with a button |
 | 31 | [31_intake](31_intake/README.md) | an intake: a subsystem, buttons, and an auto |
 
-## Calibration (on the real robot, before driving it hard)
+## Vision (PhotonVision on the Orange Pi, two cameras)
+
+First set VISION_ENABLED = True in robot_settings.py (and for the simulator, remove the # before photonlibpy in pyproject.toml, then py -m robotpy sync). Each README explains the rest.
 
 | # | Folder | What it shows |
 |---|---|---|
-| 32 | [32_zerosteering](32_zerosteering/README.md) | teach each wheel where straight ahead is |
-| 33 | [33_gyrocheck](33_gyrocheck/README.md) | check the gyro: calibrating, drift, turning test |
-| 34 | [34_wheeldiameter](34_wheeldiameter/README.md) | measure the real wheel size so distances are right |
+| 32 | [32_visionstatus](32_visionstatus/README.md) | what each camera sees, and where the position comes from |
+| 33 | [33_visionvsodometry](33_visionvsodometry/README.md) | wheels-only position vs. camera-corrected position |
+| 34 | [34_aimattag](34_aimattag/README.md) | hold A: turn to face an AprilTag |
+| 35 | [35_drivetotag](35_drivetotag/README.md) | hold A: drive to a spot 1 m in front of a tag |

@@ -9,7 +9,14 @@ Units are the ones the SPARK MAX expects:
   driveKS  volts, added in the direction of travel
   driveKV  volts per (m/s)
   steerP   duty cycle per radian of angle error
+  steerI   duty cycle per (radian x second) of angle error (Ziegler-Nichols)
+  steerD   duty cycle per (radian per second) of angle change (Ziegler-Nichols)
+  steerIZoneDeg  the I term only works within this many degrees of the target
   steerKS  volts, friction push added in the direction of the steering error
+
+steerI and steerD are in ordinary per-second units, as textbooks and
+Ziegler-Nichols give them. configs.py converts them for the SPARK, whose loop
+runs every 1 ms.
 
 Duty cycle is a fraction of ModuleConstants.kNominalVoltage, because the SPARKs
 run with voltage compensation.
@@ -41,6 +48,9 @@ class TunedGains:
     driveKS: float = 0.0
     driveKV: float = 12.0 / ModuleConstants.kDriveWheelFreeSpeedRps
     steerP: float = 1.0
+    steerI: float = 0.0
+    steerD: float = 0.0
+    steerIZoneDeg: float = 0.0
     steerKS: float = 0.0
 
     # Bookkeeping, filled in by autotune
@@ -51,7 +61,9 @@ class TunedGains:
     def summary(self) -> str:
         return (
             f"drive P={self.driveP:.4f} kS={self.driveKS:.3f} V kV={self.driveKV:.3f} V/(m/s) | "
-            f"steer P={self.steerP:.3f} kS={self.steerKS:.3f} V ({self.source})"
+            f"steer P={self.steerP:.3f}"
+            + (f" I={self.steerI:.3f} D={self.steerD:.5f}" if self.steerI or self.steerD else "")
+            + f" kS={self.steerKS:.3f} V ({self.source})"
         )
 
 

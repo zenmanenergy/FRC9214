@@ -2,7 +2,7 @@
 
 ## What it does
 
-Four moves, one after another: forward, left, back, right. The robot ends where it started.
+Four moves, one after another: forward, left, back, right. The robot ends about where it started (time-based moves are never exact, so it may be some centimeters off).
 
 ## Run it
 

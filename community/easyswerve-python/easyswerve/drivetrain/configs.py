@@ -27,6 +27,11 @@ kDrivingFactor = (
 kTurningFactor = 2 * math.pi
 
 kNominalVoltage = ModuleConstants.kNominalVoltage
+
+# The SPARK runs its closed loop every 1 ms and does not divide by time: each
+# loop it adds kI x error to the I term and uses kD x (change in error since
+# the last loop). So per-second gains are converted like this:
+kSparkLoopSeconds = 0.001
 kDrivingVelocityFeedForward = kNominalVoltage / ModuleConstants.kDriveWheelFreeSpeedRps
 
 
@@ -84,15 +89,23 @@ def drivingConfig(inverted: bool, gains: TunedGains = None) -> SparkMaxConfig:
     return config
 
 
-def turningConfig(inverted: bool, gains: TunedGains = None) -> SparkMaxConfig:
+def turningConfig(
+    inverted: bool,
+    gains: TunedGains = None,
+    encoderReversed: bool = False,
+    fastSignals: bool = False,
+) -> SparkMaxConfig:
     """SPARK MAX config for an EasySwerve turning motor (NEO / NEO 2.0) with a
     Through Bore Encoder for steering (on the roboRIO or the SPARK data port,
     see ModuleConstants.kSteeringEncoderLocation).
 
     :param gains: tuned gains (from autotune); None uses REV's defaults
+    :param encoderReversed: encoder on the SPARK counts backwards (encoder_reversed)
+    :param fastSignals: send the angle every 5 ms (Ziegler-Nichols tuning)
     """
     gains = gains if gains is not None else TunedGains()
     config = SparkMaxConfig()
+    periodMs = 5 if fastSignals else 20
 
     config.setIdleMode(SparkBaseConfig.IdleMode.kBrake)
     config.smartCurrentLimit(20)  # 70 for SparkFlex
@@ -106,13 +119,14 @@ def turningConfig(inverted: bool, gains: TunedGains = None) -> SparkMaxConfig:
         steerFactor = kTurningFactor / ModuleConstants.kSteeringReduction
         config.encoder.positionConversionFactor(steerFactor)  # radians
         config.encoder.velocityConversionFactor(steerFactor / 60.0)  # rad/s
-        config.signals.primaryEncoderPositionPeriodMs(20)
+        config.signals.primaryEncoderPositionPeriodMs(periodMs)
         config.signals.primaryEncoderVelocityPeriodMs(20)
         config.closedLoop.setFeedbackSensor(FeedbackSensor.kPrimaryEncoder)
     else:
         # Do not invert the turning encoder, since the output shaft rotates in
         # the same direction as the steering motor in the EasySwerve Module.
-        config.absoluteEncoder.inverted(False)
+        # (encoder_reversed in robot_settings.py flips it if yours reads backwards)
+        config.absoluteEncoder.inverted(encoderReversed)
         config.absoluteEncoder.positionConversionFactor(kTurningFactor)  # radians
         config.absoluteEncoder.velocityConversionFactor(kTurningFactor / 60.0)  # rad/s
         # Pulse-width timing for the encoder model set in constants.py
@@ -121,12 +135,18 @@ def turningConfig(inverted: bool, gains: TunedGains = None) -> SparkMaxConfig:
             throughBoreEncoderPreset(ModuleConstants.kThroughBoreEncoderVersion)
         )
         # Fresh steering angle every 20 ms for odometry and autotune
-        config.signals.absoluteEncoderPositionPeriodMs(20)
+        config.signals.absoluteEncoderPositionPeriodMs(periodMs)
         config.signals.absoluteEncoderVelocityPeriodMs(20)
         config.closedLoop.setFeedbackSensor(FeedbackSensor.kAbsoluteEncoder)
 
     # Gain comes from autotune (tuning/gains.py); default is REV's value.
-    config.closedLoop.pid(gains.steerP, 0, 0)
+    config.closedLoop.pid(
+        gains.steerP,
+        gains.steerI * kSparkLoopSeconds,
+        gains.steerD / kSparkLoopSeconds,
+    )
+    if gains.steerI and gains.steerIZoneDeg > 0:
+        config.closedLoop.iZone(math.radians(gains.steerIZoneDeg))
     config.closedLoop.outputRange(-1, 1)
     # Enable PID wrap around for the turning motor. This lets the PID controller
     # go through 0 to reach the setpoint, i.e. going from 350 degrees to 10

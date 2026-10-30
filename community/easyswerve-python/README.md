@@ -70,19 +70,21 @@ self.autos.addCommand("printHello", commands2.PrintCommand("Hello from auto!"))
 
 In the PathPlanner app, add a Named Command to an auto and type printHello.
 
-## Day 4: The real robot
+## Day 4: Set up the real robot
 
-1. Fill in robot_settings.py: CAN IDs, encoder DIO ports, motor mounting, wheel spacing.
-2. Connect to the robot and deploy, from the VS Code terminal:
+Before driving, go through the setup steps in examples/, in order: 00_01_checkup to 00_10_wheeldiameter. Each one tests one thing (every motor and sensor one at a time, then the zeros, the tuning, the gyro, the wheel size) and tells you exactly which line of robot_settings.py to change when something is wrong. Each step's README.md has the steps.
+
+1. Fill in robot_settings.py: CAN IDs, encoder DIO ports, wheel spacing. Not sure about the motor and encoder directions? Leave them; steps 2, 3 and 6 work them out.
+2. For each step: copy its robot.py over robot.py, then connect to the robot and deploy from the VS Code terminal:
 
 ```
 py -m robotpy deploy
 ```
 
-3. Zero the steering encoders: robot disabled, hex keys in all four modules, then press **Calibrate/Zero steering encoders** on the dashboard (examples/32_zerosteering explains it).
-4. Wheels off the ground, enable teleop, and check that pushing forward drives every wheel forward.
-5. Autotune: clear 2.5 m in front of the robot, Driver Station in **Test** mode, enable, and press **Autotune/All** on the dashboard. The robot tunes itself in about a minute.
-6. Check the gyro and measure the wheel size with examples 33_gyrocheck and 34_wheeldiameter: copy each one's robot.py over robot.py and deploy. Afterwards, copy examples/01_basic/robot.py back and deploy again.
+3. Follow that step's README, fix what it finds, and go on to the next.
+4. When step 10 is done, copy examples/01_basic/robot.py back over robot.py and deploy. Now drive.
+
+Practice first: set SIM_PRACTICE_MISTAKES = True near the top of easyswerve/sim/physics.py, and the simulator becomes a robot with wiring mistakes for the setup steps to find. Set it back to False afterwards.
 
 Deploy again any time you change robot.py or robot_settings.py.
 
@@ -92,8 +94,8 @@ Deploy again any time you change robot.py or robot_settings.py.
 
 | Where | What |
 |---|---|
-| examples/ | 34 small examples, one robot.py each: autos, buttons, dashboard, mechanisms, calibration (list in examples/README.md) |
+| examples/ | 10 setup steps (00_01 to 00_10), then 35 small examples, one robot.py each: autos, buttons, dashboard, mechanisms, cameras (list in examples/README.md) |
 | docs/DRIVETRAIN.md | full drivetrain guide: wiring, calibration, autotune, simulator (for coaches) |
 | docs/PATHPLANNER.md | full PathPlanner guide |
-| docs/VISION.md | setting up cameras (PhotonVision on the Orange Pi) |
+| docs/VISION.md | setting up cameras (PhotonVision on the Orange Pi); then try examples 32 to 35 |
 | py -m robotpy test | runs the automated tests |

@@ -12,6 +12,7 @@ class Module:
     encoder_dio: int = -1
     drive_motor_bottom: bool = True
     turn_motor_bottom: bool = True
+    encoder_reversed: bool = False
 
 
 @dataclasses.dataclass(frozen=True)

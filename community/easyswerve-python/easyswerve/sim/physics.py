@@ -22,8 +22,10 @@
 # Autotune run in the simulator should recover the SIM_* constants below,
 # which is how the tuning code itself is checked.
 #
-# Not modeled: motor inversion, encoder zeroing, wheel slip, battery sag,
-# current limits. Those need the real robot.
+# Wiring mistakes (a motor or encoder backwards, encoders plugged into the
+# wrong DIO ports, steering not zeroed) are only simulated when
+# SIM_PRACTICE_MISTAKES = True below. Not modeled: CAN ID mix-ups, battery sag,
+# current limits, backlash. Those need the real robot.
 #
 
 import collections
@@ -37,6 +39,7 @@ from wpimath.kinematics import SwerveModuleState
 
 from rev import SparkAbsoluteEncoderSim, SparkRelativeEncoderSim
 
+from ..drivetrain import configs
 from ..drivetrain.constants import DriveConstants, ModuleConstants
 
 # ---- settings you may want to change ----------------------------------------
@@ -80,6 +83,34 @@ INITIAL_STEER_ANGLE_RAD = 0.0
 # a camera (vision add-on) pull the position back.
 SIM_WHEEL_SLIP = 0.0
 
+# Delay inside the simulated SPARK's 1 ms steering loop (ms). Real SPARKs have
+# a little; it is what makes too much P oscillate (Ziegler-Nichols, 00_07).
+SIM_SPARK_DELAY_MS = 2
+
+# The NEO's built-in sensor counts 42 steps per motor turn, so through the
+# 20 : 1 steering gearing it sees the wheel angle in steps of about 0.43
+# degrees. (Encoders on the roboRIO: the SPARK steers by this sensor.)
+SIM_NEO_COUNTS_PER_REV = 42
+
+# Practice robot for the 00_ setup examples. False = the simulated robot is
+# wired exactly the way robot_settings.py says, so everything just works.
+# True = it is wired like PRACTICE_ROBOT below instead, so robot_settings.py
+# is wrong in a few places and its steering isn't zeroed. Use the setup
+# examples to find and fix each mistake in robot_settings.py. (The answers
+# are below; try not to look.)
+SIM_PRACTICE_MISTAKES = False
+
+PRACTICE_ROBOT = {
+    #      drive_motor_bottom  turn_motor_bottom  encoder_reversed  encoder_dio
+    "FL": (True,               True,              False,            3),
+    "FR": (False,              True,              False,            1),
+    "RL": (True,               True,              True,             2),
+    "RR": (True,               True,              False,            0),
+}
+# Where each practice encoder's magnet sits at the hex-key position (radians):
+# what zeroing (00_04) measures and stores.
+PRACTICE_MOUNT_OFFSETS = {"FL": 1.9, "FR": 4.4, "RL": 0.7, "RR": 3.1}
+
 TAU = 2 * math.pi
 
 
@@ -120,27 +151,60 @@ def _clampVolts(v: float) -> float:
 
 
 class _SimModule:
-    def __init__(self, name: str, module) -> None:
+    """One simulated module.
+
+    The motors are simulated in "motor frame": positive = the direction the
+    robot code commands as positive. How that maps to the real wheel depends
+    on whether robot_settings.py matches the (simulated) wiring:
+      ds  +1 if the drive motor setting matches, else -1 (wheel rolls backwards)
+      ss  +1 if the steering motor setting matches, else -1 (turns backwards)
+      st  -1 if the real encoder counts backwards, cr = -1 if the code thinks so
+    """
+
+    def __init__(self, name: str, module, dioSims) -> None:
         self.name = name
         self.module = module
-        # Steering angle goes wherever the robot code reads it: the turning
-        # SPARK's absolute encoder (SPARK wiring) or, with roboRIO wiring, the
-        # turning NEO's own sensor plus the DIO absolute encoder.
+        self.dioSims = dioSims
         self.rioWiring = module.turningEncoder.location == "rio"
         if self.rioWiring:
             self.absSim = SparkRelativeEncoderSim(module.turningSpark)
-            self.dioSim = DutyCycleEncoderSim(module.turningEncoder.absolute)
-            self.dioSim.setConnected(True)
         else:
             self.absSim = SparkAbsoluteEncoderSim(module.turningSpark)
-            self.dioSim = None
         self.relSim = SparkRelativeEncoderSim(module.drivingSpark)
 
+        # How the simulated robot is really wired
+        if SIM_PRACTICE_MISTAKES:
+            driveBottom, turnBottom, encRev, dio = PRACTICE_ROBOT[name]
+            self.trueDio = dio
+            self.mount: typing.Optional[float] = PRACTICE_MOUNT_OFFSETS[name]
+        else:
+            driveBottom = module.drivingInverted  # drivingInverted = drive_motor_bottom
+            turnBottom = not module.turningInverted
+            encRev = module.encoderReversed
+            self.trueDio = getattr(module.turningEncoder, "dioChannel", None)
+            self.mount = None  # None = already zeroed, whatever the code's zeros are
+        self.ds = 1.0 if module.drivingInverted == driveBottom else -1.0
+        self.ss = 1.0 if module.turningInverted == (not turnBottom) else -1.0
+        self.st = -1.0 if encRev else 1.0
+        self.cr = -1.0 if module.encoderReversed else 1.0
+
         self.steer = _Motor(SIM_STEER_KS, SIM_STEER_KV, SIM_STEER_KA)
-        self.steer.x = INITIAL_STEER_ANGLE_RAD
+        self.steer.x = self.ss * INITIAL_STEER_ANGLE_RAD
         self.drive = _Motor(SIM_DRIVE_KS, SIM_DRIVE_KV, SIM_DRIVE_KA)
         self.speedHistory = collections.deque()  # (time, speed) for the lagged reading
         self.measuredSpeed = 0.0
+
+        # The NEO sensor counts from wherever it was last set: the robot code
+        # sets it to the absolute encoder's angle (steering sync), so the
+        # reading = motor position + this offset
+        self.neoOffset = 0.0
+        self.lastNeoReading: typing.Optional[float] = None
+
+        # simulated SPARK steering loop state
+        self.iAccum = 0.0
+        self.lastErr: typing.Optional[float] = None
+        self.lastTarget: typing.Optional[float] = None
+        self.measHistory = collections.deque([self._sparkSees()], maxlen=max(1, SIM_SPARK_DELAY_MS) + 1)
 
         # Work out whether the encoder simulators expect raw sensor units or
         # converted units (rad, m), by writing 1.0 and reading it back through
@@ -160,33 +224,80 @@ class _SimModule:
         return read
 
     @property
+    def physical(self) -> float:
+        """The wheel's real steering angle (radians, unwrapped, + = counterclockwise)."""
+        return self.ss * self.steer.x
+
+    @property
     def angle(self) -> float:
-        return _wrap0to2pi(self.steer.x)
+        return _wrap0to2pi(self.physical)
 
     @property
     def speed(self) -> float:
-        return self.drive.v
+        """Real wheel speed (+ = rolling forward along the wheel's direction)."""
+        return self.ds * self.drive.v
+
+    def _sparkSees(self) -> float:
+        """Steering angle the turning SPARK reads (motor frame, unwrapped)."""
+        if self.rioWiring:  # the NEO's own sensor, in whole counts, plus where it was set
+            step = TAU / (SIM_NEO_COUNTS_PER_REV * ModuleConstants.kSteeringReduction)
+            return round(self.steer.x / step) * step + self.neoOffset
+        return self.cr * self.st * self.physical  # encoder on the SPARK (inverted by config)
+
+    def _noticeSensorReset(self) -> None:
+        """If the robot code set the NEO sensor (setPosition) since the last
+        step, keep counting from the new value instead of overwriting it."""
+        if not self.rioWiring or self.lastNeoReading is None:
+            return
+        now = self.module.turningEncoder.relative.getPosition()
+        if abs(now - self.lastNeoReading) > 1e-9:
+            self.neoOffset += now - self.lastNeoReading
+            self.measHistory.clear()
+            self.measHistory.append(self._sparkSees())
 
     def _write(self) -> None:
-        self.absSim.setPosition(self.angle / self.absScale)
-        self.absSim.setVelocity(self.steer.v / self.absScale)
-        if self.dioSim is not None:
-            # what the DIO encoder reads: true angle plus its mounting offset
-            self.dioSim.set((self.angle + self.module.turningEncoder.offset) % (2 * math.pi))
+        reading = self._sparkSees()
+        self.absSim.setPosition(reading / self.absScale)
+        if self.rioWiring:
+            self.lastNeoReading = self.module.turningEncoder.relative.getPosition()
+        self.absSim.setVelocity(
+            (self.steer.v if self.rioWiring else self.cr * self.st * self.ss * self.steer.v) / self.absScale
+        )
+        if self.rioWiring and self.trueDio in self.dioSims:
+            # what this module's real encoder outputs, on the DIO port it is
+            # really plugged into
+            mount = self.mount if self.mount is not None else self.cr * self.module.turningEncoder.offset
+            self.dioSims[self.trueDio].set((self.st * self.physical + mount) % TAU)
         self.relSim.setPosition(self.drive.x / self.relScale)
         self.relSim.setVelocity(self.measuredSpeed / self.relScale)
 
     def _steerVolts(self, enabled: bool) -> float:
         m = self.module
         if not enabled:
+            self.iAccum, self.lastErr = 0.0, None
             return 0.0
         if m.turningVoltage is not None:
+            self.iAccum, self.lastErr = 0.0, None
             return _clampVolts(m.turningVoltage)
-        # SPARK position loop: P (duty cycle, wrapping enabled) plus the
-        # friction push the robot code sent with the setpoint (volts)
+        # SPARK position loop (wrapping enabled), every 1 ms, on a reading a
+        # couple of ms old: P, I, D in SPARK units plus the friction push the
+        # robot code sent with the setpoint (volts)
+        g = m.gains
         target = _wrap0to2pi(m.turningClosedLoopController.getSetpoint())
-        err = _shortestDiff(target, self.angle)
-        return _clampVolts(NOMINAL_VOLTS * m.gains.steerP * err + m.turningFeedforward)
+        if target != self.lastTarget:
+            self.lastTarget = target
+        err = _shortestDiff(target, self.measHistory[0] % TAU)
+        kI = g.steerI * configs.kSparkLoopSeconds
+        kD = g.steerD / configs.kSparkLoopSeconds
+        izone = math.radians(g.steerIZoneDeg) if g.steerIZoneDeg > 0 else 0.0
+        if kI and (izone == 0.0 or abs(err) < izone):
+            self.iAccum += kI * err
+        else:
+            self.iAccum = 0.0
+        dTerm = kD * (err - self.lastErr) if (kD and self.lastErr is not None) else 0.0
+        self.lastErr = err
+        duty = max(-1.0, min(1.0, g.steerP * err + self.iAccum + dTerm))
+        return _clampVolts(NOMINAL_VOLTS * duty + m.turningFeedforward)
 
     def _driveVolts(self, enabled: bool) -> float:
         m = self.module
@@ -202,19 +313,29 @@ class _SimModule:
         return _clampVolts(ff + fb)
 
     def update(self, now: float, dt: float, enabled: bool) -> None:
+        self._noticeSensorReset()
         h = dt / SUBSTEPS
+        fine = getattr(self.module, "fineLog", None)
         for i in range(SUBSTEPS):
             self.steer.step(self._steerVolts(enabled), h)
             self.drive.step(self._driveVolts(enabled), h)
+            self.measHistory.append(self._sparkSees())
             t = now - dt + (i + 1) * h
+            if fine is not None and (i + 1) % 5 == 0:
+                fine.append((t, self._sparkSees()))  # what a 5 ms reading would see
             self.speedHistory.append((t, self.drive.v))
             while len(self.speedHistory) > 1 and self.speedHistory[1][0] <= t - SIM_DRIVE_SPEED_LAG_S:
                 self.speedHistory.popleft()
             self.measuredSpeed = self.speedHistory[0][1]
         self._write()
+        # "What you would see" if you looked at the simulated robot: the real
+        # steering angle and how far the wheel really rolled (+ = forward).
+        # The setup examples print these in the simulator only.
+        self.module.simSeenSteerDeg = math.degrees(self.physical)
+        self.module.simSeenWheelM = self.ds * self.drive.x
 
     def robotRelativeState(self) -> SwerveModuleState:
-        # Same transform the module code uses: encoder angle minus chassis offset
+        # The real wheel: physical angle minus the chassis offset
         return SwerveModuleState(
             self.speed, Rotation2d(self.angle - self.module.chassisAngularOffset)
         )
@@ -297,12 +418,22 @@ class PhysicsEngine:
         self.drive = findDrivetrain(robot)
         d = self.drive
 
+        # One simulator per DIO encoder object the robot code made, by channel
+        dioSims = {}
+        for _, mod in d.modules:
+            enc = mod.turningEncoder
+            if enc.location == "rio":
+                sim = DutyCycleEncoderSim(enc.absolute)
+                sim.setConnected(True)
+                dioSims[enc.dioChannel] = sim
         self.modules = [
-            _SimModule("FL", d.frontLeft),
-            _SimModule("FR", d.frontRight),
-            _SimModule("RL", d.rearLeft),
-            _SimModule("RR", d.rearRight),
+            _SimModule("FL", d.frontLeft, dioSims),
+            _SimModule("FR", d.frontRight, dioSims),
+            _SimModule("RL", d.rearLeft, dioSims),
+            _SimModule("RR", d.rearRight, dioSims),
         ]
+        if SIM_PRACTICE_MISTAKES:
+            print("[physics] PRACTICE ROBOT: wired with mistakes for the 00_ setup examples to find")
         self.navx = _NavxSim(d)
         self.headingRad = 0.0  # continuous, counterclockwise-positive
         self.lastPrint = -1e9

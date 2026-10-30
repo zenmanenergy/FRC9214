@@ -45,8 +45,9 @@ class DriveSubsystem(Subsystem):
         elif backup is not None:
             offsets, source = backup, "backup from robot_settings.py (saved zeros missing)"
         else:
-            offsets, source = {}, "NOT ZEROED YET: press the Calibrate button (examples/32_zerosteering)"
+            offsets, source = {}, "NOT ZEROED YET: press the Calibrate button (examples/00_04_zerosteering)"
         print(f"[drive] steering encoder zeros: {source}")
+        self.steeringZeroSource = source
 
         # Create EasySwerveModules
         self.frontLeft = EasySwerveModule(
@@ -59,6 +60,7 @@ class DriveSubsystem(Subsystem):
             name="FL",
             steeringEncoderDio=DriveConstants.kFrontLeftSteeringEncoderDio,
             steeringEncoderOffset=offsets.get("FL", 0.0),
+            steeringEncoderReversed=DriveConstants.kFrontLeftSteeringEncoderReversed,
         )
 
         self.frontRight = EasySwerveModule(
@@ -71,6 +73,7 @@ class DriveSubsystem(Subsystem):
             name="FR",
             steeringEncoderDio=DriveConstants.kFrontRightSteeringEncoderDio,
             steeringEncoderOffset=offsets.get("FR", 0.0),
+            steeringEncoderReversed=DriveConstants.kFrontRightSteeringEncoderReversed,
         )
 
         self.rearLeft = EasySwerveModule(
@@ -83,6 +86,7 @@ class DriveSubsystem(Subsystem):
             name="RL",
             steeringEncoderDio=DriveConstants.kRearLeftSteeringEncoderDio,
             steeringEncoderOffset=offsets.get("RL", 0.0),
+            steeringEncoderReversed=DriveConstants.kRearLeftSteeringEncoderReversed,
         )
 
         self.rearRight = EasySwerveModule(
@@ -95,6 +99,7 @@ class DriveSubsystem(Subsystem):
             name="RR",
             steeringEncoderDio=DriveConstants.kRearRightSteeringEncoderDio,
             steeringEncoderOffset=offsets.get("RR", 0.0),
+            steeringEncoderReversed=DriveConstants.kRearRightSteeringEncoderReversed,
         )
 
         # The gyro: navX2 on the roboRIO's MXP port (SPI) or a USB port, as set
@@ -309,6 +314,15 @@ class DriveSubsystem(Subsystem):
                 sd.putNumber(f"Drive/{name} resyncs", enc.resyncCount)
 
     # ---- helpers -------------------------------------------------------------
+
+    def gyroRotation(self) -> Rotation2d:
+        """Which way the robot faces, from the navX (counterclockwise +)."""
+        return self._gyroRotation()
+
+    def modulePositions(self):
+        """How far each wheel has rolled and which way it points (FL, FR,
+        RL, RR), as WPILib odometry wants it."""
+        return self._modulePositions()
 
     def _gyroRotation(self) -> Rotation2d:
         # getRotation2d() already converts the navX's clockwise-positive angle

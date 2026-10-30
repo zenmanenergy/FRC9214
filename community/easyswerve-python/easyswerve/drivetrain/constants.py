@@ -45,6 +45,7 @@ class ModuleConstants:
     # NEO's own sensor, kept in sync with the absolute encoder).
     kSteeringReduction = 20.0
 
+
     # With encoders on the roboRIO: re-sync the NEO steering sensor to the
     # absolute encoder when they disagree by more than this while the wheel is
     # still (always re-synced while disabled).
@@ -140,6 +141,13 @@ class DriveConstants:
     kFrontRightSteeringEncoderDio = RS.FRONT_RIGHT.encoder_dio
     kRearLeftSteeringEncoderDio = RS.BACK_LEFT.encoder_dio
     kRearRightSteeringEncoderDio = RS.BACK_RIGHT.encoder_dio
+
+    # True if that module's steering encoder counts the opposite way to the
+    # wheel (examples/00_03_steeronebyone finds out)
+    kFrontLeftSteeringEncoderReversed = RS.FRONT_LEFT.encoder_reversed
+    kFrontRightSteeringEncoderReversed = RS.FRONT_RIGHT.encoder_reversed
+    kRearLeftSteeringEncoderReversed = RS.BACK_LEFT.encoder_reversed
+    kRearRightSteeringEncoderReversed = RS.BACK_RIGHT.encoder_reversed
 
     # Backup steering zeros (radians), from STEERING_ZEROS_DEG in
     # robot_settings.py; None if there's no backup. Used only when the zeros

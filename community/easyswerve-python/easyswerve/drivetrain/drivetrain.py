@@ -18,13 +18,16 @@ from wpimath.controller import PIDController
 
 from ..tuning.autotune import Autotuner
 from ..vision.vision import VisionSubsystem
-from .constants import OIConstants
+from .constants import DriveConstants, OIConstants
 from .drivesubsystem import DriveSubsystem
 
 
 class Drivetrain(DriveSubsystem):
     def __init__(self) -> None:
         super().__init__()
+
+        # Wheel positions on the robot, for WPILib kinematics and odometry
+        self.kinematics = DriveConstants.kDriveKinematics
 
         # Cameras correct the robot's position when available (off until
         # VISION_ENABLED = True in robot_settings.py)
@@ -105,6 +108,99 @@ class Drivetrain(DriveSubsystem):
             return bool(self.gyro.isCalibrating())
         except Exception:
             return False
+
+    def saveGains(self, gains) -> str:
+        """Use these gains now and save them on the roboRIO, so they are
+        loaded at every startup. Returns where they were saved."""
+        from ..tuning import gains as savedGains
+
+        path = savedGains.save(gains)
+        self.applyGains(gains)
+        return path
+
+    def module(self, name: str):
+        """One swerve module by name: "FL", "FR", "RL" or "RR"
+        (front left, front right, rear left, rear right)."""
+        for n, m in self.modules:
+            if n == name.upper():
+                return m
+        raise ValueError(f'module name must be "FL", "FR", "RL" or "RR", not {name!r}')
+
+    def checkup(self) -> list:
+        """Checks everything the drivetrain can check without moving:
+        settings, every SPARK MAX, every steering encoder, the navX, the
+        battery, zeros and gains. Returns (ok, message) pairs."""
+        import robot_settings as RS
+
+        results = []
+
+        def add(ok, text):
+            results.append((bool(ok), text))
+
+        # settings: duplicate CAN IDs or DIO ports are a common mistake
+        mods = {"FRONT_LEFT": RS.FRONT_LEFT, "FRONT_RIGHT": RS.FRONT_RIGHT,
+                "BACK_LEFT": RS.BACK_LEFT, "BACK_RIGHT": RS.BACK_RIGHT}
+        cans = [(f"{n} drive_can", m.drive_can) for n, m in mods.items()]
+        cans += [(f"{n} turn_can", m.turn_can) for n, m in mods.items()]
+        seen = {}
+        for label, value in cans:
+            seen.setdefault(value, []).append(label)
+        dup = [f"{v} ({', '.join(ls)})" for v, ls in seen.items() if len(ls) > 1]
+        add(not dup, "CAN IDs all different" if not dup else f"same CAN ID used twice: {'; '.join(dup)}")
+        if self.frontLeft.turningEncoder.location == "rio":
+            dios = {}
+            for n, m in mods.items():
+                dios.setdefault(m.encoder_dio, []).append(n)
+            dup = [f"{v} ({', '.join(ls)})" for v, ls in dios.items() if len(ls) > 1]
+            add(not dup, "encoder DIO ports all different" if not dup else f"same DIO port used twice: {'; '.join(dup)}")
+
+        # every SPARK MAX: answering on CAN? any faults?
+        sim = wpilib.RobotBase.isSimulation()
+        for name, m in self.modules:
+            for role, spark in (("drive", m.drivingSpark), ("steer", m.turningSpark)):
+                try:
+                    can = spark.getDeviceId()
+                    volts = spark.getBusVoltage()
+                    firmware = spark.getFirmwareString()
+                    answering = sim or volts > 1.0
+                    if not answering:
+                        add(False, f"{name} {role} SPARK MAX (CAN {can}) not answering: check its CAN ID "
+                                   "in REV Hardware Client and the CAN wiring")
+                        continue
+                    fault = spark.hasActiveFault()
+                    add(not fault, f"{name} {role} SPARK MAX (CAN {can}) answering, firmware {firmware}"
+                                   + (", HAS AN ACTIVE FAULT (see REV Hardware Client)" if fault else ""))
+                except Exception as e:
+                    add(False, f"{name} {role} SPARK MAX: could not read it ({e})")
+
+        # steering encoders
+        for name, m in self.modules:
+            enc = m.turningEncoder
+            if enc.location == "rio":
+                ok = enc.isConnected()
+                add(ok, f"{name} steering encoder on DIO {enc.dioChannel} "
+                        + ("sending a signal" if ok else "NO SIGNAL: check its 3 wires (signal, 5 V, ground) and the DIO number"))
+                if getattr(enc, "stuck", False):
+                    add(False, f"{name} steering encoder reads the same value while the wheel turns (magnet or wiring)")
+
+        # gyro
+        try:
+            ok = bool(self.gyro.isConnected())
+        except Exception:
+            ok = False
+        add(ok, "navX connected" if ok else f'navX NOT connected (GYRO = "{RS.GYRO}" in robot_settings.py; check the port)')
+        if ok and self.gyroCalibrating():
+            add(True, "navX still calibrating: keep the robot still")
+
+        # battery
+        v = wpilib.RobotController.getBatteryVoltage()
+        add(v >= 12.0 or sim, f"battery {v:.1f} V" + ("" if v >= 12.0 or sim else " (charge it: under 12 V the tests are less accurate)"))
+
+        # zeros and gains
+        zs = getattr(self, "steeringZeroSource", "")
+        add("NOT ZEROED" not in zs, f"steering zeros: {zs}")
+        add(True, f"gains: {self.gains.summary()}")
+        return results
 
     def wheelDistances(self) -> list:
         """How far each wheel has rolled, in meters (FL, FR, RL, RR), as the

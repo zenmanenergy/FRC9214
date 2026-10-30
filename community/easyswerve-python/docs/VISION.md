@@ -13,9 +13,11 @@
 > | easyswerve_vision, its config.py cameras and VISION_ENABLED | easyswerve/vision/; cameras and VISION_ENABLED are in robot_settings.py |
 > | self.drivetrain, DriveSubsystem() | self.drivetrain, Drivetrain() |
 > | robotcontainer.py, RobotContainer | robot.py (built in robotInit; no separate container) |
-> | examples/robotcontainer.py, examples/deploy/pathplanner/ | examples/<name>/robot.py: 34 small examples (examples/README.md) |
+> | examples/robotcontainer.py, examples/deploy/pathplanner/ | examples/<name>/robot.py: 10 setup steps (00_01 to 00_10) and 35 small examples (examples/README.md) |
 >
 > Autotune and calibration buttons are created by Drivetrain() automatically.
+>
+> robot_settings.py starts with two placeholder cameras, front and back (yaw 180). Examples 32 to 35 use them: what each camera sees, wheels-only vs. camera-corrected position, aiming at a tag, and driving to a tag.
 
 
 Uses AprilTags seen by PhotonVision cameras (on an Orange Pi) to correct the EasySwerve robot's position on the field.

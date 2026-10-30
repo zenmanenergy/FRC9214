@@ -13,9 +13,11 @@
 > | easyswerve_vision, its config.py cameras and VISION_ENABLED | easyswerve/vision/; cameras and VISION_ENABLED are in robot_settings.py |
 > | self.drivetrain, DriveSubsystem() | self.drivetrain, Drivetrain() |
 > | robotcontainer.py, RobotContainer | robot.py (built in robotInit; no separate container) |
-> | examples/robotcontainer.py, examples/deploy/pathplanner/ | examples/<name>/robot.py: 34 small examples (examples/README.md) |
+> | examples/robotcontainer.py, examples/deploy/pathplanner/ | examples/<name>/robot.py: 10 setup steps (00_01 to 00_10) and 35 small examples (examples/README.md) |
 >
 > Autotune and calibration buttons are created by Drivetrain() automatically.
+>
+> Setup and calibration on the robot now go step by step through examples/00_01 to 00_10. New since this guide was written: encoder_reversed per module in robot_settings.py (00_03 finds it), Ziegler-Nichols steering tuning with P, I and D (00_07, easyswerve/tuning/zieglernichols.py; steerI, steerD and steerIZoneDeg in the gains file), and a practice robot with wiring mistakes in the simulator (SIM_PRACTICE_MISTAKES in easyswerve/sim/physics.py).
 
 
 RobotPy 2026 port of REV's EasySwerve-Java-Template v2026.0.

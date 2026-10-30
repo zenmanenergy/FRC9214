@@ -27,7 +27,7 @@ import typing
 
 import commands2
 import wpilib
-from wpimath.geometry import Pose2d, Rotation3d, Transform3d, Translation3d
+from wpimath.geometry import Pose2d, Rotation2d, Rotation3d, Transform3d, Translation3d
 
 from . import config as C
 from . import filters
@@ -70,6 +70,8 @@ class _Camera:
         self.lastTags = 0
         self.lastPose: typing.Optional[Pose2d] = None
         self.lastSeen = -1e9
+        self.latestResult = None  # newest camera frame, for target()
+        self.latestResultTime = -1e9
         self.errors = 0
         self.lastErrorReport = -1e9
 
@@ -135,6 +137,8 @@ class VisionSubsystem(commands2.Subsystem):
         cam.connected = cam.camera.isConnected()
         # Always drain the queue, even when not fusing, so stale frames never pile up
         for result in cam.camera.getAllUnreadResults():
+            cam.latestResult = result
+            cam.latestResultTime = now
             multi = cam.estimator.estimateCoprocMultiTagPose(result)
             est = multi if multi is not None else cam.estimator.estimateLowestAmbiguityPose(result)
             if est is None:
@@ -227,6 +231,90 @@ class VisionSubsystem(commands2.Subsystem):
             sd.putNumber(k + "errors", cam.errors)
             if cam.lastPose is not None:
                 self.field.getObject(cam.cfg.name).setPose(cam.lastPose)
+
+    # ---- simple helpers for robot.py ----------------------------------------------------
+
+    def cameraNames(self) -> typing.List[str]:
+        """Names of the cameras in use (empty if vision is off)."""
+        return [cam.cfg.name for cam in self.cameras]
+
+    def isConnected(self, cameraName: str) -> bool:
+        """True if that camera is sending pictures right now."""
+        cam = self._find(cameraName)
+        return cam is not None and cam.connected
+
+    def tagsSeen(self, cameraName: str) -> typing.List[int]:
+        """IDs of the AprilTags that camera sees right now."""
+        result = self._fresh(cameraName)
+        if result is None:
+            return []
+        return sorted(t.getFiducialId() for t in result.getTargets())
+
+    def target(self, cameraName: str, tagId: typing.Optional[int] = None):
+        """What a camera sees right now: one AprilTag (a PhotonTrackedTarget),
+        or None if it doesn't see it. tagId None = the camera's best target.
+
+        Useful parts: target.getYaw() (degrees left/right of the camera's
+        center, + = to the right), target.getPitch() (+ = up),
+        target.getFiducialId() (the tag number).
+        """
+        result = self._fresh(cameraName)
+        if result is None or not result.getTargets():
+            return None
+        if tagId is None:
+            return result.getBestTarget()
+        for t in result.getTargets():
+            if t.getFiducialId() == tagId:
+                return t
+        return None
+
+    def fieldTagIds(self) -> typing.List[int]:
+        """Every AprilTag ID on this season's field."""
+        if self.layout is None:
+            return []
+        return sorted(tag.ID for tag in self.layout.getTags())
+
+    def tagPose(self, tagId: int) -> typing.Optional[Pose2d]:
+        """Where a tag is on the field (meters from the blue corner; its
+        rotation is the way the tag faces). None if there's no such tag."""
+        if self.layout is None:
+            return None
+        pose = self.layout.getTagPose(tagId)
+        return pose.toPose2d() if pose is not None else None
+
+    def poseInFrontOfTag(
+        self, tagId: typing.Optional[int] = None, distanceM: float = 1.0
+    ) -> typing.Optional[Pose2d]:
+        """A spot distanceM in front of a tag, facing it. tagId None = the
+        first tag on the field. None if vision is off."""
+        if tagId is None:
+            ids = self.fieldTagIds()
+            if not ids:
+                return None
+            tagId = ids[0]
+        tag = self.tagPose(tagId)
+        if tag is None:
+            return None
+        facing = tag.rotation().radians()  # the way the tag faces, into the field
+        return Pose2d(
+            tag.X() + distanceM * math.cos(facing),
+            tag.Y() + distanceM * math.sin(facing),
+            Rotation2d(facing + math.pi),  # robot faces back toward the tag
+        )
+
+    def _find(self, cameraName: str) -> typing.Optional[_Camera]:
+        for cam in self.cameras:
+            if cam.cfg.name == cameraName:
+                return cam
+        return None
+
+    def _fresh(self, cameraName: str, maxAgeS: float = 0.25):
+        cam = self._find(cameraName)
+        if cam is None or cam.latestResult is None:
+            return None
+        if wpilib.Timer.getFPGATimestamp() - cam.latestResultTime > maxAgeS:
+            return None  # too old: the camera stopped seeing it
+        return cam.latestResult
 
     # ---- simulator ------------------------------------------------------------------
 

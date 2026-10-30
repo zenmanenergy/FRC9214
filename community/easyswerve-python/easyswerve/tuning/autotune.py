@@ -437,7 +437,7 @@ class Autotuner:
 
     def applySteerP(self, p: float) -> None:
         self.drive.applyGains(
-            dataclasses.replace(self.drive.gains, steerP=p, steerKS=self.steerKS)
+            dataclasses.replace(self.drive.gains, steerP=p, steerI=0.0, steerD=0.0, steerKS=self.steerKS)
         )
 
     # ---- analysis -------------------------------------------------------------
@@ -486,8 +486,8 @@ class Autotuner:
 
     def _steeringDone(self) -> None:
         self.newGains = dataclasses.replace(
-            self.newGains, steerP=self.steerP, steerKS=self.steerKS
-        )
+            self.newGains, steerP=self.steerP, steerI=0.0, steerD=0.0, steerKS=self.steerKS
+        )  # this autotune tunes P only (Ziegler-Nichols, example 00_07, sets I and D)
         nominal = ModuleConstants.kNominalVoltage
         withoutPush = math.degrees(self.steerFrictionKS / (nominal * self.steerP))
         withPush = math.degrees(

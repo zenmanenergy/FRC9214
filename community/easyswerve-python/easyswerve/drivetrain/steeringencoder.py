@@ -71,8 +71,11 @@ class RioSteeringEncoder:
 
     location = "rio"
 
-    def __init__(self, turningSpark, dioChannel: int, offset: float, name: str = "") -> None:
+    def __init__(
+        self, turningSpark, dioChannel: int, offset: float, name: str = "", reversed: bool = False
+    ) -> None:
         self.name = name
+        self.reversed = reversed  # encoder counts the opposite way to the wheel
         self.dioChannel = dioChannel
         self.offset = offset
         self.relative = turningSpark.getEncoder()  # radians, via conversion factor
@@ -124,7 +127,8 @@ class RioSteeringEncoder:
         the encoder isn't sending a signal."""
         if not self.absolute.isConnected():
             return None
-        return self.absolute.get() % TAU
+        raw = self.absolute.get() % TAU
+        return (-raw) % TAU if self.reversed else raw
 
     def absoluteAngle(self) -> typing.Optional[float]:
         raw = self.rawAbsolute()
