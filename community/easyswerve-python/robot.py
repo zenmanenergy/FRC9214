@@ -8,7 +8,7 @@ measurements are in robot_settings.py.
 Try it in the simulator: click Autonomous. The robot drives the S-Curve auto.
 
 More ideas: the examples folder has one robot.py per idea. Copy one over this
-file to try it (examples/basic/robot.py puts this one back).
+file to try it (examples/01_basic/robot.py puts this one back).
 """
 
 import commands2

@@ -52,7 +52,7 @@ self.controller.rightBumper().whileTrue(self.drivetrain.lockWheels())
 
 Try it: copy that line, change rightBumper to a and lockWheels to stop, then run the simulator again.
 
-More ideas are in examples/: each folder has a robot.py you can copy over this one (examples/README.md lists them, easiest first). examples/basic/robot.py puts the original back.
+More ideas are in examples/: each folder has a robot.py you can copy over this one (examples/README.md lists them in order, and each folder has a README.md explaining it). examples/01_basic/robot.py puts the original back.
 
 ## Day 3: Draw an auto
 
