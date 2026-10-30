@@ -6,11 +6,11 @@ Normally pushing forward drives away from the driver, whichever way the
 robot faces (field-relative). Robot-relative means forward is wherever the
 robot's front points, like a remote-control car.
 
-Try it in the simulator: plug in a controller, drag it onto Joystick slot 0,
-and click Teleoperated.
+On the robot: plug a controller into the Driver Station laptop,
+and enable in Teleoperated.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

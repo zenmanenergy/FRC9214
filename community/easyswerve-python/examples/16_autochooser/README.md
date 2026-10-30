@@ -4,9 +4,9 @@
 
 Show a drop-down list of autos on the dashboard, so the drive team picks one before each match without changing code.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py, run py -m robotpy sim, open Elastic (WPILib tools, connected to localhost), add the Auto chooser to a tab, pick an auto, then click **Autonomous**.
+Copy this folder's robot.py over robot.py and deploy (py -m robotpy deploy). Open Elastic (WPILib tools, connected to the robot), add the Auto chooser to a tab, and pick an auto. Clear space, someone ready to disable, then enable in **Autonomous**.
 
 ## The code to look at
 

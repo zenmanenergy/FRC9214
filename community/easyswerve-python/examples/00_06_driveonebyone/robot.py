@@ -14,11 +14,8 @@ right bumper = all four. Or enable in Autonomous to test them all in turn.
 LOOK: does the wheel roll forward (the top of the wheel moving toward the
 front of the robot)?
 
-Try it in the simulator: click Autonomous. The simulator also says which way
-the wheel really rolled (on the robot, you look).
-
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2
@@ -69,7 +66,6 @@ class MyRobot(commands2.TimedCommandRobot):
 
     def start(self, names) -> None:
         self.startMeters = {n: self.drivetrain.module(n).wheelMeters() for n in names}
-        self.startSeen = {n: getattr(self.drivetrain.module(n), "simSeenWheelM", None) for n in names}
         self.topSpeed = {n: 0.0 for n in names}
         print(f"---- {', '.join(names)}: drive at +{TEST_VOLTS} V. WATCH the wheel. ----")
 
@@ -86,10 +82,6 @@ class MyRobot(commands2.TimedCommandRobot):
             module = self.drivetrain.module(name)
             rolled = module.wheelMeters() - self.startMeters[name]
             line = f"  {name}: encoder says {rolled:+.2f} m, top speed {self.topSpeed[name]:.2f} m/s"
-            seen = getattr(module, "simSeenWheelM", None)
-            if seen is not None and self.startSeen[name] is not None:
-                way = "FORWARD" if seen > self.startSeen[name] else "BACKWARDS"
-                line += f"   (simulator: the wheel really rolled {way})"
             print(line)
             if abs(rolled) < 0.05:
                 print(f"    PROBLEM: it hardly moved. Check {SETTING_NAMES[name]} drive_can and the motor wires.")

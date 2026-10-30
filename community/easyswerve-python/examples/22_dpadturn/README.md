@@ -4,9 +4,9 @@
 
 Use the D-pad (the plus-shaped pad) to turn the robot to face up, left, down or right.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder, run py -m robotpy sim, plug in an Xbox controller, drag it from System Joysticks onto Joystick slot 0, and click **Teleoperated**. Press the D-pad.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Plug an Xbox controller into the Driver Station laptop (it should be in slot 0 on the USB tab), clear some space, and enable in **Teleoperated**. Press the D-pad.
 
 ## The code to look at
 

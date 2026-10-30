@@ -3,15 +3,14 @@
 EXAMPLE: Spin a motor with a button
 
 The simplest mechanism: one motor on a SPARK MAX. Hold A to spin it one way,
-B the other way. Set MOTOR_CAN_ID to your motor's CAN ID. On the real robot,
-only use this once that motor is wired up.
+B the other way. Set MOTOR_CAN_ID to your motor's CAN ID first, and only
+use this once that motor is wired up and free to spin.
 
-Try it in the simulator: plug in a controller, drag it onto Joystick slot 0,
-and click Teleoperated. Hold A or B; the motor shows in the simulator's
-SPARK MAX list.
+On the robot: plug a controller into the Driver Station laptop,
+and enable in Teleoperated. Hold A or B and watch the motor.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

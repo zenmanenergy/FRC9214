@@ -8,16 +8,17 @@ The robot keeps track of where it is in two ways here, side by side:
 Every second it prints both. When the wheels slip, the wheels-only position
 drifts away; the camera-corrected one stays right.
 
-Setup first: VISION_ENABLED = True in robot_settings.py, and in the simulator
-also remove the # before photonlibpy in pyproject.toml, then py -m robotpy sync.
-To make the wheels slip in the simulator, set SIM_WHEEL_SLIP = 0.05 at the top
-of easyswerve/sim/physics.py.
+Setup first: VISION_ENABLED = True in robot_settings.py (with measured
+cameras, measured=True), remove the # before photonlibpy in pyproject.toml,
+run py -m robotpy sync, then deploy.
 
-Try it in the simulator: click Autonomous and watch the terminal. "truth" in
-the simulator's status line is where the robot really is.
+On the robot: put it about 2 m in front of an AprilTag, facing it, with
+2 m of clear floor behind it. Enable in Autonomous: it drives back and forth
+for 12 seconds. Watch the console, then measure where the robot really is
+with a tape measure and see which position was closer.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2
@@ -75,18 +76,12 @@ class MyRobot(commands2.TimedCommandRobot):
             self.drivetrain.driveFor(1.5, forward=0.3),  # ...and come back
         )
         return commands2.SequentialCommandGroup(
-            commands2.InstantCommand(self.startInFrontOfTag),
+            commands2.InstantCommand(self.startTogether),
             backAndForth.repeatedly().withTimeout(12.0),
         )
 
-    def startInFrontOfTag(self) -> None:
-        # In the simulator, put the robot 2 m in front of the first tag, facing
-        # it. On the real robot, place it where the front camera sees a tag.
-        if wpilib.RobotBase.isSimulation():
-            spot = self.drivetrain.vision.poseInFrontOfTag(distanceM=2.0)
-            if spot is not None:
-                self.drivetrain.resetOdometry(spot)
-        # Both trackers start from the same place
+    def startTogether(self) -> None:
+        # Both trackers start from the same place: wherever the robot is now
         self.wheelsOnly.resetPosition(
             self.drivetrain.gyroRotation(),
             self.drivetrain.modulePositions(),

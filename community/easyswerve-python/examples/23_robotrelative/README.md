@@ -4,9 +4,9 @@
 
 Drive like a remote-control car: pushing forward moves the way the robot's front points.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder, run py -m robotpy sim, plug in an Xbox controller, drag it from System Joysticks onto Joystick slot 0, and click **Teleoperated**. Turn the robot, then push forward.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Plug an Xbox controller into the Driver Station laptop (it should be in slot 0 on the USB tab), clear some space, and enable in **Teleoperated**. Turn the robot, then push forward.
 
 ## The code to look at
 

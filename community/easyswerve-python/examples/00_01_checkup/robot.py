@@ -11,10 +11,8 @@ On the robot: deploy, leave the robot DISABLED, and read the console
 (Driver Station or the VS Code terminal). Fix every PROBLEM line, from the top
 down, deploy again, and repeat until everything says OK.
 
-Try it in the simulator: run it and read the terminal.
-
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

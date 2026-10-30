@@ -52,7 +52,7 @@ self.controller.rightBumper().whileTrue(self.drivetrain.lockWheels())
 
 Try it: copy that line, change rightBumper to a and lockWheels to stop, then run the simulator again.
 
-More ideas are in examples/: each folder has a robot.py you can copy over this one (examples/README.md lists them in order, and each folder has a README.md explaining it). examples/01_basic/robot.py puts the original back.
+More ideas are in examples/: each folder has a robot.py you can copy over this one and deploy to the robot (examples/README.md lists them in order, and each folder has a README.md explaining it). examples/01_basic/robot.py puts the original back.
 
 ## Day 3: Draw an auto
 
@@ -84,7 +84,6 @@ py -m robotpy deploy
 3. Follow that step's README, fix what it finds, and go on to the next.
 4. When step 10 is done, copy examples/01_basic/robot.py back over robot.py and deploy. Now drive.
 
-Practice first: set SIM_PRACTICE_MISTAKES = True near the top of easyswerve/sim/physics.py, and the simulator becomes a robot with wiring mistakes for the setup steps to find. Set it back to False afterwards.
 
 Deploy again any time you change robot.py or robot_settings.py.
 

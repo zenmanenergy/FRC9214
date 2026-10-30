@@ -6,12 +6,8 @@ Teach the robot which way "straight ahead" is for each wheel. Do this once on
 a new robot, and again whenever a module or encoder is taken apart, or after
 changing encoder_reversed or encoder_dio (so do 00_03 first).
 
-Try it in the simulator: click Disabled, then press Back on the controller (or
-the Calibrate button on the dashboard). The terminal prints each wheel's angle
-every 2 seconds while disabled.
-
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import math

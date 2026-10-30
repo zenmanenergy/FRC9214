@@ -4,9 +4,9 @@
 
 Connect several controller buttons to commands.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder, run py -m robotpy sim, plug in an Xbox controller, drag it from System Joysticks onto Joystick slot 0, and click **Teleoperated**. Press A, B, X, Y and Start while driving.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Plug an Xbox controller into the Driver Station laptop (it should be in slot 0 on the USB tab), clear some space, and enable in **Teleoperated**. Press A, B, X, Y and Start while driving.
 
 ## The code to look at
 

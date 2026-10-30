@@ -4,9 +4,9 @@
 
 Drive one path from the PathPlanner app directly, without making an auto for it.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder, run py -m robotpy sim, and click **Autonomous**.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot on the floor with about 3 m of clear space around it and someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**.
 
 ## The code to look at
 

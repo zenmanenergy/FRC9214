@@ -2,13 +2,13 @@
 """
 EXAMPLE: Print messages
 
-Commands don't have to move anything. PrintCommand writes to the terminal,
+Commands don't have to move anything. PrintCommand writes to the console,
 which is handy for seeing what your auto is doing.
 
-Try it in the simulator: click Autonomous. Watch the terminal.
+On the robot: enable in Autonomous. Watch the console.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

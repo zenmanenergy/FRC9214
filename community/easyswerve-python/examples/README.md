@@ -2,15 +2,17 @@
 
 Each folder has a robot.py that shows one idea, and a README.md that explains it: what it does, the code to look at, the key ideas, and things to try. The numbers are the order to try them in; each one builds on the ones before.
 
-To try one:
+To try one on the robot:
 
-1. Copy the example's robot.py over robot.py in the project folder (the one next to robot_settings.py). In VS Code: right-click the example's robot.py, Copy, then right-click the project folder, Paste, and choose Replace.
-2. Run the simulator: py -m robotpy sim
-3. Read the example's README.md while you try it.
+1. Do the setup steps (00_01 to 00_10) first, once, on a new robot.
+2. Copy the example's robot.py over robot.py in the project folder (the one next to robot_settings.py). In VS Code: right-click the example's robot.py, Copy, then right-click the project folder, Paste, and choose Replace.
+3. Connect to the robot and deploy: py -m robotpy deploy
+4. Clear space around the robot, have someone ready to disable (Enter disables, space bar is the emergency stop), then enable in the mode the example's README says.
+5. Read the example's README.md while you try it.
 
-To go back to the start: copy examples/01_basic/robot.py over robot.py.
+To go back to the start: copy examples/01_basic/robot.py over robot.py and deploy.
 
-Every example's auto uses gentle speeds (about 2 meters per move), so they're safe to try on the real robot too, with room to move.
+Every example's auto uses gentle speeds (about 2 meters per move), but the robot still moves: give it about 3 m of clear floor.
 
 ## Setup: do these first, in order (00_01 to 00_10)
 
@@ -29,7 +31,6 @@ On a new robot, or after rebuilding a module, go through these before driving. T
 | 9 | [00_09_gyrocheck](00_09_gyrocheck/README.md) | check the gyro: calibrating, drift, turning test | on the floor |
 | 10 | [00_10_wheeldiameter](00_10_wheeldiameter/README.md) | measure the real wheel size so distances are right | on the floor |
 
-Practice in the simulator first: set SIM_PRACTICE_MISTAKES = True near the top of easyswerve/sim/physics.py, and the simulated robot is wired with mistakes for these steps to find. Set it back to False when you're done.
 
 ## Start here
 
@@ -37,7 +38,7 @@ Practice in the simulator first: set SIM_PRACTICE_MISTAKES = True near the top o
 |---|---|---|
 | 01 | [01_basic](01_basic/README.md) | the starting robot: drive, 2 buttons, PathPlanner autos |
 
-## Simple autos (click Autonomous)
+## Simple autos (enable in Autonomous)
 
 | # | Folder | What it shows |
 |---|---|---|
@@ -66,7 +67,7 @@ Practice in the simulator first: set SIM_PRACTICE_MISTAKES = True near the top o
 | 19 | [19_paththenturn](19_paththenturn/README.md) | a path, then a turn |
 | 20 | [20_namedcommands](20_namedcommands/README.md) | autos that run your commands by name |
 
-## Buttons and driving (click Teleoperated, needs a controller)
+## Buttons and driving (enable in Teleoperated, needs a controller)
 
 | # | Folder | What it shows |
 |---|---|---|

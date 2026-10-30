@@ -4,9 +4,9 @@
 
 Let autos drawn in the PathPlanner app run your own commands, by name.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder, run py -m robotpy sim, and click **Autonomous**. Look for "Hello from auto!" in the terminal at the end.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot on the floor with about 3 m of clear space around it and someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**. Look for "Hello from auto!" in the console at the end.
 
 ## The code to look at
 

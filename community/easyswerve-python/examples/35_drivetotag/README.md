@@ -4,11 +4,11 @@
 
 Line up in front of an AprilTag automatically. Hold A and the robot drives itself to a spot 1 m in front of a tag, facing it, steering around field obstacles. The tag's spot comes from the field map; the robot's position comes from wheels, gyro and cameras together. Good for lining up to score or pick up.
 
-## Run it
+## On the robot
 
-**Setup first (once):** set VISION_ENABLED = True in robot_settings.py. For the simulator, also remove the # in front of photonlibpy in pyproject.toml and run py -m robotpy sync. On the real robot, the camera names in robot_settings.py (CAMERAS) must match the names in the PhotonVision web page exactly, and photonlibpy's version must match the PhotonVision version on the Orange Pi (docs/VISION.md). With vision off the example still runs; it just prints that vision is off.
+**Setup first (once):** set VISION_ENABLED = True in robot_settings.py, remove the # in front of photonlibpy in pyproject.toml, and run py -m robotpy sync before deploying. The camera names in robot_settings.py (CAMERAS) must match the names in the PhotonVision web page exactly, and photonlibpy's version must match the PhotonVision version on the Orange Pi (docs/VISION.md). With vision off the example still runs; it just prints that vision is off.
 
-Copy this folder's robot.py over robot.py, run py -m robotpy sim, and click **Autonomous**. The robot starts 2 m back and 1 m to the side of the goal and drives up to it. The terminal prints the goal position at startup.
+This needs measured cameras (measured=True; docs/VISION.md). Copy this folder's robot.py over robot.py and deploy. Put the robot about 3 m from the tag, a little to the side, where the cameras see tags, with a clear path and someone ready to disable. Enable in **Autonomous**: it drives slowly to 1 m in front of the tag. The console prints the goal position at startup.
 
 ## The code to look at
 
@@ -33,7 +33,7 @@ self.controller.a().whileTrue(self.driveToGoal())
 
 ## Key ideas
 
-- **This needs measured cameras.** Driving to a spot only works if the robot knows where it is. Unmeasured cameras (measured=False) don't correct the position, so the robot goes where it thinks the spot is, using wheels only. (The simulator uses the placeholder cameras anyway, so it works there right away.)
+- **This needs measured cameras.** Driving to a spot only works if the robot knows where it is. Unmeasured cameras (measured=False) don't correct the position, so the robot goes where it thinks the spot is, using wheels only.
 - **Field map.** Every tag's position is published by FIRST each season. The code loads it, so you name a tag number instead of measuring the field.
 - **Pathfinding.** The robot plans around obstacles in the PathPlanner navgrid (deploy/pathplanner/navgrid.json).
 

@@ -13,13 +13,9 @@ and press the D-pad: up = straight ahead, left = 90 left, right = 90 right,
 down = backwards (180). Or enable in Autonomous to go through them all.
 LOOK: are all four wheels parallel and pointing the way the console says?
 
-Try it in the simulator: click Autonomous and read the terminal.
-
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
-
-import math
 
 import commands2
 import wpilib
@@ -92,10 +88,6 @@ class MyRobot(commands2.TimedCommandRobot):
             took = self.arrived.get(name)
             line = f"  {name}: off by {error:+5.1f} deg, "
             line += f"settled in {took:.2f} s" if took is not None else "NEVER got there"
-            seen = getattr(module, "simSeenSteerDeg", None)  # simulator only
-            if seen is not None:
-                real = angleError(seen - math.degrees(module.chassisAngularOffset), 0.0)
-                line += f"   (simulator: really pointing {real:+.0f} deg)"
             print(line)
             if took is None or abs(error) > CLOSE_DEG:
                 problems += 1

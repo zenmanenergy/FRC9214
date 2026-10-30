@@ -12,10 +12,6 @@ The first thing to run on a new robot, before anything moves. It checks that the
 4. For each PROBLEM line, top first: fix the wiring or the number in robot_settings.py, deploy again, and check again.
 5. When every line is OK (the steering zeros line can wait until step 4), go on.
 
-## In the simulator
-
-Copy this folder's robot.py over robot.py, run py -m robotpy sim, then read the terminal. (In the simulator every part answers, so you'll mostly see OK. The steering zeros line says PROBLEM until step 4.) Want something to find? The simulated robot is wired perfectly unless you set SIM_PRACTICE_MISTAKES = True near the top of easyswerve/sim/physics.py. Then it has a few wiring mistakes and its steering isn't zeroed, like a robot fresh off the build table. Work through the setup steps in order and fix robot_settings.py as they tell you.
-
 ## The code to look at
 
 ```python

@@ -4,9 +4,9 @@
 
 Hold the left trigger to drive at 30 % speed for careful lining up.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder, run py -m robotpy sim, plug in an Xbox controller, drag it from System Joysticks onto Joystick slot 0, and click **Teleoperated**. Drive, then hold the left trigger.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Plug an Xbox controller into the Driver Station laptop (it should be in slot 0 on the USB tab), clear some space, and enable in **Teleoperated**. Drive, then hold the left trigger.
 
 ## The code to look at
 

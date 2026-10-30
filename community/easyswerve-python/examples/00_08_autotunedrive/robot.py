@@ -14,12 +14,8 @@ On the robot: wheels ON the floor, at least 2.5 m of clear floor IN FRONT of
 the robot, someone at the Disable button. Driver Station in Test mode,
 then Enable. It takes about 30 seconds. Read the console.
 
-Try it in the simulator: click Test, then watch the terminal. (The simulator's
-"true" motor numbers are SIM_DRIVE_KS and SIM_DRIVE_KV in
-easyswerve/sim/physics.py: autotune should come close to them.)
-
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

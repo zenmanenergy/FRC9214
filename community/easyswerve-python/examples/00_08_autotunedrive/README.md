@@ -12,10 +12,6 @@ Tunes the drive motors. A wheel's speed depends on voltage in a simple, steady w
 4. Driver Station in **Test** mode, then **Enable**. About 30 seconds. Disable stops it at once (nothing is saved then).
 5. Read the console for the results; they're saved automatically.
 
-## In the simulator
-
-Copy this folder's robot.py over robot.py, run py -m robotpy sim, and click **Test**. The simulator's true motor numbers are SIM_DRIVE_KS and SIM_DRIVE_KV at the top of easyswerve/sim/physics.py; autotune should find them almost exactly.
-
 ## The code to look at
 
 ```python
@@ -35,9 +31,8 @@ commands2.CommandScheduler.getInstance().schedule(self.tuneCommand)
 
 ## Try this
 
-1. Change SIM_DRIVE_KV in easyswerve/sim/physics.py, run it again in the simulator, and check that autotune finds the new value.
-2. Real robot: compare kS of the four wheels. Which has the most friction?
-3. Look at Autotune/ on the dashboard: the steering autotune button there is another way to tune the steering (P only).
+1. Real robot: compare kS of the four wheels. Which has the most friction?
+2. Look at Autotune/ on the dashboard: the steering autotune button there is another way to tune the steering (P only).
 
 Next: [00_09_gyrocheck](../00_09_gyrocheck/README.md)
 

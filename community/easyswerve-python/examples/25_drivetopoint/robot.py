@@ -6,11 +6,11 @@ Hold A and the robot drives itself to a spot on the field, steering around
 obstacles. Let go and you're driving again. Spots are in meters from the
 blue alliance corner.
 
-Try it in the simulator: plug in a controller, drag it onto Joystick slot 0,
-and click Teleoperated. Drive somewhere, then hold A.
+On the robot: plug a controller into the Driver Station laptop,
+and enable in Teleoperated. Drive somewhere, then hold A.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

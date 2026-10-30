@@ -7,11 +7,11 @@ addCommand connects that name to real code. The Test S-Curve auto already
 runs printHello at the end. In the app, try adding a Named Command block
 called lockWheels to an auto.
 
-Try it in the simulator: click Autonomous. Look for "Hello from auto!" in
-the terminal.
+On the robot: enable in Autonomous. Look for "Hello from auto!" in
+the console.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

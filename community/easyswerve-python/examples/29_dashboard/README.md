@@ -4,9 +4,9 @@
 
 Put the robot's position and heading on the dashboard, updated live.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py, run py -m robotpy sim, open Elastic (connected to localhost), add the My Robot values to a tab, and click **Autonomous**.
+Copy this folder's robot.py over robot.py and deploy (py -m robotpy deploy). Open Elastic (connected to the robot) and add the My Robot values to a tab. Clear space, someone ready to disable, then enable in **Autonomous**.
 
 ## The code to look at
 

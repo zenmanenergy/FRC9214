@@ -12,10 +12,6 @@ Make the robot's distances match the real world. The drive encoders count wheel 
 4. Measure from the tape mark to the front bumper and type it into the dashboard box "Wheel Check/Measured distance (m)", then disable.
 5. Copy the suggested WHEEL_DIAMETER_M into robot_settings.py and deploy. Run it again to check.
 
-## In the simulator
-
-In the simulator: set SIM_WHEEL_SLIP = 0.05 at the top of easyswerve/sim/physics.py (so there's an error to find), copy this folder's robot.py over robot.py, run py -m robotpy sim, and click **Autonomous**. When it stops, the terminal prints the encoder distance; the real distance is the truth x= number in the status line. Type that into the dashboard box "Wheel Check/Measured distance (m)" (Elastic, connected to localhost) and click **Disabled**.
-
 ## The code to look at
 
 ```python

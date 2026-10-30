@@ -4,9 +4,9 @@
 
 The starting robot. Everything every robot.py in this folder has in common, plus driving with a controller, two buttons, and autos from the PathPlanner app. Read this one carefully: all the other examples change just one or two parts of it.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder, run py -m robotpy sim, and click **Autonomous**. The robot drives the S-Curve auto and prints "Hello from auto!" at the end.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). In the dashboard (Elastic), pick **Test S-Curve** in the Auto chooser. Put the robot on the floor with about 3 m clear in front and 1.5 m to the left, someone ready to disable, then enable in **Autonomous**. It drives an S-shaped path and prints "Hello from auto!" in the console at the end.
 
 ## The code to look at
 

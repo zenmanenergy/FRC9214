@@ -12,10 +12,6 @@ The "do the wheels turn in sync, to the right angle" test. Now the steering uses
 4. LOOK: are all four wheels parallel, pointing the way the console says?
 5. A wheel off or never settling: go back to step 3 (directions) and step 4 (zeros).
 
-## In the simulator
-
-Copy this folder's robot.py over robot.py, run py -m robotpy sim, then click **Autonomous**. In the simulator the console also says where each wheel REALLY points: try it with SIM_PRACTICE_MISTAKES = True before zeroing, and see how the code can think everything is fine while the wheels point every which way.
-
 ## The code to look at
 
 ```python

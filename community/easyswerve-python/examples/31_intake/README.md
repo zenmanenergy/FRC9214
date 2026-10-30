@@ -4,9 +4,9 @@
 
 A mechanism written properly, as a subsystem: an Intake class with commands it can do. Buttons use it in teleop, and the auto drives while the intake runs.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder, run py -m robotpy sim, and click **Autonomous**. The terminal shows intake on, then intake off when the drive ends.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot on the floor with about 3 m of clear space around it and someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**. The console shows intake on, then intake off when the drive ends.
 
 ## The code to look at
 

@@ -5,11 +5,11 @@ EXAMPLE: Pick an auto on the dashboard
 A SendableChooser shows a drop-down list on the dashboard. The drive team
 picks an auto before the match, without changing code.
 
-Try it in the simulator: open Elastic (connected to localhost), pick an auto
-in the Auto chooser, then click Autonomous.
+On the robot: open Elastic (connected to the robot), pick an auto
+in the Auto chooser, then enable in Autonomous.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

@@ -4,9 +4,9 @@
 
 Hold A: the robot drives itself to the start of a path, then follows it exactly. Good for lining up the same way every time.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder, run py -m robotpy sim, plug in an Xbox controller, drag it from System Joysticks onto Joystick slot 0, and click **Teleoperated**. Hold A.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Plug an Xbox controller into the Driver Station laptop (it should be in slot 0 on the USB tab), clear some space, and enable in **Teleoperated**. Hold A.
 
 ## The code to look at
 

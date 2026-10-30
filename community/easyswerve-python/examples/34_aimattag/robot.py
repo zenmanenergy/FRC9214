@@ -7,21 +7,20 @@ while the left stick still drives. This uses what the camera sees directly
 (how far left or right the tag is in the picture), so it works even before
 the cameras are measured.
 
-Setup first: VISION_ENABLED = True in robot_settings.py, and in the simulator
-also remove the # before photonlibpy in pyproject.toml, then py -m robotpy sync.
+Setup first: VISION_ENABLED = True in robot_settings.py, remove the # before
+photonlibpy in pyproject.toml, run py -m robotpy sync, then deploy.
 
-Try it in the simulator: click Autonomous. The robot starts near a tag,
-turned away from it, and turns to aim at it.
+On the robot: put it about 2.5 m from an AprilTag, turned a little away from
+it (the tag still in the front camera's view). Enable in Autonomous: it turns
+in place to aim at the tag.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2
-import wpilib
 import wpimath
 from commands2.button import CommandXboxController
-from wpimath.geometry import Pose2d, Rotation2d
 
 import robot_settings
 from easyswerve import Drivetrain
@@ -69,22 +68,12 @@ class MyRobot(commands2.TimedCommandRobot):
     def makeAuto(self):
         """Builds the command that runs in autonomous."""
         return commands2.SequentialCommandGroup(
-            commands2.InstantCommand(self.startNearTag),
             commands2.RunCommand(
                 lambda: self.drivetrain.drive(0, 0, self.aimTurnSpeed(), False),
                 self.drivetrain,
             ).withTimeout(4.0),
             commands2.PrintCommand("Aimed: is the tag in the middle of the picture?"),
         )
-
-    def startNearTag(self) -> None:
-        # In the simulator, start 2.5 m in front of the first tag, turned 20
-        # degrees away from it. On the real robot, place it facing near a tag.
-        if wpilib.RobotBase.isSimulation():
-            spot = self.vision.poseInFrontOfTag(distanceM=2.5)
-            if spot is not None:
-                turnedAway = spot.rotation() + Rotation2d.fromDegrees(20)
-                self.drivetrain.resetOdometry(Pose2d(spot.translation(), turnedAway))
 
     def autonomousInit(self) -> None:
         self.autoCommand = self.makeAuto()

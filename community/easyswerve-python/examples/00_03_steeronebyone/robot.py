@@ -16,11 +16,8 @@ Teleoperated, and HOLD a button: A = front left, B = front right,
 X = rear left, Y = rear right. WATCH the wheel: which one turned, and which way?
 Or enable in Autonomous to test all four, one after another.
 
-Try it in the simulator: click Autonomous. The simulator also says which way
-the wheel really turned (on the robot, you look).
-
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2
@@ -93,7 +90,6 @@ class MyRobot(commands2.TimedCommandRobot):
         # Remember where every sensor started
         self.motorStart = {n: t.total for n, t in self.motorSensor.items()}
         self.encoderStart = {n: t.total for n, t in self.encoder.items()}
-        self.seenStart = getattr(self.drivetrain.module(name), "simSeenSteerDeg", None)
         print(f"---- {name}: steering motor at +{TEST_VOLTS} V. WATCH the wheel. ----")
 
     def endTest(self, name: str) -> None:
@@ -104,12 +100,6 @@ class MyRobot(commands2.TimedCommandRobot):
         mine = enc[name]
         setting = SETTING_NAMES[name]
         print(f"  motor sensor turned {motor:+.0f} deg, encoder turned {mine:+.0f} deg")
-
-        # Simulator only: what you would have seen
-        seen = getattr(module, "simSeenSteerDeg", None)
-        if seen is not None and self.seenStart is not None:
-            way = "counterclockwise" if seen > self.seenStart else "CLOCKWISE"
-            print(f"  (simulator: the {name} wheel really turned {way})")
 
         # 1. Did the motor turn at all?
         if abs(motor) < 10:

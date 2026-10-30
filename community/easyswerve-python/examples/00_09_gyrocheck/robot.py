@@ -6,11 +6,8 @@ The navX gyro tells the robot which way it faces. This checks the three things
 that go wrong with gyros: still calibrating, drifting while the robot sits
 still, and turns that don't add up.
 
-Try it in the simulator: click Disabled and watch the terminal (calibrating,
-heading, drift), then click Autonomous for the turning test.
-
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

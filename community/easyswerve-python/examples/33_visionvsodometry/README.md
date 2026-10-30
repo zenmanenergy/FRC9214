@@ -4,11 +4,11 @@
 
 See why cameras help. The robot tracks its position two ways at once: wheels only (encoders and gyro, called odometry) and wheels + cameras (the drivetrain's real position, corrected whenever a camera sees a tag). Once a second it prints both and how far apart they are. With slipping wheels, the wheels-only position drifts and the cameras pull the real one back.
 
-## Run it
+## On the robot
 
-**Setup first (once):** set VISION_ENABLED = True in robot_settings.py. For the simulator, also remove the # in front of photonlibpy in pyproject.toml and run py -m robotpy sync. On the real robot, the camera names in robot_settings.py (CAMERAS) must match the names in the PhotonVision web page exactly, and photonlibpy's version must match the PhotonVision version on the Orange Pi (docs/VISION.md). With vision off the example still runs; it just prints that vision is off.
+**Setup first (once):** set VISION_ENABLED = True in robot_settings.py, remove the # in front of photonlibpy in pyproject.toml, and run py -m robotpy sync before deploying. The camera names in robot_settings.py (CAMERAS) must match the names in the PhotonVision web page exactly, and photonlibpy's version must match the PhotonVision version on the Orange Pi (docs/VISION.md). With vision off the example still runs; it just prints that vision is off.
 
-To make the wheels slip, set SIM_WHEEL_SLIP = 0.05 at the top of easyswerve/sim/physics.py. Copy this folder's robot.py over robot.py, run py -m robotpy sim, and click **Autonomous**. The robot drives back and forth in front of a tag. Compare both positions with truth x= y= in the simulator's status line, which is where the robot really is.
+This needs measured cameras (measured=True; docs/VISION.md). Copy this folder's robot.py over robot.py and deploy. Put the robot about 2 m in front of an AprilTag, facing it, with 2 m of clear floor behind it, and enable in **Autonomous**: it drives back and forth for 12 seconds. Afterwards, measure where the robot really is with a tape measure: which position was closer?
 
 ## The code to look at
 
@@ -45,7 +45,7 @@ self.wheelsOnly.resetPosition(
 
 ## Try this
 
-1. Run it with SIM_WHEEL_SLIP = 0 and then 0.05. How far apart do the two get each time?
+1. Run it on carpet, then on a slippery floor. How far apart do the two get each time?
 2. Set VISION_ENABLED = False. Now both positions should match exactly. Why?
 3. Change the auto to drive back and forth longer (withTimeout(30)). Does the wheels-only error keep growing?
 4. Real robot: drive around the field for a minute, then park on a line you can measure to. Which position is closer?

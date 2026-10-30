@@ -4,9 +4,9 @@
 
 Use two controllers: the driver drives, and an operator runs everything else.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py, run py -m robotpy sim, plug in two controllers, drag them onto Joystick slots 0 and 1, and click **Teleoperated**.
+Copy this folder's robot.py over robot.py and deploy (py -m robotpy deploy). Plug two controllers into the Driver Station laptop; on the USB tab, drag the driver's to slot 0 and the operator's to slot 1. Clear some space and enable in **Teleoperated**.
 
 ## The code to look at
 

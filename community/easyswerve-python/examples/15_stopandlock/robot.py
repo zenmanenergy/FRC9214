@@ -5,10 +5,10 @@ EXAMPLE: Drive, then lock the wheels
 At the end of an auto, lock the wheels in an X so other robots can't push
 yours out of position.
 
-Try it in the simulator: click Autonomous.
+On the robot: enable in Autonomous.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

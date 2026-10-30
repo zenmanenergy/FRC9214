@@ -5,10 +5,11 @@ YOUR ROBOT
 What the controller buttons do, and what runs in autonomous. Wiring and
 measurements are in robot_settings.py.
 
-Try it in the simulator: click Autonomous. The robot drives the S-Curve auto.
+On the robot: deploy (py -m robotpy deploy), pick an auto in the dashboard's
+Auto chooser, and enable in Autonomous.
 
 More ideas: the examples folder has one robot.py per idea. Copy one over this
-file to try it (examples/01_basic/robot.py puts this one back).
+file and deploy to try it (examples/01_basic/robot.py puts this one back).
 """
 
 import commands2

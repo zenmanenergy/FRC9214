@@ -4,10 +4,10 @@ EXAMPLE: Drive in an arc
 
 Driving forward and turning at the same time makes a curve, like a car.
 
-Try it in the simulator: click Autonomous.
+On the robot: enable in Autonomous.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

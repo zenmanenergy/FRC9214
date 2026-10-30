@@ -4,9 +4,9 @@
 
 Turn in a circle without moving: 3 seconds of spinning counterclockwise.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder, run py -m robotpy sim, and click **Autonomous**.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot on the floor with about 3 m of clear space around it and someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**.
 
 ## The code to look at
 
@@ -24,7 +24,7 @@ return self.drivetrain.driveFor(3.0, turn=0.3)
 
 ## Try this
 
-1. Work out how long one full turn takes at turn=0.3: 360 / 108 = 3.33 seconds. Change 3.0 to 3.33. Does it end facing where it started? (h= in the status line is the heading.)
+1. Work out how long one full turn takes at turn=0.3: 360 / 108 = 3.33 seconds. Change 3.0 to 3.33. Does it end facing where it started? (Put a tape line along one side before you start.)
 2. Try turn=-0.3 to spin clockwise.
 
 To go back to the starting robot, copy 01_basic/robot.py over robot.py.

@@ -12,10 +12,6 @@ Checks every drive motor's direction and that all four run in sync. It points ev
 4. LOOK: does the wheel roll forward (the top of the wheel moving toward the front of the robot)?
 5. Rolled backwards: flip drive_motor_bottom for that module in robot_settings.py. Deploy and test again.
 
-## In the simulator
-
-Copy this folder's robot.py over robot.py, run py -m robotpy sim, then click **Autonomous**. The simulated robot isn't on blocks, so it drives around a little. The console says which way each wheel really rolled. Want something to find? The simulated robot is wired perfectly unless you set SIM_PRACTICE_MISTAKES = True near the top of easyswerve/sim/physics.py. Then it has a few wiring mistakes and its steering isn't zeroed, like a robot fresh off the build table. Work through the setup steps in order and fix robot_settings.py as they tell you.
-
 ## The code to look at
 
 ```python
@@ -46,7 +42,6 @@ if fastest > 0 and (fastest - slowest) / fastest > 0.15:
 
 1. At 1.5 V, about how fast should a wheel go? (Hint: the drive kV is about 2.5 V per m/s, and some voltage goes to friction.) Compare with the console.
 2. Change TEST_VOLTS to 3.0. Is the speed about twice as fast?
-3. Simulator with SIM_PRACTICE_MISTAKES = True: which wheel rolls backwards? Fix it.
 
 Next: [00_07_zieglernichols](../00_07_zieglernichols/README.md)
 

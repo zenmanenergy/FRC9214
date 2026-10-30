@@ -5,11 +5,11 @@ EXAMPLE: Driver and operator
 Many teams use two controllers: the driver drives, the operator runs the
 rest. The operator's controller is in Driver Station slot 1.
 
-Try it in the simulator: plug in two controllers, drag them onto Joystick
-slots 0 and 1, and click Teleoperated.
+On the robot: plug two controllers into the Driver Station
+laptop (USB slots 0 and 1), and enable in Teleoperated.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

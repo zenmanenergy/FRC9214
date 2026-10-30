@@ -5,11 +5,11 @@ EXAMPLE: Drive a distance
 driveFor uses time; driveDistance uses the wheel encoders to drive an exact
 distance, however fast it goes. Negative meters drives backward.
 
-Try it in the simulator: click Autonomous. The robot stops 2 meters from
+On the robot: enable in Autonomous. The robot stops 2 meters from
 where it started.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

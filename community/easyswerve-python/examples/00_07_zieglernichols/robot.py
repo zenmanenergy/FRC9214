@@ -19,10 +19,8 @@ On the robot: wheels ON the floor (that's the load they steer in a match),
 robot on a clear patch of floor. Enable in Autonomous. The wheels wiggle
 and buzz for about 20 seconds; the robot doesn't drive. Read the console.
 
-Try it in the simulator: click Autonomous and read the terminal.
-
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import dataclasses

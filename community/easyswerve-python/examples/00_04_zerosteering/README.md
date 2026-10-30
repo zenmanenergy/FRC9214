@@ -13,10 +13,6 @@ Teach the robot which way each wheel points. The steering encoders measure angle
 5. Copy the backup line (STEERING_ZEROS_DEG = ...) into robot_settings.py, in case the roboRIO is ever reimaged.
 6. Take the hex keys out. The wheel angles printed should now be FL 45, FR -45, RL 135, RR -135.
 
-## In the simulator
-
-Copy this folder's robot.py over robot.py, run py -m robotpy sim, then leave it **Disabled**, and press Back on the controller (or the Calibrate button on the dashboard). Want something to find? The simulated robot is wired perfectly unless you set SIM_PRACTICE_MISTAKES = True near the top of easyswerve/sim/physics.py. Then it has a few wiring mistakes and its steering isn't zeroed, like a robot fresh off the build table. Work through the setup steps in order and fix robot_settings.py as they tell you.
-
 ## The code to look at
 
 ```python
@@ -45,7 +41,7 @@ return self.drivetrain.driveFor(1.5, forward=0.15)
 
 ## Try this
 
-1. Run the check auto. Do all four wheels point straight ahead in the status line (FL, FR, RL, RR near 0, or 180: the same line, rolling the other way)?
+1. Run the check auto. Do all four wheels point straight ahead?
 2. Turn one wheel by hand while disabled (on the real robot) and watch its number change in the printout.
 3. Why must the robot be disabled while zeroing? What would happen if a wheel moved during it?
 4. After zeroing, paste the printed STEERING_ZEROS_DEG line into robot_settings.py. Restart the robot: the console says which zeros it loaded (saved on the roboRIO, or the backup).

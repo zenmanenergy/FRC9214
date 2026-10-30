@@ -4,9 +4,9 @@
 
 Make the controller vibrate while B is held.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py, run py -m robotpy sim, plug in an Xbox controller, drag it onto Joystick slot 0, click **Teleoperated**, and hold B. You'll feel it.
+Copy this folder's robot.py over robot.py and deploy (py -m robotpy deploy). Plug an Xbox controller into the Driver Station laptop, enable in **Teleoperated**, and hold B. You'll feel it.
 
 ## The code to look at
 

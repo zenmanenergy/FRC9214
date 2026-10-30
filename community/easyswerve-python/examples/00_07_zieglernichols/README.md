@@ -12,10 +12,6 @@ Tunes the steering P, I and D by the Ziegler-Nichols "ultimate gain" method, aut
 4. Enable in **Autonomous**. The wheels wiggle and buzz for about 20 seconds; the robot doesn't drive. Disable at any time to stop.
 5. Read the console: Ku and Tu for each module, the gains, and before vs. after. If the after numbers are good, the gains are saved.
 
-## In the simulator
-
-Copy this folder's robot.py over robot.py, run py -m robotpy sim, then click **Autonomous** and read the terminal (about 20 seconds). In the simulator Ku comes out near 13 and Tu near 41 ms.
-
 ## The code to look at
 
 ```python

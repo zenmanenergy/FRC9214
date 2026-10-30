@@ -5,10 +5,10 @@ EXAMPLE: Drive diagonally
 Mix forward and left to drive at an angle: forward and left at the same
 speed goes diagonally forward-left, still facing straight ahead.
 
-Try it in the simulator: click Autonomous.
+On the robot: enable in Autonomous.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

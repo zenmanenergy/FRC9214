@@ -4,11 +4,11 @@
 
 Point the robot straight at an AprilTag. Hold A and the robot turns until the tag is in the middle of the front camera's picture, while the left stick still drives. This uses the camera's picture directly, not the field map, so it works even before the cameras are measured. Good for aiming a shooter.
 
-## Run it
+## On the robot
 
-**Setup first (once):** set VISION_ENABLED = True in robot_settings.py. For the simulator, also remove the # in front of photonlibpy in pyproject.toml and run py -m robotpy sync. On the real robot, the camera names in robot_settings.py (CAMERAS) must match the names in the PhotonVision web page exactly, and photonlibpy's version must match the PhotonVision version on the Orange Pi (docs/VISION.md). With vision off the example still runs; it just prints that vision is off.
+**Setup first (once):** set VISION_ENABLED = True in robot_settings.py, remove the # in front of photonlibpy in pyproject.toml, and run py -m robotpy sync before deploying. The camera names in robot_settings.py (CAMERAS) must match the names in the PhotonVision web page exactly, and photonlibpy's version must match the PhotonVision version on the Orange Pi (docs/VISION.md). With vision off the example still runs; it just prints that vision is off.
 
-Copy this folder's robot.py over robot.py, run py -m robotpy sim, and click **Autonomous**. The robot starts 2.5 m from a tag, turned 20 degrees away, and turns to face it. Watch the Field widget.
+Copy this folder's robot.py over robot.py and deploy. Put the robot about 2.5 m from an AprilTag, turned a little away from it (the tag still in the front camera's view), and enable in **Autonomous**: it turns in place to face the tag.
 
 ## The code to look at
 

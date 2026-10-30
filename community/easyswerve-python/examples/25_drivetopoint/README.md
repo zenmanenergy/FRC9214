@@ -4,9 +4,9 @@
 
 Hold A and the robot drives itself to a spot on the field, steering around obstacles. Let go and the driver is back in control.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder, run py -m robotpy sim, plug in an Xbox controller, drag it from System Joysticks onto Joystick slot 0, and click **Teleoperated**. Drive somewhere, then hold A.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Plug an Xbox controller into the Driver Station laptop (it should be in slot 0 on the USB tab), clear some space, and enable in **Teleoperated**. Drive somewhere, then hold A.
 
 ## The code to look at
 
@@ -22,7 +22,7 @@ self.controller.a().whileTrue(self.autos.driveTo(2.0, 4.0, 0))
 
 - **Pathfinding.** PathPlanner plans a route from wherever the robot is, around the obstacles in deploy/pathplanner/navgrid.json.
 - **Planned at the moment you press.** The route depends on where the robot is right then.
-- **This needs to know where the robot is on the field.** In the simulator that's easy. On a real field, cameras (docs/VISION.md) keep the position accurate.
+- **This needs to know where the robot is on the field.** Wheels and gyro alone drift a little; cameras (docs/VISION.md) keep it accurate on a real field.
 
 ## Try this
 

@@ -11,10 +11,6 @@ Check the navX gyro, which tells the robot which way it faces. Field-relative dr
 3. Leave it disabled for a minute and watch the drift. It should barely move.
 4. Put tape on the floor along one side of the robot, enable in **Autonomous** for the turning test, and check it ends up lined up with the tape.
 
-## In the simulator
-
-Copy this folder's robot.py over robot.py, run py -m robotpy sim, leave it **Disabled** and watch the terminal, then click **Autonomous** for the turning test. The simulated gyro is perfect, so the real test is on the robot.
-
 ## The code to look at
 
 ```python

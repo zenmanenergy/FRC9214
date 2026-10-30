@@ -5,11 +5,11 @@ EXAMPLE: Point the robot with the D-pad
 The D-pad (POV) is four more buttons. Each one turns the robot to face a
 direction.
 
-Try it in the simulator: plug in a controller, drag it onto Joystick slot 0,
-and click Teleoperated. Press the D-pad.
+On the robot: plug a controller into the Driver Station laptop,
+and enable in Teleoperated. Press the D-pad.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

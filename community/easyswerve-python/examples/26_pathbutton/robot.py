@@ -5,11 +5,11 @@ EXAMPLE: Drive a path from a button
 Hold A: the robot drives itself to the start of a path, then follows it.
 Good for lining up the same way every time.
 
-Try it in the simulator: plug in a controller, drag it onto Joystick slot 0,
-and click Teleoperated. Hold A.
+On the robot: plug a controller into the Driver Station laptop,
+and enable in Teleoperated. Hold A.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

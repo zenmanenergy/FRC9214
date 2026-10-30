@@ -6,20 +6,20 @@ Hold A and the robot drives itself to a spot 1 meter in front of an AprilTag,
 facing it. The tag's position comes from the field map; the robot's position
 comes from the wheels, gyro and cameras together. Good for lining up to score.
 
-Setup first: VISION_ENABLED = True in robot_settings.py, and in the simulator
-also remove the # before photonlibpy in pyproject.toml, then py -m robotpy sync.
+Setup first: VISION_ENABLED = True in robot_settings.py (with measured
+cameras, measured=True), remove the # before photonlibpy in pyproject.toml,
+run py -m robotpy sync, then deploy.
 
-Try it in the simulator: click Autonomous. The robot starts 3 m away from a
-tag, off to the side, and drives up to it.
+On the robot: put it about 3 m from the tag, a little off to the side, where
+the cameras can see tags, with a clear path. Enable in Autonomous: it drives
+itself to 1 m in front of the tag, slowly.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2
-import wpilib
 from commands2.button import CommandXboxController
-from wpimath.geometry import Rotation2d, Transform2d
 
 import robot_settings
 from easyswerve import Autos, Drivetrain
@@ -62,16 +62,9 @@ class MyRobot(commands2.TimedCommandRobot):
         if self.goal is None:
             return None
         return commands2.SequentialCommandGroup(
-            commands2.InstantCommand(self.startAwayFromTag),
             self.driveToGoal(),
             commands2.PrintCommand("Arrived in front of the tag"),
         )
-
-    def startAwayFromTag(self) -> None:
-        # In the simulator, start 2 m further back and 1 m to the side of the
-        # goal. On the real robot, place it anywhere the cameras can see tags.
-        if wpilib.RobotBase.isSimulation():
-            self.drivetrain.resetOdometry(self.goal.transformBy(Transform2d(-2.0, 1.0, Rotation2d())))
 
     def autonomousInit(self) -> None:
         self.autoCommand = self.makeAuto()

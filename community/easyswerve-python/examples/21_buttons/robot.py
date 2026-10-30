@@ -4,11 +4,11 @@ EXAMPLE: More buttons
 
 Buttons run commands. whileTrue: while held. onTrue: once when pressed.
 
-Try it in the simulator: plug in a controller, drag it onto Joystick slot 0,
-and click Teleoperated. Press A, B, X, Y and Start.
+On the robot: plug a controller into the Driver Station laptop,
+and enable in Teleoperated. Press A, B, X, Y and Start.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

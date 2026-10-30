@@ -15,11 +15,8 @@ On the robot: deploy, keep it DISABLED, and for each module in turn:
      "counterclockwise".
   2. Roll its wheel a little by hand. The console should name THAT module.
 
-Try it in the simulator: there are no hands, so click Autonomous and the
-simulator turns each module's steering, then each wheel, one at a time.
-
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2
@@ -102,37 +99,10 @@ class MyRobot(commands2.TimedCommandRobot):
         print(f"{name} wheel (drive CAN {can}) rolled {moved:+.2f} m")
 
     def makeAuto(self):
-        """Simulator only: pretend to turn things by hand, one at a time."""
-        if not wpilib.RobotBase.isSimulation():
-            print("On the real robot, stay disabled and turn the wheels by hand.")
-            return None
-        steps = []
-        for name, module in self.drivetrain.modules:
-            steps.append(commands2.PrintCommand(f"(simulator) turning {name} steering counterclockwise..."))
-            steps.append(self.runFor(lambda m=module: m.spinSteering(1.0), 0.5))
-            steps.append(commands2.WaitCommand(0.5))
-        for name, module in self.drivetrain.modules:
-            steps.append(commands2.PrintCommand(f"(simulator) rolling {name} wheel..."))
-            steps.append(self.runFor(lambda m=module: m.spinWheel(1.0), 0.4))
-            steps.append(commands2.WaitCommand(1.0))  # let it coast to a stop
-        return commands2.SequentialCommandGroup(*steps)
-
-    def runFor(self, action, seconds: float) -> commands2.Command:
-        """Do action every loop for some seconds, then stop all motors."""
-        return commands2.FunctionalCommand(
-            lambda: None,
-            action,
-            lambda interrupted: self.stopAll(),
-            lambda: False,
-            self.drivetrain,
-        ).withTimeout(seconds)
-
-    def stopAll(self) -> None:
-        for _, module in self.drivetrain.modules:
-            module.stopMotors()
+        """Builds the command that runs in autonomous."""
+        return None  # nothing moves: stay disabled and turn the wheels by hand
 
     def autonomousInit(self) -> None:
-        self.stopAll()
         self.autoCommand = self.makeAuto()
         if self.autoCommand is not None:
             commands2.CommandScheduler.getInstance().schedule(self.autoCommand)

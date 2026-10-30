@@ -13,10 +13,6 @@ Check the sensors before any motor runs. You turn a module's steering, or roll a
 5. Repeat for front right (FR), rear left (RL) and rear right (RR).
 6. Wrong name or wrong direction? Fix robot_settings.py (Key ideas below), deploy, and check that module again.
 
-## In the simulator
-
-Copy this folder's robot.py over robot.py, run py -m robotpy sim, then click **Autonomous**: the simulator turns each module's steering, then each wheel, one at a time (it has no hands). Want something to find? The simulated robot is wired perfectly unless you set SIM_PRACTICE_MISTAKES = True near the top of easyswerve/sim/physics.py. Then it has a few wiring mistakes and its steering isn't zeroed, like a robot fresh off the build table. Work through the setup steps in order and fix robot_settings.py as they tell you.
-
 ## The code to look at
 
 ```python
@@ -54,7 +50,6 @@ if self.total != 0.0 and now - self.stillSince >= STILL_S:
 1. Turn one module a full turn. Does the total come out near 360?
 2. Turn it quickly back and forth. Why does it print the total only at the end?
 3. Change STEER_DEG to 1.0. What gets printed now when you bump the robot?
-4. Simulator with SIM_PRACTICE_MISTAKES = True: which modules are on the wrong DIO port? Which encoder reads backwards?
 
 Next: [00_03_steeronebyone](../00_03_steeronebyone/README.md)
 

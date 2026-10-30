@@ -5,11 +5,11 @@ EXAMPLE: Slow mode
 Hold the left trigger to drive at 30 % speed, for careful lining up. This
 writes its own driving command instead of using driveWithController.
 
-Try it in the simulator: plug in a controller, drag it onto Joystick slot 0,
-and click Teleoperated. Drive, then hold the left trigger.
+On the robot: plug a controller into the Driver Station laptop,
+and enable in Teleoperated. Drive, then hold the left trigger.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

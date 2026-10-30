@@ -4,9 +4,9 @@
 
 Drive exactly 2 meters, measured with the wheel encoders, instead of driving for a time.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder, run py -m robotpy sim, and click **Autonomous**. The robot stops about 2 meters from where it started.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot on the floor with about 3 m of clear space around it and someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**. The robot stops about 2 meters from where it started.
 
 ## The code to look at
 

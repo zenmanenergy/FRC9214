@@ -5,11 +5,12 @@ EXAMPLE: Basic robot (the starting robot.py)
 Driving with a controller, two buttons, and autos from the PathPlanner app.
 Copy this back over robot.py to start over.
 
-Try it in the simulator: click Autonomous. The robot drives the S-Curve
-auto.
+On the robot: in the dashboard (Elastic), pick "Test S-Curve" in the Auto
+chooser, then enable in Autonomous. The robot drives an S-shaped path, about
+3 m forward and 1 m to the side: clear the floor first.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

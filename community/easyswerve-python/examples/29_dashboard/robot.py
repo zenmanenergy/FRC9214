@@ -5,11 +5,11 @@ EXAMPLE: Show numbers on the dashboard
 robotPeriodic runs 50 times a second in every mode. SmartDashboard puts
 values on the dashboard, where you can watch them live.
 
-Try it in the simulator: open Elastic (connected to localhost), click
+On the robot: open Elastic (connected to the robot), enable in
 Autonomous, and add the My Robot values to a tab.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

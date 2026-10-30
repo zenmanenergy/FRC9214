@@ -4,11 +4,11 @@
 
 The simplest possible auto: drive straight forward for 2 seconds at quarter speed, then stop. About 2 meters.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder, run py -m robotpy sim, and click **Autonomous**.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot on the floor with about 3 m of clear space around it and someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**.
 
-Watch: The status line in the terminal: truth is where the simulated robot really is, odo is where the code thinks it is.
+Watch: Put a tape mark at the front bumper before you start, so you can measure the distance afterwards.
 
 ## The code to look at
 
@@ -30,7 +30,7 @@ return self.drivetrain.driveFor(2.0, forward=0.25)
 
 ## Try this
 
-1. Predict the distance: 0.25 x 4.5 m/s x 2 s = 2.25 m. The terminal prints the robot's position every half second (the truth x= number). How close was your prediction?
+1. Predict the distance: 0.25 x 4.5 m/s x 2 s = 2.25 m. Measure how far it really went with a tape measure. How close was your prediction?
 2. Try forward=0.5. Does it go twice as far?
 3. Try 1.0 seconds instead of 2.0.
 

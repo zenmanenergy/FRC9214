@@ -4,9 +4,9 @@
 
 The simplest mechanism: one motor on a SPARK MAX. Hold A to spin it one way, B the other.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder, run py -m robotpy sim, plug in an Xbox controller, drag it from System Joysticks onto Joystick slot 0, and click **Teleoperated**. Hold A or B. On the real robot, only use this once a motor with this CAN ID is wired up.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Plug an Xbox controller into the Driver Station laptop (it should be in slot 0 on the USB tab), clear some space, and enable in **Teleoperated**. Hold A or B. Only use this once a motor with this CAN ID is wired up and free to spin.
 
 ## The code to look at
 

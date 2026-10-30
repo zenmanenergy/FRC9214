@@ -5,11 +5,11 @@ EXAMPLE: Make the controller rumble
 StartEndCommand runs one thing when it starts and another when it ends.
 Here: rumble on while B is held, off when let go.
 
-Try it in the simulator: plug in a controller, click Teleoperated, and hold
-B (you'll feel it).
+On the robot: plug a controller into the Driver Station laptop, enable in
+Teleoperated, and hold B (you'll feel it).
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

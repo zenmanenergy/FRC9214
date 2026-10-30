@@ -5,11 +5,11 @@ EXAMPLE: An intake mechanism
 A mechanism as a subsystem (a class), with commands it can do. The buttons
 use them in teleop, and the auto drives forward while the intake runs.
 
-Try it in the simulator: click Autonomous, and watch the terminal: intake
+On the robot: enable in Autonomous, and watch the console: intake
 on, then off when the drive ends.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

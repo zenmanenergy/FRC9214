@@ -4,9 +4,9 @@
 
 Drive to a spot, then lock the wheels in an X so other robots can't push yours away.
 
-## Run it
+## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder, run py -m robotpy sim, and click **Autonomous**.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot on the floor with about 3 m of clear space around it and someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**.
 
 ## The code to look at
 
@@ -27,6 +27,6 @@ return commands2.SequentialCommandGroup(
 ## Try this
 
 1. Put lockWheels in the middle of a sequence, before another move. What happens? Fix it with .withTimeout(1.0).
-2. Watch the wheel angles in the status line while locked: 45 and -45 degrees (a wheel may show 135 or -135 instead: the same line, rolling the other way).
+2. Look at the wheels while locked: they form an X. Try pushing the robot.
 
 To go back to the starting robot, copy 01_basic/robot.py over robot.py.

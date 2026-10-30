@@ -6,10 +6,10 @@ A path is one drawn line in the PathPlanner app. drivePath sets the robot's
 position to the start of the path and drives it. On the real robot, place
 the robot at the path's start first.
 
-Try it in the simulator: click Autonomous.
+On the robot: enable in Autonomous.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

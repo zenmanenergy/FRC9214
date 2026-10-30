@@ -5,11 +5,11 @@ EXAMPLE: Wait, then drive
 WaitCommand pauses. Useful when another robot needs to move out of the way
 first.
 
-Try it in the simulator: click Autonomous. Nothing happens for 3 seconds,
+On the robot: enable in Autonomous. Nothing happens for 3 seconds,
 then it drives.
 
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2

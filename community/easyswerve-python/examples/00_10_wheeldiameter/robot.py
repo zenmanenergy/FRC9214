@@ -7,12 +7,8 @@ WHEEL_DIAMETER_M in robot_settings.py. If that number is wrong (treads wear
 down), every distance and every path is off. This drives a test distance;
 you measure how far it really went, and the robot works out the right number.
 
-Try it in the simulator: click Autonomous. When it stops, read the robot's
-real distance from the terminal (truth x=), type it into the dashboard box
-"Wheel Check/Measured distance (m)", and click Disabled.
-
 To use this example: copy this file over robot.py in the project folder
-(the file next to robot_settings.py), then run the simulator.
+(the file next to robot_settings.py), then deploy: py -m robotpy deploy
 """
 
 import commands2
