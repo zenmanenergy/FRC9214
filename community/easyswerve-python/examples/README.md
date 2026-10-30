@@ -72,3 +72,11 @@ Every example's auto uses gentle speeds (about 2 meters per move), so they're sa
 |---|---|---|
 | 30 | [30_motor](30_motor/README.md) | spin one motor with a button |
 | 31 | [31_intake](31_intake/README.md) | an intake: a subsystem, buttons, and an auto |
+
+## Calibration (on the real robot, before driving it hard)
+
+| # | Folder | What it shows |
+|---|---|---|
+| 32 | [32_zerosteering](32_zerosteering/README.md) | teach each wheel where straight ahead is |
+| 33 | [33_gyrocheck](33_gyrocheck/README.md) | check the gyro: calibrating, drift, turning test |
+| 34 | [34_wheeldiameter](34_wheeldiameter/README.md) | measure the real wheel size so distances are right |

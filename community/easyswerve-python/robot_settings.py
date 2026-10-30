@@ -38,6 +38,11 @@ ENCODER_VERSION = 1
 TRACK_WIDTH_M = 0.6858  # left wheels to right wheels
 WHEEL_BASE_M = 0.6858  # front wheels to back wheels
 
+# ---- Wheels -------------------------------------------------------------------------
+# Wheel diameter. New EasySwerve wheels are 0.1016 m; treads wear smaller.
+# examples/34_wheeldiameter measures the right value for your robot.
+WHEEL_DIAMETER_M = 0.1016
+
 # ---- Driving -----------------------------------------------------------------------
 MAX_SPEED_MPS = 4.5  # full stick speed (the wheels can do about 4.8)
 MAX_TURN_DEG_PER_S = 360  # full stick spin speed

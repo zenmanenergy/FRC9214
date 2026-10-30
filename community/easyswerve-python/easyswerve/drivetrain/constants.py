@@ -70,7 +70,7 @@ class ModuleConstants:
 
     # Calculations required for driving motor conversion factors and feed forward
     kDrivingMotorFreeSpeedRps = NeoMotorConstants.kFreeSpeedRpm / 60
-    kWheelDiameterMeters = 0.1016
+    kWheelDiameterMeters = getattr(RS, "WHEEL_DIAMETER_M", 0.1016)
     kWheelCircumferenceMeters = kWheelDiameterMeters * math.pi
     # Drive gear ratio 6.3 : 1, from REV's EasySwerve specifications. (REV's
     # Java template computes 7.5 : 1 from tooth counts that don't match the

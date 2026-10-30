@@ -90,6 +90,27 @@ class Drivetrain(DriveSubsystem):
         """Stop all wheels."""
         return commands2.InstantCommand(lambda: self.drive(0, 0, 0, False), self)
 
+    # ---- calibration ------------------------------------------------------------------
+
+    def zeroSteeringCommand(self) -> commands2.Command:
+        """Save the current wheel angles as straight ahead (hex keys in, robot
+        disabled). The same as the dashboard's Calibrate button; works while
+        disabled, so it can go on a controller button."""
+        return commands2.InstantCommand(self._zeroSteering).ignoringDisable(True)
+
+    def gyroCalibrating(self) -> bool:
+        """True while the navX is still calibrating after power-on (keep the
+        robot still until this is False)."""
+        try:
+            return bool(self.gyro.isCalibrating())
+        except Exception:
+            return False
+
+    def wheelDistances(self) -> list:
+        """How far each wheel has rolled, in meters (FL, FR, RL, RR), as the
+        drive encoders measure it."""
+        return [m.drivingEncoder.getPosition() for _, m in self.modules]
+
     # ---- simple moves for autos -------------------------------------------------
     # Speeds are fractions of full speed: 1.0 = full, 0.5 = half, negative =
     # the other way. "forward", "left" and "turn" are from the robot's point

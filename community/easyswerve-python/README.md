@@ -73,14 +73,18 @@ In the PathPlanner app, add a Named Command to an auto and type printHello.
 ## Day 4: The real robot
 
 1. Fill in robot_settings.py: CAN IDs, encoder DIO ports, motor mounting, wheel spacing.
-2. Zero the steering encoders: robot disabled, hex keys in all four modules, then press **Calibrate/Zero steering encoders** on the dashboard (docs/DRIVETRAIN.md section 4.1).
-3. Wheels off the ground, enable teleop, and check that pushing forward drives every wheel forward.
-4. Autotune: clear 2.5 m in front of the robot, Driver Station in **Test** mode, enable, and press **Autotune/All** on the dashboard. The robot tunes itself in about a minute.
-5. Deploy from the VS Code terminal:
+2. Connect to the robot and deploy, from the VS Code terminal:
 
 ```
 py -m robotpy deploy
 ```
+
+3. Zero the steering encoders: robot disabled, hex keys in all four modules, then press **Calibrate/Zero steering encoders** on the dashboard (examples/32_zerosteering explains it).
+4. Wheels off the ground, enable teleop, and check that pushing forward drives every wheel forward.
+5. Autotune: clear 2.5 m in front of the robot, Driver Station in **Test** mode, enable, and press **Autotune/All** on the dashboard. The robot tunes itself in about a minute.
+6. Check the gyro and measure the wheel size with examples 33_gyrocheck and 34_wheeldiameter: copy each one's robot.py over robot.py and deploy. Afterwards, copy examples/01_basic/robot.py back and deploy again.
+
+Deploy again any time you change robot.py or robot_settings.py.
 
 ---
 
@@ -88,7 +92,7 @@ py -m robotpy deploy
 
 | Where | What |
 |---|---|
-| examples/ | 31 small examples, one robot.py each: autos, buttons, dashboard, mechanisms (list in examples/README.md) |
+| examples/ | 34 small examples, one robot.py each: autos, buttons, dashboard, mechanisms, calibration (list in examples/README.md) |
 | docs/DRIVETRAIN.md | full drivetrain guide: wiring, calibration, autotune, simulator (for coaches) |
 | docs/PATHPLANNER.md | full PathPlanner guide |
 | docs/VISION.md | setting up cameras (PhotonVision on the Orange Pi) |
