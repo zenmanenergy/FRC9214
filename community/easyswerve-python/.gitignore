@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+# created by the simulator
+simgui*.json
+networktables.json
+# autotune results and steering zeros from the simulator
+# (the robot keeps its own in /home/lvuser)
+easyswerve-tuning.json*
+easyswerve-calibration.json*

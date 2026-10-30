@@ -1,0 +1,21 @@
+#
+# Which RobotPy packages to install. "python -m robotpy sync" reads this.
+#
+
+[tool.robotpy]
+
+# Version of robotpy this project depends on
+robotpy_version = "2026.2.2"
+
+# Optional robotpy components
+components = ["commands2"]
+
+# Other libraries (each line is like a line in requirements.txt)
+requires = [
+    "robotpy-rev==2026.0.4",
+    "robotpy-navx==2026.0.1.2",
+    "robotpy-pathplannerlib==2026.1.2",
+    # Cameras: remove the # below when you set up PhotonVision. The version
+    # must match the PhotonVision version on the Orange Pi (docs/VISION.md).
+    # "photonlibpy==2026.3.4",
+]
