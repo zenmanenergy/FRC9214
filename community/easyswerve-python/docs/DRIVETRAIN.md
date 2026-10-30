@@ -4,7 +4,7 @@
 >
 > | Old name in this guide | Now |
 > |---|---|
-> | constants.py: CAN IDs, DIO ports, motor mounting, sizes, encoder location and version, gyro | robot_settings.py |
+> | constants.py: CAN IDs, DIO ports, motor mounting, sizes, encoder location and version, gyro, steering zero backup (kSteeringEncoderOffsetsRad, now STEERING_ZEROS_DEG in degrees) | robot_settings.py |
 > | constants.py: everything else | easyswerve/drivetrain/constants.py |
 > | configs.py, subsystems/ | easyswerve/drivetrain/ |
 > | tuning/ | easyswerve/tuning/ |
@@ -153,7 +153,7 @@ RobotPy 2026 installs vendor libraries (REV, navX) through requires, not compone
 | kFrontRightSteeringEncoderDio | 1 | |
 | kRearLeftSteeringEncoderDio | 2 | |
 | kRearRightSteeringEncoderDio | 3 | |
-| kSteeringEncoderOffsetsRad | all 0.0 | backup steering zeros, used only if the dashboard zeroing file is missing |
+| STEERING_ZEROS_DEG (robot_settings.py) | None | backup steering zeros in degrees, used only if the saved zeros on the roboRIO are missing |
 | kGyroReversed | False | flips getTurnRate() only |
 | kOdometryStdDevs | (0.05, 0.05, 0.01) | how closely the wheels and gyro are trusted (x m, y m, heading rad); smaller = cameras correct more slowly |
 | kDefaultVisionStdDevs | (0.9, 0.9, 0.9) | trust for a camera reading given without its own (the vision add-on always gives its own) |
@@ -289,10 +289,11 @@ Zeroing (once, and again whenever a module or encoder is taken apart):
 The zeros are saved on the roboRIO (/home/lvuser/easyswerve-calibration.json), outside the deploy folder, and loaded at every startup. The console also prints a line like
 
 ```
-[drive] backup for constants.py: kSteeringEncoderOffsetsRad = {"FL": 1.1000, "FR": 4.0000, "RL": 2.5000, "RR": 5.9000}
+[drive] backup: paste this line into robot_settings.py:
+STEERING_ZEROS_DEG = {"FL": 63.03, "FR": 229.18, "RL": 143.24, "RR": 338.04}
 ```
 
-Paste it into DriveConstants as a backup; it is used if the saved file is ever lost (for example after reimaging the roboRIO).
+Paste that line into robot_settings.py, replacing STEERING_ZEROS_DEG = None. It is used only if the saved file is ever lost (for example after reimaging the roboRIO).
 
 #### Encoders on the SPARK data port (kSteeringEncoderLocation = "spark")
 

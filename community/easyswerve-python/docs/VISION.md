@@ -4,7 +4,7 @@
 >
 > | Old name in this guide | Now |
 > |---|---|
-> | constants.py: CAN IDs, DIO ports, motor mounting, sizes, encoder location and version, gyro | robot_settings.py |
+> | constants.py: CAN IDs, DIO ports, motor mounting, sizes, encoder location and version, gyro, steering zero backup (kSteeringEncoderOffsetsRad, now STEERING_ZEROS_DEG in degrees) | robot_settings.py |
 > | constants.py: everything else | easyswerve/drivetrain/constants.py |
 > | configs.py, subsystems/ | easyswerve/drivetrain/ |
 > | tuning/ | easyswerve/tuning/ |

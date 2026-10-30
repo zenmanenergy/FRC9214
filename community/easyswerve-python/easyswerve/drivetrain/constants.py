@@ -141,10 +141,13 @@ class DriveConstants:
     kRearLeftSteeringEncoderDio = RS.BACK_LEFT.encoder_dio
     kRearRightSteeringEncoderDio = RS.BACK_RIGHT.encoder_dio
 
-    # Fallback zero offsets (radians) for the roboRIO encoders, used only if the
-    # dashboard zeroing has never been run (it saves its own file). After
-    # zeroing, the console prints values you can paste here as a backup.
-    kSteeringEncoderOffsetsRad = {"FL": 0.0, "FR": 0.0, "RL": 0.0, "RR": 0.0}
+    # Backup steering zeros (radians), from STEERING_ZEROS_DEG in
+    # robot_settings.py; None if there's no backup. Used only when the zeros
+    # saved on the roboRIO are missing.
+    _zerosDeg = getattr(RS, "STEERING_ZEROS_DEG", None)
+    kSteeringEncoderOffsetsRad = (
+        {name: math.radians(deg) for name, deg in _zerosDeg.items()} if _zerosDeg else None
+    )
 
     kGyroReversed = False
     kGyroPort = RS.GYRO  # "mxp" or "usb"

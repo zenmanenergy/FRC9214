@@ -30,7 +30,7 @@ return self.drivetrain.driveFor(1.5, forward=0.15)
 ## Key ideas
 
 - **Absolute encoders** know the wheel's angle the moment the robot turns on, but each encoder is mounted at some random rotation. The zero is the reading when the wheel is in a known position: that's what the hex key sets.
-- **Saved, not typed.** The zeros are saved in a file on the roboRIO and loaded every time the robot starts. Redeploying code doesn't erase them.
+- **Saved, with a backup.** The zeros are saved in a file on the roboRIO and loaded every time the robot starts; redeploying code doesn't erase them. The console also prints a line, STEERING_ZEROS_DEG = {...}. Paste it into robot_settings.py: if the roboRIO is ever reimaged and the saved file is lost, the robot uses that backup instead.
 - **The hex-key position is an X.** After zeroing, the printout shows FL 45, FR -45, RL 135, RR -135, not 0. That's expected: REV's code knows the hex-key pocket sits 45 degrees off straight, and allows for it.
 - **On the real robot:** robot disabled, push a 3 mm hex key into the hole on top of each module, turn the wheel by hand until the key drops about 6 mm deeper, leave all four keys in, then press Back. Remove the keys before enabling.
 
@@ -39,5 +39,6 @@ return self.drivetrain.driveFor(1.5, forward=0.15)
 1. Run the check auto. Do all four wheels point straight ahead in the status line (FL, FR, RL, RR near 0, or 180: the same line, rolling the other way)?
 2. Turn one wheel by hand while disabled (on the real robot) and watch its number change in the printout.
 3. Why must the robot be disabled while zeroing? What would happen if a wheel moved during it?
+4. After zeroing, paste the printed STEERING_ZEROS_DEG line into robot_settings.py. Restart the robot: the console says which zeros it loaded (saved on the roboRIO, or the backup).
 
 To go back to the starting robot, copy 01_basic/robot.py over robot.py.

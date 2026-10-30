@@ -36,13 +36,17 @@ class DriveSubsystem(Subsystem):
         print(f"[drive] gains: {self.gains.summary()}")
 
         # Steering encoder zeros (only used when encoders are on the roboRIO):
-        # saved by the dashboard zeroing, else the fallback in constants.py
+        # the ones saved on the roboRIO by the Calibrate button, else the
+        # backup STEERING_ZEROS_DEG in robot_settings.py
         saved = calibration.loadOffsets()
-        offsets = saved if saved is not None else DriveConstants.kSteeringEncoderOffsetsRad
-        print(
-            "[drive] steering encoder zeros: "
-            + ("saved file" if saved is not None else "not zeroed yet (use the Calibrate button)")
-        )
+        backup = DriveConstants.kSteeringEncoderOffsetsRad
+        if saved is not None:
+            offsets, source = saved, "saved on the roboRIO"
+        elif backup is not None:
+            offsets, source = backup, "backup from robot_settings.py (saved zeros missing)"
+        else:
+            offsets, source = {}, "NOT ZEROED YET: press the Calibrate button (examples/32_zerosteering)"
+        print(f"[drive] steering encoder zeros: {source}")
 
         # Create EasySwerveModules
         self.frontLeft = EasySwerveModule(
@@ -281,9 +285,10 @@ class DriveSubsystem(Subsystem):
         path = calibration.saveOffsets(raw)
         for name, m in self.modules:
             m.turningEncoder.setOffset(raw[name])
-        backup = ", ".join(f'"{n}": {v:.4f}' for n, v in raw.items())
+        backup = ", ".join(f'"{n}": {math.degrees(v):.2f}' for n, v in raw.items())
         print(f"[drive] steering zeros saved to {path}")
-        print(f"[drive] backup for constants.py: kSteeringEncoderOffsetsRad = {{{backup}}}")
+        print("[drive] backup: paste this line into robot_settings.py:")
+        print(f"STEERING_ZEROS_DEG = {{{backup}}}")
         return f"zeroed and saved ({path})"
 
     def applyGains(self, gains: tunedGains.TunedGains) -> None:
