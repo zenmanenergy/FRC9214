@@ -26,10 +26,10 @@ from easyswerve.settings_types import Camera, Module
 #
 # Not sure? Leave them as they are: the 00_ examples check every one.
 
-FRONT_LEFT = Module(drive_can=9, turn_can=8, encoder_dio=0, drive_motor_bottom=True, turn_motor_bottom=True)
-FRONT_RIGHT = Module(drive_can=11, turn_can=10, encoder_dio=1, drive_motor_bottom=True, turn_motor_bottom=True)
-BACK_LEFT = Module(drive_can=15, turn_can=14, encoder_dio=2, drive_motor_bottom=True, turn_motor_bottom=True)
-BACK_RIGHT = Module(drive_can=13, turn_can=12, encoder_dio=3, drive_motor_bottom=True, turn_motor_bottom=True)
+FRONT_LEFT = Module(drive_can=6, turn_can=5, encoder_dio=3, drive_motor_bottom=True, turn_motor_bottom=True)
+FRONT_RIGHT = Module(drive_can=2, turn_can=1, encoder_dio=0, drive_motor_bottom=True, turn_motor_bottom=True)
+BACK_LEFT = Module(drive_can=8, turn_can=7, encoder_dio=2, drive_motor_bottom=True, turn_motor_bottom=True)
+BACK_RIGHT = Module(drive_can=4, turn_can=3, encoder_dio=1, drive_motor_bottom=True, turn_motor_bottom=True)
 
 # ---- Steering encoders -----------------------------------------------------------
 # Where the steering encoders are plugged in:
