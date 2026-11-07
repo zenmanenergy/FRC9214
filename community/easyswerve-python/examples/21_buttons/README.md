@@ -11,11 +11,9 @@ Copy this folder's robot.py over robot.py in the project folder and deploy (py -
 ## The code to look at
 
 ```python
-# A: stop the wheels
-self.controller.a().onTrue(self.drivetrain.stop())
-
-# X (hold): lock the wheels
-self.controller.x().whileTrue(self.drivetrain.lockWheels())
+self.controller.a().onTrue(self.drivetrain.stop())          # A (press): stop the wheels
+lock = self.drivetrain.lockWheels()                         # a command: wheels in an X
+self.controller.x().whileTrue(lock)                         # X (hold): runs while held
 ```
 
 - **onTrue** starts the command once when the button is pressed. It keeps running until it finishes, even if you let go.

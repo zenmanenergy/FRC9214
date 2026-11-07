@@ -11,9 +11,11 @@ import math
 
 import pytest
 
+from easyswerve.drivetrain.constants import DriveConstants
+
 pytest.importorskip("photonlibpy")
 
-from easyswerve.sim.physics import findDrivetrain
+from conftest import drivetrainOrSkip, startingRobotOrSkip
 
 
 def _poseFacingFirstTag(layout, distanceM=2.0):
@@ -30,11 +32,11 @@ def _poseFacingFirstTag(layout, distanceM=2.0):
 def test_camera_estimates_are_fused_in_sim(control, robot):
     with control.run_robot():
         control.step_timing(seconds=0.5, autonomous=False, enabled=False)
-        vision = getattr(findDrivetrain(robot), "vision", None)
+        vision = getattr(drivetrainOrSkip(robot), "vision", None)
         if vision is None or not vision.cameras:
             pytest.skip("vision is off (VISION_ENABLED = False in robot_settings.py)")
 
-        drive = findDrivetrain(robot)
+        drive = drivetrainOrSkip(robot)
         drive.resetOdometry(_poseFacingFirstTag(vision.layout))
         before = drive.visionMeasurementCount
 
@@ -55,7 +57,7 @@ def test_robot_drives_with_no_camera(control, robot, monkeypatch):
 
     with control.run_robot():
         control.step_timing(seconds=0.5, autonomous=False, enabled=False)
-        vision = getattr(findDrivetrain(robot), "vision", None)
+        vision = getattr(startingRobotOrSkip(robot), "vision", None)  # uses the sticks
         if vision is None:
             pytest.skip("drivetrain has no vision")
         vision.cameras = []  # as if photonlibpy were missing or the Pi absent
@@ -64,4 +66,4 @@ def test_robot_drives_with_no_camera(control, robot, monkeypatch):
         xbox = XboxControllerSim(0)
         xbox.setLeftY(-1.0)
         control.step_timing(seconds=1.0, autonomous=False, enabled=True)
-        assert findDrivetrain(robot).getPose().X() > 1.0
+        assert drivetrainOrSkip(robot).getPose().X() > 0.5 * DriveConstants.kMaxSpeedMetersPerSecond

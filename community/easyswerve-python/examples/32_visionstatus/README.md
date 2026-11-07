@@ -2,7 +2,7 @@
 
 ## What it does
 
-Check that both cameras on the Orange Pi are working. PhotonVision runs on the Pi, finds AprilTags in each camera's picture, and sends the results to the roboRIO over the network. Once a second this prints whether each camera (front and back) is connected, which tag numbers it sees, and where the robot is getting its position from.
+Check that both cameras on the Orange Pi are working. PhotonVision runs on the Pi, finds AprilTags in each camera's picture, and sends the results to the roboRIO over the network. It prints whether each camera (front and back) is connected, which tag numbers it sees, and where the robot is getting its position from: once at the start, then a line each time one of those changes, so the console doesn't flood.
 
 ## On the robot
 
@@ -13,19 +13,26 @@ Copy this folder's robot.py over robot.py and deploy. Put the robot about 2 m in
 ## The code to look at
 
 ```python
-print(f"Vision: {self.vision.status}")
+status = self.vision.status                                 # where the position comes from right now
+if status != self.lastSeen.get("status"):                   # changed since last time?
+    self.lastSeen["status"] = status                        # remember it
+    print(f"Vision: {status}")                              # and print it
 ```
 
 ```python
-for name in self.vision.cameraNames():
-    if not self.vision.isConnected(name):
-        print(f"  {name:6} not connected")
-        continue
-    tags = self.vision.tagsSeen(name)
+for name in self.vision.cameraNames():                      # repeat for each camera ("front", "back")
+    if not self.vision.isConnected(name):                   # camera not sending pictures?
+        now_sees = "not connected"
+    else:                                                   # otherwise:
+        tags = self.vision.tagsSeen(name)                   # the tag numbers it sees now
+        now_sees = f"sees tags {tags}" if tags else "sees no tags"
+    if now_sees != self.lastSeen.get(name):                 # different from last time?
+        self.lastSeen[name] = now_sees                      # remember it
+        print(f"  {name:6} {now_sees}")                     # :6 = pad the name to 6 letters
 ```
 
 ```python
-return self.drivetrain.driveFor(10.0, turn=0.1)  # slow spin: cameras sweep around
+return self.drivetrain.driveFor(10.0, turn=0.1)             # slow spin: the cameras sweep around
 ```
 
 - **self.drivetrain.vision** is the camera system. The Drivetrain builds it from CAMERAS in robot_settings.py, so robot.py doesn't have to.

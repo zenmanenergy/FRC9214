@@ -130,17 +130,36 @@ The size of the robot, measured from the CENTER of one wheel to the CENTER of th
 
 Measure in centimeters and divide by 100: 58.4 cm is 0.584.
 
+### ROBOT_LENGTH_M and ROBOT_WIDTH_M
+
+The outside size of the robot WITH its bumpers on: front bumper to back bumper, and left bumper to right bumper. The examples use it to work out how much room the robot has on the practice carpet.
+
+Type the same two numbers into the PathPlanner app too (Settings, Robot Length and Robot Width): PathPlanner uses them to keep paths clear of walls. If they differ, the robot code prints a warning at startup.
+
+### CARPET_LENGTH_M and CARPET_WIDTH_M
+
+The size of the carpet (or taped-off area) you practice on: the long side and the short side. Every example that moves keeps its moves on it: a move that would go off the edge is made shorter (easyswerve/carpet.py works it out). Step 0's report prints how much room that leaves.
+
+- Examples 01 to 36: start the robot in the middle of the carpet, facing the long way.
+- Setup steps 8, 10 and 11, and the PathPlanner paths: start at one end, facing the long way, centered side to side, with the back bumper about 20 cm from the edge.
+
+On a big floor or a real field, set CARPET_LENGTH_M = None: then nothing is shortened.
+
 ### WHEEL_DIAMETER_M
 
 Leave it at 0.1016 (new EasySwerve wheels). Setup step 10 measures the real size later, because treads wear down.
 
 ### MAX_SPEED_MPS and MAX_TURN_DEG_PER_S
 
-How fast the robot goes with the stick pushed all the way, in meters per second, and how fast it spins, in degrees per second. The wheels can do about 4.8 m/s, which is fast and dangerous in a small room. **For the first drives, set MAX_SPEED_MPS = 1.5** and MAX_TURN_DEG_PER_S = 180. Raise them later. (The examples' READMEs work out distances with 4.5; at 1.5 every auto goes a third as far, which is fine.)
+How fast the robot goes with the stick pushed all the way, in meters per second, and how fast it spins, in degrees per second. The wheels can do about 4.8 m/s, which is fast and dangerous in a small room, so the file starts at **MAX_SPEED_MPS = 1.5** and MAX_TURN_DEG_PER_S = 180. Keep those for the first drives and raise them later. Every limit follows them: the autos, driveTo and PathPlanner never go faster than MAX_SPEED_MPS.
 
 ### CONTROLLER_PORT
 
 Which slot the driver's Xbox controller is in on the Driver Station's USB tab (the tab with the USB symbol). Usually 0.
+
+### HEADING_HOLD
+
+Leave it True. While the robot drives without turning, the gyro keeps it facing the same way, so small differences between the wheels can't make it creep around (example 36 shows it). Set it to False only if the gyro is broken or drifting.
 
 ### GYRO
 
@@ -167,6 +186,10 @@ Print this and fill it in at the robot.
 | TRACK_WIDTH_M (left to right wheel centers) | |
 | WHEEL_BASE_M (front to back wheel centers) | |
 | GYRO ("mxp" or "usb") | |
+| ROBOT_LENGTH_M (outside the bumpers, front to back) | |
+| ROBOT_WIDTH_M (outside the bumpers, left to right) | |
+| CARPET_LENGTH_M (practice carpet, long side) | |
+| CARPET_WIDTH_M (practice carpet, short side) | |
 
 ## Deploy for the first time
 
@@ -194,7 +217,7 @@ Every time you change robot.py or robot_settings.py, deploy again. The robot onl
 
 ## The Driver Station in one minute
 
-- **Mode buttons** (left side): Teleoperated (a driver uses a controller), Autonomous (the robot drives itself), Test (used for tuning, setup step 8).
+- **Mode buttons** (left side): Teleoperated (a driver uses a controller), Autonomous (the robot drives itself), Test (used for tuning, setup steps 8 and 11).
 - **Enable** starts the robot in that mode. **Disable** stops it.
 - **Enter** disables. **Space bar** is the emergency stop: the robot stays stopped until it's restarted. Whoever is near the laptop keeps a hand near both, every time the robot is enabled.
 - The **USB tab** shows the controllers and their slot numbers.
@@ -211,20 +234,20 @@ Every time you change robot.py or robot_settings.py, deploy again. The robot onl
 
 ## The code to look at
 
-This step's robot.py doesn't build a robot: it only reads robot_settings.py and prints it.
+This step's robot.py doesn't build a robot: it only reads robot_settings.py and prints it. Every line has a comment on its right saying what it does. Python ignores everything after a # sign, so the comments don't change what the code does.
 
 ```python
-import robot_settings as S
+import robot_settings as S                                           # load robot_settings.py: S.GYRO is its GYRO
 ```
 
 This loads robot_settings.py, so S.TRACK_WIDTH_M is the number you typed for TRACK_WIDTH_M.
 
 ```python
-            if value > 5:
-                notes.append(f"{label} = {value} looks like centimeters. It's in meters: 60 cm is 0.60.")
+            if value > 5:                                            # no robot is 5 m wide, so...
+                notes.append(label + ": in cm? 60 cm = 0.60")        # ...it was typed in cm
 ```
 
-Each check is a simple question about a setting. If the answer looks wrong, it adds a note to the list. At the end, the notes are printed with numbers.
+Each check is a simple question about one setting. If the answer looks wrong, it adds a note to the list. At the end, the notes are printed with numbers.
 
 ## Try this
 

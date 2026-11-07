@@ -11,16 +11,16 @@ Copy this folder's robot.py over robot.py and deploy (py -m robotpy deploy). Plu
 ## The code to look at
 
 ```python
-self.controller.b().whileTrue(
-    commands2.StartEndCommand(
-        lambda: self.controller.setRumble(GenericHID.RumbleType.kBothRumble, 1.0),
-        lambda: self.controller.setRumble(GenericHID.RumbleType.kBothRumble, 0.0),
+self.controller.b().whileTrue(                              # hold B to run this command:
+    commands2.StartEndCommand(                              # does one thing at start, another at end
+        lambda: self.rumble(1.0),                           # start: full rumble
+        lambda: self.rumble(0.0),                           # end (B let go): rumble off
     )
 )
 ```
 
 - **StartEndCommand(start, end)** runs start when the command begins and end when it stops. Here: rumble on, rumble off.
-- **lambda:** makes a small function in place. The command calls it later; without lambda, setRumble would run once, right now.
+- **lambda:** makes a small function in place. The command calls it later; without lambda, self.rumble(1.0) would run once, right now. rumble() (above makeAuto) does the actual shaking with setRumble.
 - **1.0** is full strength; 0.0 is off.
 
 ## Key ideas

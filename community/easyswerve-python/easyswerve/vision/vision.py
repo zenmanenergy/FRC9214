@@ -127,8 +127,9 @@ class VisionSubsystem(commands2.Subsystem):
                 self._processCamera(cam, now)
             except Exception as e:  # never let vision break the robot loop
                 cam.errors += 1
-                if now - cam.lastErrorReport > 5.0:
-                    cam.lastErrorReport = now
+                # each different error once (the count is on the dashboard)
+                if str(e) != getattr(cam, "lastErrorText", None):
+                    cam.lastErrorText = str(e)
                     wpilib.reportError(f"Vision camera '{cam.cfg.name}': {e}", False)
         self._updateStatus(now)
         self._publish()

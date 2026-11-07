@@ -11,10 +11,8 @@ Copy this folder's robot.py over robot.py and deploy (py -m robotpy deploy). Plu
 ## The code to look at
 
 ```python
-self.operator = CommandXboxController(1)
-
-# Operator buttons
-self.operator.x().whileTrue(self.drivetrain.lockWheels())
+self.operator = CommandXboxController(1)                     # a second controller, in USB slot 1
+self.operator.x().whileTrue(self.drivetrain.lockWheels())    # operator X (hold): lock the wheels
 ```
 
 - **CommandXboxController(1)** is the controller in Driver Station slot 1. The driver's is slot 0 (CONTROLLER_PORT in robot_settings.py).

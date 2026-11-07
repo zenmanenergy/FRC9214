@@ -6,12 +6,12 @@ Turn until the robot faces 90 degrees (a quarter turn left), using the gyro.
 
 ## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot on the floor with about 3 m of clear space around it and someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**. It ends facing left (90 degrees from where it started).
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot in the middle of the practice carpet, facing the long way, have someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**. The moves are sized to fit the carpet (CARPET_LENGTH_M and CARPET_WIDTH_M in robot_settings.py). It ends facing left (90 degrees from where it started).
 
 ## The code to look at
 
 ```python
-return self.drivetrain.turnTo(90)
+return self.drivetrain.turnTo(90)                           # turn to face 90 degrees (left), using the gyro
 ```
 
 - **turnTo(90)** turns until the gyro says the robot faces 90 degrees, then stops.
@@ -20,8 +20,9 @@ return self.drivetrain.turnTo(90)
 ## Key ideas
 
 - **The gyro (navX)** measures which way the robot faces.
-- **Proportional control.** Inside turnTo, the turning speed is the error (how far from the target) times a number. Far away: turn fast. Close: turn slowly. That way it doesn't overshoot much. This is the P in PID.
-- **Done means close and still.** turnTo finishes when it's within 2 degrees and has stopped turning.
+- **PID control.** Inside turnTo, the turning speed comes from the error (how far from the target): P turns faster the farther off it is, I adds a push if it sits a little off for a while, D calms it down as it gets close. Far away: turn fast. Close: turn slowly, so it doesn't overshoot. The P, I and D are tuned by setup step 11.
+- **Done means close and still.** turnTo finishes when it has stayed within 1 degree, and stopped turning, for a tenth of a second.
+- **The same idea keeps the robot straight.** Heading hold (example 36) uses the same heading PID: while the robot drives without turning, it turns back a little whenever it has drifted off.
 
 ## Try this
 

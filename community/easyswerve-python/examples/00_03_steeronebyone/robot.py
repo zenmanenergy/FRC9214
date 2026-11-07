@@ -18,141 +18,152 @@ Or enable in Autonomous to test all four, one after another.
 
 To use this example: copy this file over robot.py in the project folder
 (the file next to robot_settings.py), then deploy: py -m robotpy deploy
+
+The comments on the right explain each line. Python ignores everything
+after a # sign, so they don't change what the code does.
 """
 
-import commands2
-import wpilib
-from commands2.button import CommandXboxController
+import commands2                                                          # command-based robot library
+from commands2.button import CommandXboxController                        # an Xbox controller with buttons
 
-import robot_settings
-from easyswerve import Drivetrain
+import robot_settings                                                     # load robot_settings.py (your robot's settings)
+from easyswerve import Drivetrain                                         # the swerve drivetrain (4 modules)
 
-TEST_VOLTS = 1.0  # low: the wheel turns slowly
-TEST_SECONDS = 1.0
-SETTING_NAMES = {"FL": "FRONT_LEFT", "FR": "FRONT_RIGHT", "RL": "BACK_LEFT", "RR": "BACK_RIGHT"}
-
-
-class AngleTracker:
-    """Adds up how far an angle reading has turned in total (degrees), even
-    when it wraps around from 359 to 0."""
-
-    def __init__(self) -> None:
-        self.last = None
-        self.total = 0.0
-
-    def update(self, degrees) -> None:
-        if degrees is None:
-            return
-        if self.last is not None:
-            self.total += (degrees - self.last + 180.0) % 360.0 - 180.0
-        self.last = degrees
+TEST_VOLTS = 1.0                                                          # low: the wheel turns slowly
+TEST_SECONDS = 1.0                                                        # how long each test runs
+SETTING_NAMES = {                                                         # short name -> its name in robot_settings.py
+    "FL": "FRONT_LEFT",
+    "FR": "FRONT_RIGHT",
+    "RL": "BACK_LEFT",
+    "RR": "BACK_RIGHT",
+}
 
 
-class MyRobot(commands2.TimedCommandRobot):
-    def robotInit(self) -> None:
-        """Runs once when the robot turns on: build the robot here."""
-        self.drivetrain = Drivetrain()
-        self.controller = CommandXboxController(robot_settings.CONTROLLER_PORT)
+class AngleTracker:                                                       # adds up how far an angle has turned in total
+    def __init__(self) -> None:                                           # runs once, when a tracker is made
+        self.last = None                                                  # the last reading (None = none yet)
+        self.total = 0.0                                                  # total turn so far, degrees
 
-        # Two trackers per module: motor sensor and absolute encoder
-        self.motorSensor = {name: AngleTracker() for name, _ in self.drivetrain.modules}
-        self.encoder = {name: AngleTracker() for name, _ in self.drivetrain.modules}
+    def update(self, degrees) -> None:                                    # call every loop with the newest reading
+        if degrees is None:                                               # no reading (encoder not sending)?
+            return                                                        # skip it
+        if self.last is not None:                                         # if there was a reading before...
+            step = (degrees - self.last + 180.0) % 360.0 - 180.0          # ...the change, even across 359 -> 0
+            self.total += step                                            # add it to the total
+        self.last = degrees                                               # remember this reading
 
-        # Hold a button to test one module
-        self.controller.a().whileTrue(self.testSteering("FL"))
-        self.controller.b().whileTrue(self.testSteering("FR"))
-        self.controller.x().whileTrue(self.testSteering("RL"))
-        self.controller.y().whileTrue(self.testSteering("RR"))
 
-        self.autoCommand = None
+class MyRobot(commands2.TimedCommandRobot):                               # our robot: runs 50 times a second
+    def robotInit(self) -> None:                                          # runs ONCE, when the robot code starts
+        self.drivetrain = Drivetrain()                                    # make the drivetrain (uses robot_settings.py)
+        port = robot_settings.CONTROLLER_PORT                             # Driver Station USB slot (usually 0)
+        self.controller = CommandXboxController(port)                     # the driver's Xbox controller
+        names = [name for name, _ in self.drivetrain.modules]             # ["FL", "FR", "RL", "RR"]
+        self.motorSensor = {n: AngleTracker() for n in names}             # the NEO's own sensor, per module
+        self.encoder = {n: AngleTracker() for n in names}                 # the Through Bore Encoder, per module
 
-    def robotPeriodic(self) -> None:
-        """Runs 50 times a second: keep the trackers up to date."""
-        for name, module in self.drivetrain.modules:
-            self.motorSensor[name].update(module.steeringDeg())
-            self.encoder[name].update(module.absoluteDeg())
+        self.controller.a().whileTrue(self.testSteering("FL"))            # hold A: test front left
+        self.controller.b().whileTrue(self.testSteering("FR"))            # hold B: front right
+        self.controller.x().whileTrue(self.testSteering("RL"))            # hold X: rear left
+        self.controller.y().whileTrue(self.testSteering("RR"))            # hold Y: rear right
 
-    def testSteering(self, name: str) -> commands2.Command:
-        """Turn one module's steering at TEST_VOLTS, then report."""
-        module = self.drivetrain.module(name)
-        return commands2.FunctionalCommand(
-            lambda: self.startTest(name),
-            lambda: module.spinSteering(TEST_VOLTS),  # every loop
-            lambda interrupted: self.endTest(name),
-            lambda: False,
-            self.drivetrain,
-        ).withTimeout(TEST_SECONDS)
+        self.autoCommand = None                                           # no auto yet (None = nothing)
 
-    def startTest(self, name: str) -> None:
-        # Everything else off, so nothing else moves
-        for _, module in self.drivetrain.modules:
-            module.stopMotors()
-        # Remember where every sensor started
-        self.motorStart = {n: t.total for n, t in self.motorSensor.items()}
-        self.encoderStart = {n: t.total for n, t in self.encoder.items()}
-        print(f"---- {name}: steering motor at +{TEST_VOLTS} V. WATCH the wheel. ----")
+    def robotPeriodic(self) -> None:                                      # runs 50 times a second, in every mode
+        for name, module in self.drivetrain.modules:                      # repeat for each of the 4 modules
+            self.motorSensor[name].update(module.steeringDeg())           # motor sensor, degrees
+            self.encoder[name].update(module.absoluteDeg())               # encoder, degrees
 
-    def endTest(self, name: str) -> None:
-        module = self.drivetrain.module(name)
-        module.stopMotors()
-        motor = self.motorSensor[name].total - self.motorStart[name]
-        enc = {n: t.total - self.encoderStart[n] for n, t in self.encoder.items()}
-        mine = enc[name]
-        setting = SETTING_NAMES[name]
-        print(f"  motor sensor turned {motor:+.0f} deg, encoder turned {mine:+.0f} deg")
+    def testSteering(self, name: str) -> commands2.Command:               # a command: test one module
+        module = self.drivetrain.module(name)                             # one module by name, e.g. "FL"
+        return commands2.FunctionalCommand(                               # a command built from 4 functions:
+            lambda: self.startTest(name),                                 # 1. at the start
+            lambda: module.spinSteering(TEST_VOLTS),                      # 2. every loop: fixed volts, no PID
+            lambda interrupted: self.endTest(name),                       # 3. at the end
+            lambda: False,                                                # 4. finished? (never: the timeout ends it)
+            self.drivetrain,                                              # it uses the drivetrain
+        ).withTimeout(TEST_SECONDS)                                       # stop after TEST_SECONDS
 
-        # 1. Did the motor turn at all?
-        if abs(motor) < 10:
-            print(f"  PROBLEM: the motor hardly turned. Check {setting} turn_can, the motor wires,")
+    def startTest(self, name: str) -> None:                               # runs at the start of a test
+        for _, module in self.drivetrain.modules:                         # repeat for each of the 4 modules
+            module.stopMotors()                                           # everything off, so nothing else moves
+        sensors = self.motorSensor.items()                                # (name, tracker) for each module
+        self.motorStart = {n: t.total for n, t in sensors}                # where each motor sensor started
+        encoders = self.encoder.items()                                   # same for the encoders
+        self.encoderStart = {n: t.total for n, t in encoders}             # where each encoder started
+        print(f"---- {name}: +{TEST_VOLTS} V. WATCH the wheel. ----")
+
+    def endTest(self, name: str) -> None:                                 # runs at the end of a test: the report
+        module = self.drivetrain.module(name)                             # one module by name, e.g. "FL"
+        module.stopMotors()                                               # both of its motors off
+        now = self.motorSensor[name].total                                # motor sensor's total now
+        motor = now - self.motorStart[name]                               # how far the motor turned
+        start = self.encoderStart                                         # where each encoder started
+        enc = {n: t.total - start[n] for n, t in self.encoder.items()}    # how far each encoder turned
+        mine = enc[name]                                                  # how far THIS module's encoder turned
+        setting = SETTING_NAMES[name]                                     # e.g. "FRONT_LEFT"
+        print(f"  motor sensor turned {motor:+.0f} deg")                  # + means counterclockwise
+        print(f"  encoder turned {mine:+.0f} deg")
+
+        if abs(motor) < 10:                                               # 1. did the motor turn at all?
+            print("  PROBLEM: the motor hardly turned. Check")
+            print(f"  {setting} turn_can, the motor wires,")
             print("  and that nothing is jammed.")
+            return                                                        # stop here: nothing else to check
+
+        if abs(mine) < 0.3 * abs(motor):                                  # 2. did THIS module's encoder see it?
+            others = [n for n, d in enc.items()                           # did another module's
+                      if n != name and abs(d) > 0.3 * abs(motor)]         # encoder see it instead?
+            if others:                                                    # yes: the plugs are probably swapped
+                other = self.drivetrain.module(others[0])                 # the module whose encoder moved
+                port = other.turningEncoder.dioChannel                    # its DIO port
+                print(f"  PROBLEM: {name}'s encoder didn't move,")
+                print(f"  but {others[0]}'s did (DIO {port}).")
+                print(f"  If the {name} wheel turned: set")
+                print(f"  encoder_dio={port} for {setting}")
+                print(f"  (and fix {others[0]} to match).")
+                print("  If a DIFFERENT wheel turned, the")
+                print("  turn_can numbers are mixed up instead.")
+            else:                                                         # no encoder moved at all
+                print(f"  PROBLEM: {name}'s encoder didn't move.")
+                print("  Check its 3 wires and DIO number, and")
+                print("  that it is on the steering shaft.")
             return
 
-        # 2. Did THIS module's encoder see it?
-        if abs(mine) < 0.3 * abs(motor):
-            others = [n for n, d in enc.items() if n != name and abs(d) > 0.3 * abs(motor)]
-            if others:
-                other = self.drivetrain.module(others[0])
-                port = other.turningEncoder.dioChannel
-                print(f"  PROBLEM: {name}'s encoder didn't move, but {others[0]}'s did (DIO {port}).")
-                print(f"  If the {name} wheel turned, its encoder is plugged into DIO {port}:")
-                print(f"  set encoder_dio={port} for {setting} (and fix {others[0]} to match).")
-                print("  If a DIFFERENT wheel turned, the turn_can numbers are mixed up instead.")
-            else:
-                print(f"  PROBLEM: {name}'s encoder didn't move. Check its 3 wires and DIO number,")
-                print("  and that it is pressed onto the steering shaft.")
-            return
-
-        # 3. Do the motor sensor and the encoder agree on the direction?
-        if (motor > 0) == (mine > 0):
+        if (motor > 0) == (mine > 0):                                     # 3. both turned the same way?
             print("  Motor and encoder agree. LOOK at the wheel:")
-            print("    turned counterclockwise -> OK, this module is right")
-            print(f"    turned clockwise        -> both are backwards: flip turn_motor_bottom for {setting}")
-            print(f"                               AND flip encoder_reversed for {setting}")
-        else:
-            print("  PROBLEM: motor and encoder DISAGREE (this makes the wheel fight itself). LOOK:")
-            print(f"    turned counterclockwise -> the encoder is backwards: flip encoder_reversed for {setting}")
-            print(f"    turned clockwise        -> the motor is backwards: flip turn_motor_bottom for {setting}")
-        print("  ('flip' = True becomes False, False becomes True. Deploy and test again after a change.)")
+            print("    counterclockwise -> OK")
+            print("    clockwise -> both are backwards:")
+            print(f"      flip turn_motor_bottom for {setting}")
+            print(f"      AND flip encoder_reversed for {setting}")
+        else:                                                             # they turned opposite ways
+            print("  PROBLEM: motor and encoder DISAGREE")
+            print("  (this makes the wheel fight itself). LOOK:")
+            print("    counterclockwise -> encoder backwards:")
+            print(f"      flip encoder_reversed for {setting}")
+            print("    clockwise -> motor backwards:")
+            print(f"      flip turn_motor_bottom for {setting}")
+        print("  (flip: True becomes False, False becomes True.")
+        print("  Deploy and test again after a change.)")
 
-    def makeAuto(self):
-        """Builds the command that runs in autonomous: all four in turn."""
-        steps = []
-        for name in ("FL", "FR", "RL", "RR"):
-            steps.append(self.testSteering(name))
-            steps.append(commands2.WaitCommand(0.5))
-        return commands2.SequentialCommandGroup(*steps)
+    def makeAuto(self):                                                   # builds what autonomous will do
+        steps = []                                                        # a list of commands to run in order
+        for name in ("FL", "FR", "RL", "RR"):                             # each module in turn:
+            steps.append(self.testSteering(name))                         # test it
+            steps.append(commands2.WaitCommand(0.5))                      # then pause half a second
+        return commands2.SequentialCommandGroup(*steps)                   # * = use the whole list
 
-    def autonomousInit(self) -> None:
-        self.autoCommand = self.makeAuto()
-        if self.autoCommand is not None:
-            commands2.CommandScheduler.getInstance().schedule(self.autoCommand)
+    def autonomousInit(self) -> None:                                     # runs once when enabled in Autonomous
+        self.autoCommand = self.makeAuto()                                # build the auto (makeAuto, above)
+        if self.autoCommand is not None:                                  # if there is an auto...
+            scheduler = commands2.CommandScheduler.getInstance()          # the part that runs commands
+            scheduler.schedule(self.autoCommand)                          # start the auto
 
-    def teleopInit(self) -> None:
-        # Stop the auto when the driver takes over
-        if self.autoCommand is not None:
-            self.autoCommand.cancel()
-        for _, module in self.drivetrain.modules:
-            module.stopMotors()
+    def teleopInit(self) -> None:                                         # runs once when enabled in Teleoperated
+        if self.autoCommand is not None:                                  # if an auto is still running...
+            self.autoCommand.cancel()                                     # stop the auto: the driver takes over
+        for _, module in self.drivetrain.modules:                         # repeat for each of the 4 modules
+            module.stopMotors()                                           # both of its motors off
 
-    def testInit(self) -> None:
-        commands2.CommandScheduler.getInstance().cancelAll()
+    def testInit(self) -> None:                                           # runs once when enabled in Test
+        commands2.CommandScheduler.getInstance().cancelAll()              # stop every command that is running

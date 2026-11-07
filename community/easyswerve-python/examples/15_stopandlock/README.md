@@ -6,14 +6,15 @@ Drive to a spot, then lock the wheels in an X so other robots can't push yours a
 
 ## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot on the floor with about 3 m of clear space around it and someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot in the middle of the practice carpet, facing the long way, have someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**. The moves are sized to fit the carpet (CARPET_LENGTH_M and CARPET_WIDTH_M in robot_settings.py).
 
 ## The code to look at
 
 ```python
-return commands2.SequentialCommandGroup(
-    self.drivetrain.driveDistance(2.0),
-    self.drivetrain.lockWheels(),  # keeps holding until auto ends
+meters = carpet.fitMeters(2.0)                              # 2 m, or less to stay on the carpet
+return commands2.SequentialCommandGroup(                    # these run one after another:
+    self.drivetrain.driveDistance(meters),                  # 1. drive that far
+    self.drivetrain.lockWheels(),                           # 2. wheels in an X; holds until the auto ends
 )
 ```
 

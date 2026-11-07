@@ -20,6 +20,10 @@ from ..tuning.gains import TunedGains
 from .steeringencoder import RioSteeringEncoder, SparkSteeringEncoder
 
 
+# The gains the SPARK MAXes themselves use (the rest run on the roboRIO)
+SPARK_GAIN_FIELDS = ("driveP", "driveKS", "driveKV", "steerP", "steerI", "steerD", "steerIZoneDeg")
+
+
 class EasySwerveModule:
     def __init__(
         self,
@@ -205,8 +209,12 @@ class EasySwerveModule:
     def applyGains(self, gains: TunedGains) -> None:
         """Send new gains to both SPARKs right away. The full config is resent,
         exactly as at startup. Not written to SPARK flash: the saved tuning file
-        is reapplied at every startup instead."""
-        self.gains = gains
+        is reapplied at every startup instead. If none of the gains the SPARKs
+        use changed (the position autotune only changes roboRIO gains), the
+        SPARKs are left alone: reconfiguring takes CAN time and resets them."""
+        old, self.gains = self.gains, gains
+        if all(getattr(old, f) == getattr(gains, f) for f in SPARK_GAIN_FIELDS):
+            return
         self.drivingSpark.configure(
             configs.drivingConfig(self.drivingInverted, gains),
             ResetMode.kResetSafeParameters,

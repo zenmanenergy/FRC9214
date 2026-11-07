@@ -46,10 +46,26 @@ ENCODER_VERSION = 1
 # reimaged). None = no backup yet.
 STEERING_ZEROS_DEG = None
 
+# Backup of the autotune results (all the PID gains). Autotune saves them on
+# the roboRIO; afterwards the console prints a line to paste here. Only used
+# if the saved tuning is missing. None = no backup yet.
+TUNED_GAINS = None
+
 # ---- Robot size ---------------------------------------------------------------------
 # Measured between the CENTERS of the wheels
 TRACK_WIDTH_M = 0.6858  # left wheels to right wheels
 WHEEL_BASE_M = 0.6858  # front wheels to back wheels
+
+# Outside size of the robot WITH bumpers (for the practice carpet below)
+ROBOT_LENGTH_M = 0.95  # front bumper to back bumper
+ROBOT_WIDTH_M = 0.95  # left bumper to right bumper
+
+# ---- Practice carpet ------------------------------------------------------------------
+# The space the robot practices on. The examples keep their moves on it
+# (easyswerve/carpet.py works out the room). Measure it! On a big floor or a
+# real field, set CARPET_LENGTH_M = None and nothing is limited.
+CARPET_LENGTH_M = 2.74  # the long side (9 feet is 2.74 m)
+CARPET_WIDTH_M = 1.52  # the short side (5 feet is 1.52 m)
 
 # ---- Wheels -------------------------------------------------------------------------
 # Wheel diameter. New EasySwerve wheels are 0.1016 m; treads wear smaller.
@@ -57,9 +73,14 @@ WHEEL_BASE_M = 0.6858  # front wheels to back wheels
 WHEEL_DIAMETER_M = 0.1016
 
 # ---- Driving -----------------------------------------------------------------------
-MAX_SPEED_MPS = 4.5  # full stick speed (the wheels can do about 4.8)
-MAX_TURN_DEG_PER_S = 360  # full stick spin speed
+MAX_SPEED_MPS = 1.5  # full stick speed: slow for a first drive (the wheels can do about 4.8)
+MAX_TURN_DEG_PER_S = 180  # full stick spin speed
 CONTROLLER_PORT = 0  # Driver Station USB slot of the driver's controller
+
+# Heading hold: while driving without turning, the navX keeps the robot facing
+# the same way, so small differences between the wheels can't make it creep
+# around. Turn the stick and it lets go. False = off (only if the gyro is bad).
+HEADING_HOLD = True
 
 # ---- Gyro ----------------------------------------------------------------------------
 # Where the navX2 is plugged in: "mxp" (on top of the roboRIO) or "usb"

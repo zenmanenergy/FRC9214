@@ -11,7 +11,8 @@ Copy this folder's robot.py over robot.py in the project folder and deploy (py -
 ## The code to look at
 
 ```python
-self.drivetrain.driveWithController(self.controller, fieldRelative=False)
+pad = self.controller                                            # a shorter name for the controller
+self.drivetrain.driveWithController(pad, fieldRelative=False)    # sticks move it the way IT faces
 ```
 
 - **fieldRelative=False** switches off field-relative driving. Everything else is the same as example 01.

@@ -40,17 +40,18 @@ Have a controller? Plug it in, drag it from System Joysticks onto Joystick slot 
 
 ## Day 2: Change what a button does
 
-Open robot.py. Each button is one line, inside robotInit:
+Open robot.py. Each button is two lines inside robotInit: make the command, then pick the button. The comments on the right say what each line does.
 
 ```python
-self.controller.rightBumper().whileTrue(self.drivetrain.lockWheels())
+lock = self.drivetrain.lockWheels()                         # a command: wheels in an X (hard to push)
+self.controller.rightBumper().whileTrue(lock)               # runs while the right bumper is held
 ```
 
 - the button: rightBumper, leftBumper, a, b, x, y, start, back, leftTrigger, rightTrigger
 - when: whileTrue (while held), onTrue (once when pressed), toggleOnTrue (press on, press off)
 - what: a command, like lockWheels(), resetHeading(), stop()
 
-Try it: copy that line, change rightBumper to a and lockWheels to stop, then run the simulator again.
+Try it: copy those two lines, change lockWheels to stop and rightBumper to a, then run the simulator again.
 
 More ideas are in examples/: each folder has a robot.py you can copy over this one and deploy to the robot (examples/README.md lists them in order, and each folder has a README.md explaining it). examples/01_basic/robot.py puts the original back.
 
@@ -65,14 +66,15 @@ More ideas are in examples/: each folder has a robot.py you can copy over this o
 Autos can run commands by name. robot.py has one called printHello:
 
 ```python
-self.autos.addCommand("printHello", commands2.PrintCommand("Hello from auto!"))
+hello = commands2.PrintCommand("Hello from auto!")          # a command that prints a message
+self.autos.addCommand("printHello", hello)                  # autos can run it by this name
 ```
 
 In the PathPlanner app, add a Named Command to an auto and type printHello.
 
 ## Day 4: Set up the real robot
 
-Before driving, go through the setup steps in examples/, in order: 00_00_robotsettings to 00_10_wheeldiameter. Each one tests one thing (every motor and sensor one at a time, then the zeros, the tuning, the gyro, the wheel size) and tells you exactly which line of robot_settings.py to change when something is wrong. Each step's README.md has the steps.
+Before driving, go through the setup steps in examples/, in order: 00_00_robotsettings to 00_11_autotuneposition. Each one tests one thing (every motor and sensor one at a time, then the zeros, the tuning, the gyro, the wheel size, and last the PID that drives the robot to a spot) and tells you exactly which line of robot_settings.py to change when something is wrong. Each step's README.md has the steps.
 
 1. Start with step 0 (examples/00_00_robotsettings/README.md): it explains the robot's parts and every line of robot_settings.py, then you fill it in and deploy for the first time. Not sure about the motor and encoder directions? Leave them; steps 2, 3 and 6 work them out.
 2. For each step: copy its robot.py over robot.py, then connect to the robot and deploy from the VS Code terminal:
@@ -82,7 +84,7 @@ py -m robotpy deploy
 ```
 
 3. Follow that step's README, fix what it finds, and go on to the next.
-4. When step 10 is done, copy examples/01_basic/robot.py back over robot.py and deploy. Now drive.
+4. When step 11 is done, copy examples/01_basic/robot.py back over robot.py and deploy. Now drive.
 
 
 Deploy again any time you change robot.py or robot_settings.py.
@@ -93,7 +95,7 @@ Deploy again any time you change robot.py or robot_settings.py.
 
 | Where | What |
 |---|---|
-| examples/ | 11 setup steps (00_00 to 00_10), then 35 small examples, one robot.py each: autos, buttons, dashboard, mechanisms, cameras (list in examples/README.md) |
+| examples/ | 12 setup steps (00_00 to 00_11), then 36 small examples, one robot.py each: autos, buttons, dashboard, mechanisms, cameras, heading hold (list in examples/README.md) |
 | docs/DRIVETRAIN.md | full drivetrain guide: wiring, calibration, autotune, simulator (for coaches) |
 | docs/PATHPLANNER.md | full PathPlanner guide |
 | docs/VISION.md | setting up cameras (PhotonVision on the Orange Pi); then try examples 32 to 35 |

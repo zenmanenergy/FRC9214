@@ -16,24 +16,27 @@ The step that fixes wheels that fight each other or point the wrong way. It turn
 ## The code to look at
 
 ```python
-return commands2.FunctionalCommand(
-    lambda: self.startTest(name),
-    lambda: module.spinSteering(TEST_VOLTS),  # every loop
-    lambda interrupted: self.endTest(name),
-    lambda: False,
-    self.drivetrain,
-).withTimeout(TEST_SECONDS)
+return commands2.FunctionalCommand(                               # a command built from 4 functions:
+    lambda: self.startTest(name),                                 # 1. at the start
+    lambda: module.spinSteering(TEST_VOLTS),                      # 2. every loop: fixed volts, no PID
+    lambda interrupted: self.endTest(name),                       # 3. at the end
+    lambda: False,                                                # 4. finished? (never: the timeout ends it)
+    self.drivetrain,                                              # it uses the drivetrain
+).withTimeout(TEST_SECONDS)                                       # stop after TEST_SECONDS
 ```
 
 ```python
-if (motor > 0) == (mine > 0):
+if (motor > 0) == (mine > 0):                                     # 3. both turned the same way?
     print("  Motor and encoder agree. LOOK at the wheel:")
 ```
 
 ```python
-print("  PROBLEM: motor and encoder DISAGREE (this makes the wheel fight itself). LOOK:")
-print(f"    turned counterclockwise -> the encoder is backwards: flip encoder_reversed for {setting}")
-print(f"    turned clockwise        -> the motor is backwards: flip turn_motor_bottom for {setting}")
+print("  PROBLEM: motor and encoder DISAGREE")
+print("  (this makes the wheel fight itself). LOOK:")
+print("    counterclockwise -> encoder backwards:")
+print(f"      flip encoder_reversed for {setting}")
+print("    clockwise -> motor backwards:")
+print(f"      flip turn_motor_bottom for {setting}")
 ```
 
 - **spinSteering(volts)** runs the steering motor at a fixed voltage with no PID. It's the most direct test: volts in, movement out.

@@ -3,6 +3,7 @@ Ways to get the PathPlanner RobotConfig (mass, inertia, wheel grip, module
 layout) that PathPlanner needs to plan realistic paths.
 """
 
+import json
 import logging
 import os
 import typing
@@ -81,3 +82,50 @@ def boxMOI(massKg: float, lengthM: float, widthM: float) -> float:
     """Moment of inertia of a uniform rectangular robot, kg m^2. A starting
     estimate; real robots with heavy parts near the edges are higher."""
     return massKg * (lengthM**2 + widthM**2) / 12
+
+
+def matchRobot(
+    config: RobotConfig, trackWidthM: float, wheelBaseM: float, maxSpeedMps: float
+) -> RobotConfig:
+    """The app's RobotConfig, with the wheel positions and top speed taken from
+    robot_settings.py instead (the robot code's own numbers), so PathPlanner
+    never plans a path faster than MAX_SPEED_MPS lets the wheels go. Mass,
+    inertia, grip and motor stay as entered in the app. If anything goes
+    wrong, the app's config is returned unchanged."""
+    try:
+        m = config.moduleConfig
+        module = ModuleConfig(
+            m.wheelRadiusMeters,
+            min(m.maxDriveVelocityMPS, maxSpeedMps),
+            m.wheelCOF,
+            m.driveMotor,  # already includes the gear ratio
+            m.driveCurrentLimit,
+            1,
+        )
+        x, y = wheelBaseM / 2, trackWidthM / 2
+        offsets = [Translation2d(x, y), Translation2d(x, -y), Translation2d(-x, y), Translation2d(-x, -y)]
+        return RobotConfig(config.massKG, config.MOI, module, offsets)
+    except Exception as e:  # never stop the robot over this
+        logger.warning("Could not adjust the PathPlanner robot config (%s); using the app's", e)
+        return config
+
+
+def appMismatches(robotLengthM: float, robotWidthM: float, trackWidthM: float) -> typing.List[str]:
+    """Settings in the PathPlanner app (deploy/pathplanner/settings.json) that
+    disagree with robot_settings.py. The app uses the robot size to keep paths
+    and pathfinding clear of walls, so it should match."""
+    try:
+        with open(settingsFilePath()) as f:
+            app = json.load(f)
+    except Exception:
+        return []
+    out = []
+    for key, mine, label in (
+        ("robotLength", robotLengthM, "Robot Length (ROBOT_LENGTH_M)"),
+        ("robotWidth", robotWidthM, "Robot Width (ROBOT_WIDTH_M)"),
+        ("robotTrackwidth", trackWidthM, "Trackwidth (TRACK_WIDTH_M)"),
+    ):
+        theirs = app.get(key)
+        if isinstance(theirs, (int, float)) and abs(theirs - mine) > 0.01:
+            out.append(f"{label}: app {theirs:.2f} m, robot_settings.py {mine:.2f} m")
+    return out

@@ -13,6 +13,8 @@ import math
 
 import robot_settings as RS
 
+from .. import carpet
+
 from wpimath.geometry import Translation2d
 from wpimath.kinematics import SwerveDrive4Kinematics
 
@@ -91,6 +93,22 @@ class DriveConstants:
     # (about 4.79 m/s, REV's template uses 4.8); lower it for headroom.
     kMaxSpeedMetersPerSecond = min(RS.MAX_SPEED_MPS, ModuleConstants.kDriveWheelFreeSpeedRps)
     kMaxAngularSpeed = math.radians(RS.MAX_TURN_DEG_PER_S)  # radians per second
+
+    # Heading hold (HEADING_HOLD in robot_settings.py): while driving with no
+    # turn input, the tuned heading PID (headP/I/D, from the position
+    # autotune) turns the robot back to where it was facing, limited:
+    kHeadingHold = getattr(RS, "HEADING_HOLD", True)
+    kHeadingHoldMaxDegPerS = 70.0  # never turns back faster than this
+    kHeadingHoldSettleDegPerS = 10.0  # after a turn, hold once slower than this
+    kHeadingHoldMinMove = 0.02  # only while driving at least 2 % speed
+
+    # driveDistance: the tuned position PID (posP/I/D) drives to the target
+    # point; done within the tolerance. Speeding up is limited so the wheels
+    # don't slip. The SPARKs' speed PID does the rest.
+    kDistanceToleranceM = 0.01  # done within 1 cm
+    kDistanceHeadingToleranceDeg = 1.0
+    kDistanceAccelMps2 = 3.0
+    kDistanceTimeoutS = 2.0  # extra seconds allowed beyond the expected time
 
     # Chassis configuration (REV default is a 0.6858 m square; measure yours)
     kTrackWidth = RS.TRACK_WIDTH_M
@@ -209,7 +227,9 @@ class AutotuneConstants:
     kSteerOvershootMin = 0.03  # less than 3 %: try a higher P
 
     # Drive test (robot drives straight forward, then back to where it started)
-    kDriveMaxDistanceM = 2.0  # clear floor needed in front of the robot
+    # Farthest the drive test goes. It coasts up to about 0.3 m more, so this fits
+    # the practice carpet (robot_settings.py; starting at one end): at most 2 m.
+    kDriveMaxDistanceM = max(0.5, min(2.0, carpet.END_AHEAD_M - 0.35))
     kDriveRampVoltsPerSecond = 0.75
     kDriveRampMaxSeconds = 7.0
     kDriveStepVolts = 5.0

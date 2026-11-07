@@ -6,14 +6,14 @@ Mix a PathPlanner path with a simple move in one sequence.
 
 ## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot on the floor with about 3 m of clear space around it and someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot at one end of the practice carpet, facing the long way, centered side to side, with the back bumper about 20 cm from the edge, have someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**. The paths are 1.2 m long, so they fit the carpet; on a bigger floor, drag their points out in the PathPlanner app.
 
 ## The code to look at
 
 ```python
-return commands2.SequentialCommandGroup(
-    self.autos.drivePath("Drive Forward 2m"),
-    self.drivetrain.turnTo(180),
+return commands2.SequentialCommandGroup(                    # these run one after another:
+    self.autos.drivePath("Drive Forward"),                  # 1. drive a path from the PathPlanner app
+    self.drivetrain.turnTo(180),                            # 2. turn to face 180 degrees (backwards)
 )
 ```
 

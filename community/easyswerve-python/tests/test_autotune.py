@@ -15,7 +15,7 @@ import pytest
 
 from easyswerve.tuning import fit
 
-from easyswerve.sim.physics import findDrivetrain
+from conftest import drivetrainOrSkip
 
 
 # ---- math only ----------------------------------------------------------------
@@ -119,6 +119,25 @@ def test_step_response_metrics():
 # ---- whole autotune in the simulator -----------------------------------------------
 
 
+def test_position_lag_fit_and_rules():
+    """The position autotune's fit finds a known dead time and lag, and both
+    rule sets give positive gains."""
+    from easyswerve.tuning.positiontune import fitLag, simcPID, znPID
+
+    dead, lag, speed = 0.04, 0.06, 0.6
+    times = [0.02 * k for k in range(36)]
+    values = []
+    for t in times:
+        s = t - dead
+        values.append(speed * (s - lag * (1 - math.exp(-s / lag))) if s > 0 else 0.0)
+    gain, foundDead, foundLag = fitLag(times, values, speed)
+    assert gain == pytest.approx(1.0, abs=0.02)
+    assert foundDead == pytest.approx(dead, abs=0.006)
+    assert foundLag == pytest.approx(lag, abs=0.006)
+    for p, i, d in (simcPID(gain, foundDead, foundLag), znPID(30.0, 0.2)):
+        assert p > 0 and i > 0 and d > 0
+
+
 def test_full_autotune_in_sim(control, robot, monkeypatch, tmp_path):
     import commands2
     from wpilib.simulation import DriverStationSim
@@ -134,12 +153,12 @@ def test_full_autotune_in_sim(control, robot, monkeypatch, tmp_path):
         DriverStationSim.setTest(True)
         control.step_timing(seconds=0.2, autonomous=False, enabled=True)
 
-        tuner = findDrivetrain(robot).autotuner
+        tuner = drivetrainOrSkip(robot).autotuner
         commands2.CommandScheduler.getInstance().schedule(tuner.fullCommand())
-        control.step_timing(seconds=60, autonomous=False, enabled=True)
+        control.step_timing(seconds=200, autonomous=False, enabled=True)  # steering, drive, position
 
         assert not tuner.failed, "\n".join(tuner.lines)
-        g = findDrivetrain(robot).gains
+        g = drivetrainOrSkip(robot).gains
         assert g.source == "autotune"
         assert (tmp_path / "tuning.json").exists()
 
@@ -148,6 +167,9 @@ def test_full_autotune_in_sim(control, robot, monkeypatch, tmp_path):
         assert g.driveKS == pytest.approx(physics.SIM_DRIVE_KS, abs=0.05)
         assert 0.05 < g.driveP <= 1.0
         assert 0.1 < g.steerP < 3.0
+        # position and heading PID from the position autotune
+        assert 1.0 < g.posP < 30.0 and g.posI >= 0.0
+        assert 1.0 < g.headP < 30.0 and g.headI >= 0.0
         # steering friction push: a fraction of the simulated steering friction
         from easyswerve.drivetrain.constants import AutotuneConstants
 

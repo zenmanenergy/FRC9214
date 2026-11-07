@@ -11,16 +11,20 @@ Copy this folder's robot.py over robot.py in the project folder and deploy (py -
 ## The code to look at
 
 ```python
-MOTOR_CAN_ID = 20  # change to your motor's CAN ID
+MOTOR_CAN_ID = 20                                                   # change to your motor's CAN ID
 ```
 
 ```python
-self.motor = SparkMax(MOTOR_CAN_ID, SparkMax.MotorType.kBrushless)
+kind = SparkMax.MotorType.kBrushless                        # NEO motors are brushless
+self.motor = SparkMax(MOTOR_CAN_ID, kind)                   # the SPARK MAX with that CAN ID
 ```
 
 ```python
-self.controller.a().whileTrue(
-    commands2.StartEndCommand(lambda: self.motor.set(0.5), lambda: self.motor.set(0))
+self.controller.a().whileTrue(                              # hold A to run this command:
+    commands2.StartEndCommand(                              # one thing at the start, another at the end:
+        lambda: self.motor.set(0.5),                        # start (A pressed): 50 % power forward
+        lambda: self.motor.set(0),                          # end (A let go): stop
+    )
 )
 ```
 

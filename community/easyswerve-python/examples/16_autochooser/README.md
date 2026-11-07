@@ -11,21 +11,23 @@ Copy this folder's robot.py over robot.py and deploy (py -m robotpy deploy). Ope
 ## The code to look at
 
 ```python
-self.chooser = wpilib.SendableChooser()
-self.chooser.setDefaultOption("Drive forward", self.driveForward)
-self.chooser.addOption("Spin", self.spin)
-self.chooser.addOption("Do nothing", self.doNothing)
-wpilib.SmartDashboard.putData("Auto", self.chooser)
+self.chooser = wpilib.SendableChooser()                     # a list of autos shown on the dashboard
+forward = self.driveForward                                 # the function that builds this auto
+self.chooser.setDefaultOption("Drive forward", forward)     # picked unless you choose another
+self.chooser.addOption("Spin", self.spin)                   # another choice: name, function
+self.chooser.addOption("Do nothing", self.doNothing)        # and another
+wpilib.SmartDashboard.putData("Auto", self.chooser)         # show it on the dashboard as "Auto"
 ```
 
 ```python
-buildAuto = self.chooser.getSelected()
-return buildAuto()
+buildAuto = self.chooser.getSelected()                      # the function for the auto that was picked
+return buildAuto()                                          # call it: it builds the auto
 ```
 
 ```python
-def driveForward(self):
-    return self.drivetrain.driveFor(2.0, forward=0.25)
+def driveForward(self):                                         # builds the "Drive forward" auto
+    seconds = carpet.fitSeconds(2.0, forward=0.25)              # 2 s, or less to stay on the carpet
+    return self.drivetrain.driveFor(seconds, forward=0.25)      # 2 s forward
 ```
 
 - **SendableChooser** is the drop-down list. setDefaultOption is the choice if nobody picks; addOption adds more.

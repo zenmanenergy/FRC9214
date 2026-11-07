@@ -6,12 +6,13 @@ Combine forward and sideways to drive at an angle, while still facing straight a
 
 ## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot on the floor with about 3 m of clear space around it and someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot in the middle of the practice carpet, facing the long way, have someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**. The moves are sized to fit the carpet (CARPET_LENGTH_M and CARPET_WIDTH_M in robot_settings.py).
 
 ## The code to look at
 
 ```python
-return self.drivetrain.driveFor(2.0, forward=0.2, left=0.2)
+seconds = carpet.fitSeconds(2.0, forward=0.2, left=0.2)          # 2 s, or less to stay on the carpet
+return self.drivetrain.driveFor(seconds, forward=0.2, left=0.2)  # forward AND left at once: diagonal
 ```
 
 - **forward=0.2 and left=0.2 together** add up like arrows (vectors): equal parts forward and left point 45 degrees to the left.

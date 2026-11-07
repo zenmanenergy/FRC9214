@@ -21,140 +21,135 @@ and buzz for about 20 seconds; the robot doesn't drive. Read the console.
 
 To use this example: copy this file over robot.py in the project folder
 (the file next to robot_settings.py), then deploy: py -m robotpy deploy
+
+The comments on the right explain each line. Python ignores everything
+after a # sign, so they don't change what the code does.
 """
 
 import dataclasses
 
-import commands2
+import commands2                                                              # command-based robot library
 
-from easyswerve import Drivetrain
+from easyswerve import Drivetrain                                             # the swerve drivetrain (4 modules)
 from easyswerve.tuning.zieglernichols import SteeringStepCheck, ZieglerNicholsTest
 
-# Ziegler and Nichols' table: P = kP x Ku, Ti = ti x Tu, Td = td x Tu
-# (None = that part is not used)
-RULES = {
-    #                  kP     ti     td
-    "P only":         (0.50,  None,  None),
-    "PI":             (0.45,  0.83,  None),
-    "PID (classic)":  (0.60,  0.50,  0.125),
-    "some overshoot": (0.33,  0.50,  0.33),
+RULES = {                                                                     # Ziegler and Nichols' table. Columns:
+    "P only":         (0.50,  None,  None),                                   # kP: P = kP x Ku
+    "PI":             (0.45,  0.83,  None),                                   # ti: Ti = ti x Tu
+    "PID (classic)":  (0.60,  0.50,  0.125),                                  # td: Td = td x Tu
+    "some overshoot": (0.33,  0.50,  0.33),                                   # None = that part is not used
     "no overshoot":   (0.20,  0.50,  0.33),
 }
-RULE = "no overshoot"  # which row to use; try the others!
+RULE = "no overshoot"                                                         # which row to use; try the others!
 
-I_ZONE_DEG = 3.0  # the I part only works within this many degrees of the target
-GOOD_OVERSHOOT_PCT = 25.0  # save the new gains only if overshoot is under this
+I_ZONE_DEG = 3.0                                                              # I only works this close to the target (degrees)
+GOOD_OVERSHOOT_PCT = 25.0                                                     # save new gains only if overshoot is under this
 
 
-class MyRobot(commands2.TimedCommandRobot):
-    def robotInit(self) -> None:
-        """Runs once when the robot turns on: build the robot here."""
-        self.drivetrain = Drivetrain()
+class MyRobot(commands2.TimedCommandRobot):                                   # our robot: runs 50 times a second
+    def robotInit(self) -> None:                                              # runs ONCE, when the robot code starts
+        self.drivetrain = Drivetrain()                                        # no controller: the test moves the wheels itself
+        self.test = None                                                      # the tuning test (made in makeAuto)
+        self.addPeriodic(self.sampleSteering, 0.005)                          # also run sampleSteering every 5 ms
+        self.before = {}                                                      # step results before tuning
+        self.after = {}                                                       # and after
+        self.newGains = None                                                  # the new gains (None = none yet)
+        self.autoCommand = None                                               # no auto yet (None = nothing)
 
-        # The swings are fast, so the test reads the steering every 5 ms
-        # instead of every 20 ms (the normal robot loop)
-        self.test = None
-        self.addPeriodic(self.sampleSteering, 0.005)
+    def sampleSteering(self) -> None:                                         # every 5 ms: the swings are too fast for 20 ms
+        if self.test is not None:                                             # if the test exists...
+            self.test.sample()                                                # ...let it read the steering angles
 
-        self.before = {}
-        self.after = {}
-        self.newGains = None
-        self.autoCommand = None
-
-    def sampleSteering(self) -> None:
-        if self.test is not None:
-            self.test.sample()
-
-    def makeAuto(self):
-        """Builds the command that runs in autonomous."""
-        self.before, self.after, self.newGains = {}, {}, None
-        self.test = ZieglerNicholsTest(self.drivetrain, onDone=self.useResults)
-        return commands2.SequentialCommandGroup(
-            commands2.PrintCommand("Step 1: steering steps with the gains it has now..."),
-            SteeringStepCheck(self.drivetrain, onDone=self.before.update),
-            commands2.PrintCommand("Step 2: raising P until the wheels keep swinging..."),
-            self.test,
-            commands2.PrintCommand("Step 4: steering steps with the new gains...").onlyIf(
-                lambda: self.newGains is not None
-            ),
-            SteeringStepCheck(self.drivetrain, onDone=self.after.update).onlyIf(
-                lambda: self.newGains is not None
-            ),
-            commands2.InstantCommand(self.finish),
+    def makeAuto(self):                                                       # builds what autonomous will do
+        self.before, self.after, self.newGains = {}, {}, None                 # start fresh each time
+        dt = self.drivetrain                                                  # a shorter name for the drivetrain
+        self.test = ZieglerNicholsTest(dt, onDone=self.useResults)            # calls useResults when done
+        before = SteeringStepCheck(dt, onDone=self.before.update)             # measure steering: before
+        after = SteeringStepCheck(dt, onDone=self.after.update)               # and after
+        haveGains = lambda: self.newGains is not None                         # True once there are new gains
+        return commands2.SequentialCommandGroup(                              # these run one after another:
+            commands2.PrintCommand("Step 1: steps with the gains now..."),
+            before,                                                           # step 1
+            commands2.PrintCommand("Step 2: raising P until it swings..."),
+            self.test,                                                        # step 2: Ku and Tu (then step 3: useResults)
+            commands2.PrintCommand("Step 4: steps with the new gains..."),
+            after.onlyIf(haveGains),                                          # step 4 (only if there are new gains)
+            commands2.InstantCommand(self.finish),                            # step 5: save or not
         )
 
-    def useResults(self, results) -> None:
-        """Step 3: the test is done. Ku and Tu -> P, I, D."""
+    def useResults(self, results) -> None:                                    # step 3: Ku and Tu -> P, I, D
         print("Ultimate gain Ku and period Tu of each module:")
-        found = []
-        problems = []
-        for r in results:
-            if r.ku is None:
+        found = []                                                            # modules that gave a result
+        problems = []                                                         # why the others didn't
+        for r in results:                                                     # repeat for each module's result
+            if r.ku is None:                                                  # no Ku found?
                 print(f"  {r.name}: no result")
-                if r.problem not in problems:
+                if r.problem not in problems:                                 # each reason only once
                     problems.append(r.problem)
-            else:
-                print(f"  {r.name}: Ku = {r.ku:6.2f}   Tu = {r.tu * 1000:5.1f} ms   ({len(r.trials)} tries)")
+            else:                                                             # otherwise:
+                ms = r.tu * 1000                                              # Tu in milliseconds
+                print(f"  {r.name}: Ku = {r.ku:6.2f}   Tu = {ms:5.1f} ms")    # :6.2f = 2 decimals
                 found.append(r)
-        if len(found) < len(results):
+        if len(found) < len(results):                                         # a module had no result?
             for problem in problems:
                 print(f"  Why: {problem}")
-            print("Not every module gave a result, so the gains are unchanged.")
-            return
+            print("Not every module gave a result: gains unchanged.")
+            return                                                            # stop here
 
-        # All four share one set of gains, so use the module that starts
-        # swinging first (smallest Ku): safe for all of them.
-        limit = min(found, key=lambda r: r.ku)
-        ku, tu = limit.ku, limit.tu
-        if max(r.ku for r in found) > 1.5 * ku:
-            print(f"  Note: {limit.name} swings much sooner than the others. Check it for binding.")
+        limit = min(found, key=lambda r: r.ku)                                # the module that swings first (smallest Ku)
+        ku, tu = limit.ku, limit.tu                                           # all 4 share gains, so use its Ku and Tu
+        if max(r.ku for r in found) > 1.5 * ku:                               # much lower than the others?
+            print(f"  Note: {limit.name} swings much sooner than the others.")
+            print("  Check it for binding.")
 
-        kP, ti, td = RULES[RULE]
-        p = kP * ku
-        i = p / (ti * tu) if ti else 0.0  # I = P / Ti
-        d = p * (td * tu) if td else 0.0  # D = P x Td
+        kP, ti, td = RULES[RULE]                                              # the chosen row of the table
+        p = kP * ku                                                           # P = kP x Ku
+        i = p / (ti * tu) if ti else 0.0                                      # I = P / Ti   (0 if not used)
+        d = p * (td * tu) if td else 0.0                                      # D = P x Td   (0 if not used)
         print(f'Rule "{RULE}": P = {p:.3f}   I = {i:.2f}   D = {d:.5f}')
 
-        self.newGains = dataclasses.replace(
+        self.newGains = dataclasses.replace(                                  # a copy of the gains, with these changed:
             self.drivetrain.gains,
             steerP=p,
             steerI=i,
             steerD=d,
-            steerIZoneDeg=I_ZONE_DEG if i else 0.0,
-            source=f"Ziegler-Nichols ({RULE})",
+            steerIZoneDeg=I_ZONE_DEG if i else 0.0,                           # I zone only if I is used
+            source=f"Ziegler-Nichols ({RULE})",                               # a note: where they came from
         )
-        self.oldGains = self.drivetrain.gains
-        self.drivetrain.applyGains(self.newGains)  # try them (not saved yet)
+        self.oldGains = self.drivetrain.gains                                 # keep the old ones, in case
+        self.drivetrain.applyGains(self.newGains)                             # try the new ones (not saved yet)
 
-    def finish(self) -> None:
-        if self.newGains is None:
+    def finish(self) -> None:                                                 # step 5: compare before and after, save if good
+        if self.newGains is None:                                             # no new gains?
             print("No new gains. Read the messages above.")
             return
 
-        def describe(report):
-            settle = report["settleS"]
+        def describe(report):                                                 # a step result as one line of text
+            settle = report["settleS"]                                        # seconds to settle (None = never)
             took = f"{settle:.2f} s" if settle is not None else "never settled"
             return f"overshoot {report['overshootPct']:.0f} %, settled in {took}"
 
         print(f"Before: {describe(self.before)}")
         print(f"After:  {describe(self.after)}")
-        good = self.after["settleS"] is not None and self.after["overshootPct"] < GOOD_OVERSHOOT_PCT
-        if good:
-            path = self.drivetrain.saveGains(self.newGains)
+        settled = self.after["settleS"] is not None                           # did it settle?
+        calm = self.after["overshootPct"] < GOOD_OVERSHOOT_PCT                # and overshoot little?
+        if settled and calm:                                                  # good: keep them
+            path = self.drivetrain.saveGains(self.newGains)                   # save on the roboRIO
             print(f"Saved to {path}. These are used from now on.")
-        else:
-            self.drivetrain.applyGains(self.oldGains)
-            print('Not good enough, so NOT saved (back to the old gains). Try RULE = "no overshoot".')
+        else:                                                                 # not good: undo
+            self.drivetrain.applyGains(self.oldGains)                         # back to the old gains
+            print("Not good enough, so NOT saved (old gains back).")
+            print('Try RULE = "no overshoot".')
 
-    def autonomousInit(self) -> None:
-        self.autoCommand = self.makeAuto()
-        if self.autoCommand is not None:
-            commands2.CommandScheduler.getInstance().schedule(self.autoCommand)
+    def autonomousInit(self) -> None:                                         # runs once when enabled in Autonomous
+        self.autoCommand = self.makeAuto()                                    # build the auto (makeAuto, above)
+        if self.autoCommand is not None:                                      # if there is an auto...
+            scheduler = commands2.CommandScheduler.getInstance()              # the part that runs commands
+            scheduler.schedule(self.autoCommand)                              # start the auto
 
-    def teleopInit(self) -> None:
-        # Stop the auto when the driver takes over
-        if self.autoCommand is not None:
-            self.autoCommand.cancel()
+    def teleopInit(self) -> None:                                             # runs once when enabled in Teleoperated
+        if self.autoCommand is not None:                                      # if an auto is still running...
+            self.autoCommand.cancel()                                         # stop the auto: the driver takes over
 
-    def testInit(self) -> None:
-        commands2.CommandScheduler.getInstance().cancelAll()
+    def testInit(self) -> None:                                               # runs once when enabled in Test
+        commands2.CommandScheduler.getInstance().cancelAll()                  # stop every command that is running

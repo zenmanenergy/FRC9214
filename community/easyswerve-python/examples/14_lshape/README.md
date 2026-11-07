@@ -6,15 +6,17 @@ Drive, turn a corner, drive again. Both moves use sensors, so the corner is a tr
 
 ## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot on the floor with about 3 m of clear space around it and someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot in the middle of the practice carpet, facing the long way, have someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**. The moves are sized to fit the carpet (CARPET_LENGTH_M and CARPET_WIDTH_M in robot_settings.py).
 
 ## The code to look at
 
 ```python
-return commands2.SequentialCommandGroup(
-    self.drivetrain.driveDistance(1.5),
-    self.drivetrain.turnTo(90),
-    self.drivetrain.driveDistance(1.5),
+first = carpet.fitMeters(1.5)                               # 1.5 m, or less: the long way
+second = carpet.fitMeters(1.5, carpet.SIDE_M)               # after the turn it goes across: less room
+return commands2.SequentialCommandGroup(                    # these run one after another:
+    self.drivetrain.driveDistance(first),                   # drive that far the way the robot faces
+    self.drivetrain.turnTo(90),                             # then turn to face 90 degrees (left)
+    self.drivetrain.driveDistance(second),                  # drive that far the way the robot faces
 )
 ```
 

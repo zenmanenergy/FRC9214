@@ -13,17 +13,17 @@ This needs measured cameras (measured=True; docs/VISION.md). Copy this folder's 
 ## The code to look at
 
 ```python
-self.goal = self.vision.poseInFrontOfTag(TAG_ID, STOP_DISTANCE_M)
+self.goal = self.vision.poseInFrontOfTag(TAG_ID, STOP_DISTANCE_M)    # the spot in front of the tag
 ```
 
 ```python
-return self.autos.driveTo(
-    self.goal.X(), self.goal.Y(), self.goal.rotation().degrees(), maxSpeedMps=1.5
-)
+x, y = self.goal.X(), self.goal.Y()
+facing = self.goal.rotation().degrees()
+return self.autos.driveTo(x, y, facing, maxSpeedMps=1.5)             # slowly (1.5 m/s at most)
 ```
 
 ```python
-self.controller.a().whileTrue(self.driveToGoal())
+self.controller.a().whileTrue(self.driveToGoal())                # hold A: drive there by itself
 ```
 
 - **poseInFrontOfTag(TAG_ID, 1.0)** looks the tag up in the field map and works out the spot 1 m in front of it, facing it.
@@ -36,6 +36,7 @@ self.controller.a().whileTrue(self.driveToGoal())
 - **This needs measured cameras.** Driving to a spot only works if the robot knows where it is. Unmeasured cameras (measured=False) don't correct the position, so the robot goes where it thinks the spot is, using wheels only.
 - **Field map.** Every tag's position is published by FIRST each season. The code loads it, so you name a tag number instead of measuring the field.
 - **Pathfinding.** The robot plans around obstacles in the PathPlanner navgrid (deploy/pathplanner/navgrid.json).
+- **Tuned, not guessed.** While it drives, PathPlanner's PID compares where the robot is with where the path says it should be and corrects. Its P, I and D are the position and heading gains from setup step 11 (00_11_autotuneposition). PathPlanner reads them when the robot code starts, so restart the code (or deploy) after tuning.
 
 ## Try this
 

@@ -13,7 +13,7 @@
 > | easyswerve_vision, its config.py cameras and VISION_ENABLED | easyswerve/vision/; cameras and VISION_ENABLED are in robot_settings.py |
 > | self.drivetrain, DriveSubsystem() | self.drivetrain, Drivetrain() |
 > | robotcontainer.py, RobotContainer | robot.py (built in robotInit; no separate container) |
-> | examples/robotcontainer.py, examples/deploy/pathplanner/ | examples/<name>/robot.py: 11 setup steps (00_00 to 00_10) and 35 small examples (examples/README.md) |
+> | examples/robotcontainer.py, examples/deploy/pathplanner/ | examples/<name>/robot.py: 12 setup steps (00_00 to 00_11) and 36 small examples (examples/README.md) |
 >
 > Autotune and calibration buttons are created by Drivetrain() automatically.
 
@@ -127,7 +127,7 @@ python -m robotpy sync
 | Robot MOI | start with mass x (length^2 + width^2) / 12, kg m^2 |
 | Wheel radius | 0.0508 m |
 | Drive gearing | 6.3 |
-| True max drive speed | 4.5 m/s to start; lower it to what the robot really reaches on carpet |
+| True max drive speed | 4.5 m/s; lower it to what the robot really reaches on carpet (the robot code also never plans faster than MAX_SPEED_MPS) |
 | Wheel COF | 1.2 (1.0 if unsure) |
 | Drive motor | NEO (use this for NEO 2.0 too) |
 | Drive current limit | 50 A |
@@ -144,32 +144,19 @@ The starter settings.json already has the EasySwerve values filled in, with plac
 
 All positions are field meters from the blue corner. Every path is drawn from the blue side and mirrored on red. Each auto resets odometry to its first path's start, so place the robot there (or anywhere in the simulator).
 
-Test paths (folder Tests), for checking and tuning the drive:
+The starter paths are small, so they fit the practice carpet (2.74 m by 1.52 m; CARPET_LENGTH_M and CARPET_WIDTH_M in robot_settings.py). Put the robot at one end of the carpet, facing the long way, centered side to side, with the back bumper about 20 cm from the edge. On a bigger floor or a field, drag the points out in the PathPlanner app.
 
-| Path | What it does | Checks |
-|---|---|---|
-| Test Straight 2m | (2.0, 4.0) to (4.0, 4.0), facing forward, max 2 m/s | translation P, odometry distance |
-| Test Strafe 1.5m | (2.0, 4.0) to (2.0, 5.5) sideways, heading held at 0 | sideways tracking, heading hold |
-| Test Spin While Driving | (2.0, 4.0) to (5.0, 4.0) while turning 0 to 180 degrees | rotation P while translating |
-| Test S-Curve | (2.0, 3.0) through (3.5, 4.2) to (5.0, 3.0); faces 90 degrees at the middle | curves, rotation targets |
-
-Example paths (folder Examples), showing PathPlanner features:
-
-| Path | Shows |
+| Path | What it does |
 |---|---|
-| Example Out | event marker "Say hello" at the halfway point runs named command printHello; constraint zone "Slow near the end" limits the last 30 % to 1 m/s |
-| Example Back | the return trip, robot facing forward while driving backward |
-| Score Approach | a short final approach, facing the wall (180 degrees), max 1.5 m/s; used by teleop auto-align (example 6.3) |
-
-Autos (one per test path, plus two examples):
+| Drive Forward | (2.0, 4.0) to (3.2, 4.0): 1.2 m straight, facing forward, max 2 m/s |
+| S-Curve | (2.0, 4.0) through (2.6, 4.1) to (3.2, 4.0): a gentle 1.2 m curve; faces 90 degrees at the middle |
 
 | Auto | Sequence |
 |---|---|
-| Test Straight, Test Strafe, Test Spin While Driving, Test S-Curve | that one path |
-| Example Out and Back | Example Out, xLock (0.5 s), wait 0.5 s, printHello, Example Back |
-| Example Intake While Driving | Example Out with intakeDemo running alongside (deadline group: intake stops when the path ends), wait 0.5 s, Example Back |
+| Drive Forward | the Drive Forward path |
+| Test S-Curve | the S-Curve path, then the named command printHello |
 
-They use the named commands printHello, xLock and intakeDemo, which examples/robotcontainer.py registers.
+The paths don't change when the carpet size in robot_settings.py changes; the moves in the code examples do (easyswerve/carpet.py).
 
 ---
 
@@ -372,7 +359,7 @@ The "Example Out" path has a constraint zone "Slow near the end" from 0.7 to 1.0
 
 ### 6.11 Face a direction partway (rotation target)
 
-The "Test S-Curve" path has a rotation target at 1.0 (the middle waypoint) of 90 degrees: the robot turns to face 90 degrees by then, and back to 0 by the end. A holonomic robot can point anywhere while it drives the path; rotation targets and the goal end rotation say where.
+The "S-Curve" path has a rotation target at 1.0 (the middle waypoint) of 90 degrees: the robot turns to face 90 degrees by then, and back to 0 by the end. A holonomic robot can point anywhere while it drives the path; rotation targets and the goal end rotation say where.
 
 ### 6.12 Build an auto in code instead of the app
 
@@ -468,7 +455,7 @@ Do this after drivetrain autotune (the drivetrain must already hold its commande
 Do the drivetrain tuning in the EasySwerve guide first; path following can't fix a drive that doesn't hold its commanded speed.
 
 1. Set the true max drive speed (app) or maxDriveSpeedMps (code) to what the robot actually reaches on carpet. Too high = paths it can't keep up with.
-2. Draw a 3 m straight path. Run it. Compare where the robot stops to where the path ends.
+2. Draw a straight path as long as your floor allows. Run it. Compare where the robot stops to where the path ends.
 3. translationPID kP (default 5): raise if the robot ends short or drifts off the line; lower if it wobbles side to side.
 4. rotationPID kP (default 5): raise if heading lags; lower if it oscillates.
 5. MOI too low makes rotation planning aggressive and the robot overshoots heading; raise it.

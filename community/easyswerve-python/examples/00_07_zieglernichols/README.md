@@ -15,31 +15,30 @@ Tunes the steering P, I and D by the Ziegler-Nichols "ultimate gain" method, aut
 ## The code to look at
 
 ```python
-RULES = {
-    #                  kP     ti     td
-    "P only":         (0.50,  None,  None),
-    "PI":             (0.45,  0.83,  None),
-    "PID (classic)":  (0.60,  0.50,  0.125),
-    "some overshoot": (0.33,  0.50,  0.33),
+RULES = {                                                                     # Ziegler and Nichols' table. Columns:
+    "P only":         (0.50,  None,  None),                                   # kP: P = kP x Ku
+    "PI":             (0.45,  0.83,  None),                                   # ti: Ti = ti x Tu
+    "PID (classic)":  (0.60,  0.50,  0.125),                                  # td: Td = td x Tu
+    "some overshoot": (0.33,  0.50,  0.33),                                   # None = that part is not used
     "no overshoot":   (0.20,  0.50,  0.33),
 }
-RULE = "no overshoot"  # which row to use; try the others!
+RULE = "no overshoot"                                                         # which row to use; try the others!
 ```
 
 ```python
-limit = min(found, key=lambda r: r.ku)
-ku, tu = limit.ku, limit.tu
+limit = min(found, key=lambda r: r.ku)                                # the module that swings first (smallest Ku)
+ku, tu = limit.ku, limit.tu                                           # all 4 share gains, so use its Ku and Tu
 ```
 
 ```python
-kP, ti, td = RULES[RULE]
-p = kP * ku
-i = p / (ti * tu) if ti else 0.0  # I = P / Ti
-d = p * (td * tu) if td else 0.0  # D = P x Td
+kP, ti, td = RULES[RULE]                                              # the chosen row of the table
+p = kP * ku                                                           # P = kP x Ku
+i = p / (ti * tu) if ti else 0.0                                      # I = P / Ti   (0 if not used)
+d = p * (td * tu) if td else 0.0                                      # D = P x Td   (0 if not used)
 ```
 
 ```python
-self.addPeriodic(self.sampleSteering, 0.005)
+self.addPeriodic(self.sampleSteering, 0.005)                          # also run sampleSteering every 5 ms
 ```
 
 - **ZieglerNicholsTest** (in easyswerve/tuning/zieglernichols.py) does steps 1 and 2: it raises P by 25 % per try and calls useResults with each module's Ku and Tu when it's done.

@@ -4,9 +4,12 @@ Autotune for the EasySwerve drivetrain.
 Runs from the dashboard in Test mode. Three entry points:
 
   steeringCommand()  robot stays in place; finds steering P       (about 30 s)
-  driveCommand()     robot drives up to kDriveMaxDistanceM forward and back;
-                     finds drive kS, kV and P                      (about 25 s)
-  fullCommand()      steering, then drive
+  driveCommand()     robot drives up to kDriveMaxDistanceM (1 m) forward and back;
+                     finds drive kS, kV and P                      (about 15 s)
+  positionCommand()  robot drives about 1 m forward and back and turns;
+                     finds the position and heading PID (tuning/positiontune.py)
+                                                                   (about 60 s)
+  fullCommand()      steering, then drive, then position
 
 How it works:
 
@@ -48,6 +51,7 @@ from ..drivetrain.constants import AutotuneConstants as AC
 from ..drivetrain.constants import ModuleConstants
 from . import fit
 from . import gains as G
+from .positiontune import PositionTune
 
 STEER = "steer"
 DRIVE = "drive"
@@ -316,11 +320,17 @@ class Autotuner:
             self._begin("drive"), *self._driveSteps(), self._finish()
         ).withName("Autotune drive")
 
+    def positionCommand(self) -> commands2.Command:
+        return commands2.SequentialCommandGroup(
+            self._begin("position"), self._guard(PositionTune(self)), self._finish()
+        ).withName("Autotune position")
+
     def fullCommand(self) -> commands2.Command:
         return commands2.SequentialCommandGroup(
-            self._begin("steering + drive"),
+            self._begin("steering + drive + position"),
             *self._steeringSteps(),
             *self._driveSteps(),
+            self._guard(PositionTune(self)),
             self._finish(),
         ).withName("Autotune all")
 
@@ -333,6 +343,9 @@ class Autotuner:
             self.drive.applyGains(defaults)
             self.status(f"reset to defaults (deleted {p})")
             print(f"[autotune] reset to defaults: {defaults.summary()}")
+            if getattr(G.RS, "TUNED_GAINS", None):
+                print("[autotune] note: TUNED_GAINS in robot_settings.py is set, so the next")
+                print("[autotune] startup uses that backup. Set it to None for the defaults.")
 
         return commands2.InstantCommand(run).withName("Autotune reset")
 
@@ -426,12 +439,17 @@ class Autotuner:
             self.drive.applyGains(g)
             self.report(f"final gains:    {g.summary()}")
             self.report(f"saved to {path} (loaded automatically at every startup)")
+            # A backup in robot_settings.py, like the steering zeros
+            print("[autotune] backup: paste this line into robot_settings.py:")
+            print(G.backupLine(g))
             self.status("done - gains saved and applied")
             sd = wpilib.SmartDashboard
             sd.putNumber("Autotune/drive P", g.driveP)
             sd.putNumber("Autotune/drive kS", g.driveKS)
             sd.putNumber("Autotune/drive kV", g.driveKV)
             sd.putNumber("Autotune/steer P", g.steerP)
+            sd.putNumber("Autotune/position P", g.posP)
+            sd.putNumber("Autotune/heading P", g.headP)
 
         return commands2.InstantCommand(run)
 

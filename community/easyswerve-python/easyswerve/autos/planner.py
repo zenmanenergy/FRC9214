@@ -30,8 +30,8 @@ from . import robotconfig as _robotconfig
 
 logger = logging.getLogger("easyswerve_pathplanner")
 
-# Starting gains for path following. These correct position error on top of
-# the planned speeds; PathPlanner's own examples use 5.0 for both.
+# Gains used only if none are given. Autos passes the position autotune's
+# gains (posP/I/D, headP/I/D); PathPlanner's own examples use P = 5.0.
 DEFAULT_TRANSLATION_PID = PIDConstants(5.0, 0.0, 0.0)
 DEFAULT_ROTATION_PID = PIDConstants(5.0, 0.0, 0.0)
 

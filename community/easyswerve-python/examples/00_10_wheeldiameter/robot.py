@@ -9,90 +9,84 @@ you measure how far it really went, and the robot works out the right number.
 
 To use this example: copy this file over robot.py in the project folder
 (the file next to robot_settings.py), then deploy: py -m robotpy deploy
+
+The comments on the right explain each line. Python ignores everything
+after a # sign, so they don't change what the code does.
 """
 
-import commands2
-import wpilib
-from commands2.button import CommandXboxController
+import commands2                                                           # command-based robot library
+import wpilib                                                              # WPILib: the library all FRC robots use
+from commands2.button import CommandXboxController                         # an Xbox controller with buttons
 
-import robot_settings
-from easyswerve import Drivetrain
+import robot_settings                                                      # load robot_settings.py (your robot's settings)
+from easyswerve import Drivetrain                                          # the swerve drivetrain (4 modules)
+from easyswerve import carpet                                              # the practice carpet's size (robot_settings.py)
 
-TEST_DISTANCE_M = 2.0  # how far the test drive goes, by the encoders
+TEST_DISTANCE_M = carpet.fitMeters(2.0, carpet.END_AHEAD_M)                # 2 m, or less to fit the carpet (from one end)
+BOX = "Wheel Check/Measured distance (m)"                                  # the name of the dashboard box
 
 
-class MyRobot(commands2.TimedCommandRobot):
-    def robotInit(self) -> None:
-        """Runs once when the robot turns on: build the robot here."""
-        self.drivetrain = Drivetrain()
-        self.controller = CommandXboxController(robot_settings.CONTROLLER_PORT)
+class MyRobot(commands2.TimedCommandRobot):                                # our robot: runs 50 times a second
+    def robotInit(self) -> None:                                           # runs ONCE, when the robot code starts
+        self.drivetrain = Drivetrain()                                     # make the drivetrain (uses robot_settings.py)
+        port = robot_settings.CONTROLLER_PORT                              # Driver Station USB slot (usually 0)
+        self.controller = CommandXboxController(port)                      # the driver's Xbox controller
+        self.drivetrain.driveWithController(self.controller)               # left stick drives, right stick turns
+        wpilib.SmartDashboard.putNumber(BOX, 0.0)                          # a dashboard box to type the distance in
+        self.startDistances = None                                         # each wheel's distance at the start
+        self.encoderDistance = None                                        # how far the encoders say it went
+        self.autoCommand = None                                            # no auto yet (None = nothing)
 
-        # Left stick moves the robot, right stick turns it
-        self.drivetrain.driveWithController(self.controller)
-
-        # A box on the dashboard to type the measured distance into
-        wpilib.SmartDashboard.putNumber("Wheel Check/Measured distance (m)", 0.0)
-
-        self.startDistances = None
-        self.encoderDistance = None
-        self.autoCommand = None
-
-    # ---- the test drive -----------------------------------------------------------------
-
-    def makeAuto(self):
-        """Builds the command that runs in autonomous."""
-        return commands2.SequentialCommandGroup(
-            commands2.InstantCommand(self.startMeasuring),
-            # Slow, so the wheels don't slip
-            self.drivetrain.driveDistance(TEST_DISTANCE_M, speed=0.15),
-            commands2.WaitCommand(0.5),  # let the robot come to a full stop
-            commands2.InstantCommand(self.stopMeasuring),
+    def makeAuto(self):                                                    # builds what autonomous will do
+        return commands2.SequentialCommandGroup(                           # these run one after another:
+            commands2.InstantCommand(self.startMeasuring),                 # 1. note the wheel distances
+            self.drivetrain.driveDistance(TEST_DISTANCE_M, speed=0.15),    # 2. drive (slow: no slipping)
+            commands2.WaitCommand(0.5),                                    # 3. let it come to a full stop
+            commands2.InstantCommand(self.stopMeasuring),                  # 4. how far did they roll?
         )
 
-    def startMeasuring(self) -> None:
-        self.startDistances = self.drivetrain.wheelDistances()
+    def startMeasuring(self) -> None:                                      # at the start of the test drive
+        self.startDistances = self.drivetrain.wheelDistances()             # each wheel's distance now
         print("Test drive: put a tape mark at the front bumper now")
 
-    def stopMeasuring(self) -> None:
-        end = self.drivetrain.wheelDistances()
-        # How far each wheel rolled, by its encoder, averaged over 4 wheels
-        rolled = [abs(e - s) for s, e in zip(self.startDistances, end)]
-        self.encoderDistance = sum(rolled) / len(rolled)
+    def stopMeasuring(self) -> None:                                       # at the end of the test drive
+        end = self.drivetrain.wheelDistances()                             # each wheel's distance now
+        pairs = zip(self.startDistances, end)                              # (start, end) for each wheel
+        rolled = [abs(e - s) for s, e in pairs]                            # how far each wheel rolled
+        self.encoderDistance = sum(rolled) / len(rolled)                   # the average of the 4
         print(f"Encoders say the robot drove {self.encoderDistance:.3f} m.")
-        print("Measure from the tape mark to the front bumper, and type it into")
-        print('the dashboard box "Wheel Check/Measured distance (m)".')
+        off = (self.encoderDistance - TEST_DISTANCE_M) * 100               # how far from the distance asked for (cm)
+        print(f"Asked for {TEST_DISTANCE_M} m: it stopped {off:+.1f} cm off (by its encoders).")
+        if abs(off) > 3:                                                   # more than 3 cm off?
+            print("  That's a lot: is something rubbing, or the battery low?")
+        print("Measure from the tape mark to the front bumper")
+        print(f'and type it into the dashboard box "{BOX}".')
 
-    # ---- the math ------------------------------------------------------------------------
+    def disabledPeriodic(self) -> None:                                    # runs 50 times a second while disabled
+        if self.encoderDistance is None:                                   # no test drive yet?
+            return
+        measured = wpilib.SmartDashboard.getNumber(BOX, 0.0)               # what was typed in the box
+        if measured <= 0:                                                  # nothing typed in yet?
+            return
+        ratio = measured / self.encoderDistance                            # real distance / encoder distance
+        correct = robot_settings.WHEEL_DIAMETER_M * ratio                  # the real diameter: same ratio
+        board = wpilib.SmartDashboard                                      # the dashboard
+        board.putNumber("Wheel Check/Set WHEEL_DIAMETER_M to", correct)    # show it there
 
-    def disabledPeriodic(self) -> None:
-        if self.encoderDistance is None:
-            return  # no test drive yet
-        measured = wpilib.SmartDashboard.getNumber("Wheel Check/Measured distance (m)", 0.0)
-        if measured <= 0:
-            return  # nothing typed in yet
+        if measured != getattr(self, "lastMeasured", None):                # a new number typed in?
+            self.lastMeasured = measured                                   # remember it (print only once)
+            print(f"Measured {measured:.3f} m, encoders {self.encoderDistance:.3f} m.")
+            print(f"Set WHEEL_DIAMETER_M = {correct:.4f} in robot_settings.py")
 
-        # Each wheel turn rolls pi x diameter. The encoders used the diameter
-        # in robot_settings.py; the real diameter is in the same ratio as the
-        # real distance to the encoder distance.
-        correct = robot_settings.WHEEL_DIAMETER_M * measured / self.encoderDistance
-        wpilib.SmartDashboard.putNumber("Wheel Check/Set WHEEL_DIAMETER_M to", correct)
+    def autonomousInit(self) -> None:                                      # runs once when enabled in Autonomous
+        self.autoCommand = self.makeAuto()                                 # build the auto (makeAuto, above)
+        if self.autoCommand is not None:                                   # if there is an auto...
+            scheduler = commands2.CommandScheduler.getInstance()           # the part that runs commands
+            scheduler.schedule(self.autoCommand)                           # start the auto
 
-        if measured != getattr(self, "lastMeasured", None):
-            self.lastMeasured = measured
-            print(
-                f"Measured {measured:.3f} m, encoders {self.encoderDistance:.3f} m. "
-                f"Set WHEEL_DIAMETER_M = {correct:.4f} in robot_settings.py"
-            )
+    def teleopInit(self) -> None:                                          # runs once when enabled in Teleoperated
+        if self.autoCommand is not None:                                   # if an auto is still running...
+            self.autoCommand.cancel()                                      # stop the auto: the driver takes over
 
-    def autonomousInit(self) -> None:
-        self.autoCommand = self.makeAuto()
-        if self.autoCommand is not None:
-            commands2.CommandScheduler.getInstance().schedule(self.autoCommand)
-
-    def teleopInit(self) -> None:
-        # Stop the auto when the driver takes over
-        if self.autoCommand is not None:
-            self.autoCommand.cancel()
-
-    def testInit(self) -> None:
-        commands2.CommandScheduler.getInstance().cancelAll()
+    def testInit(self) -> None:                                            # runs once when enabled in Test
+        commands2.CommandScheduler.getInstance().cancelAll()               # stop every command that is running

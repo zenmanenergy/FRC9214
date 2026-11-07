@@ -6,40 +6,41 @@ The starting robot. Everything every robot.py in this folder has in common, plus
 
 ## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). In the dashboard (Elastic), pick **Test S-Curve** in the Auto chooser. Put the robot on the floor with about 3 m clear in front and 1.5 m to the left, someone ready to disable, then enable in **Autonomous**. It drives an S-shaped path and prints "Hello from auto!" in the console at the end.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). In the dashboard (Elastic), pick **Test S-Curve** in the Auto chooser. Put the robot at one end of the practice carpet, facing the long way, centered side to side, with the back bumper about 20 cm from the edge. Have someone ready to disable, then enable in **Autonomous**. It drives an S-shaped path and prints "Hello from auto!" in the console at the end.
 
 ## The code to look at
 
 ```python
-class MyRobot(commands2.TimedCommandRobot):
-    def robotInit(self) -> None:
+class MyRobot(commands2.TimedCommandRobot):                         # our robot: runs 50 times a second
+    def robotInit(self) -> None:                                    # runs ONCE, when the robot code starts
 ```
 
 ```python
-self.drivetrain = Drivetrain()
-self.controller = CommandXboxController(robot_settings.CONTROLLER_PORT)
+self.drivetrain = Drivetrain()                              # make the drivetrain (uses robot_settings.py)
+port = robot_settings.CONTROLLER_PORT                       # Driver Station USB slot (usually 0)
+self.controller = CommandXboxController(port)               # the driver's Xbox controller
 ```
 
 ```python
-self.drivetrain.driveWithController(self.controller)
+self.drivetrain.driveWithController(self.controller)        # left stick drives, right stick turns
 ```
 
 ```python
-self.controller.rightBumper().whileTrue(self.drivetrain.lockWheels())
+lock = self.drivetrain.lockWheels()                         # a command: wheels in an X (hard to push)
+self.controller.rightBumper().whileTrue(lock)               # runs while the right bumper is held
 ```
 
 ```python
-def makeAuto(self):
-    """Builds the command that runs in autonomous."""
-    # The auto picked in the dashboard's "Auto" chooser
-    return self.autos.selected()
+def makeAuto(self):                                             # builds what autonomous will do
+    return self.autos.selected()                                # the auto picked in the dashboard's "Auto" chooser
 ```
 
 ```python
-def autonomousInit(self) -> None:
-    self.autoCommand = self.makeAuto()
-    if self.autoCommand is not None:
-        commands2.CommandScheduler.getInstance().schedule(self.autoCommand)
+def autonomousInit(self) -> None:                               # runs once when enabled in Autonomous
+    self.autoCommand = self.makeAuto()                          # build the auto (makeAuto, above)
+    if self.autoCommand is not None:                            # if there is an auto...
+        scheduler = commands2.CommandScheduler.getInstance()    # the part that runs commands
+        scheduler.schedule(self.autoCommand)                    # start the auto
 ```
 
 - **MyRobot** is your robot. RobotPy creates it when the robot turns on.

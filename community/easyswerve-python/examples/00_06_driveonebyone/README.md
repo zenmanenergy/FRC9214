@@ -15,16 +15,19 @@ Checks every drive motor's direction and that all four run in sync. It points ev
 ## The code to look at
 
 ```python
-commands2.RunCommand(self.straighten, self.drivetrain).withTimeout(0.5),
+straight = commands2.RunCommand(self.straighten, self.drivetrain)    # point all wheels ahead...
+return commands2.SequentialCommandGroup(                             # these run one after another:
+    straight.withTimeout(0.5),                                       # 1. ...for half a second
 ```
 
 ```python
-module.spinWheel(TEST_VOLTS)  # steering stays where straighten() put it
-self.topSpeed[name] = max(self.topSpeed[name], module.wheelSpeed())
+module.spinWheel(TEST_VOLTS)                                     # fixed volts, no PID
+fastest = max(self.topSpeed[name], module.wheelSpeed())          # the bigger of the two
+self.topSpeed[name] = fastest                                    # keep the fastest speed seen
 ```
 
 ```python
-if fastest > 0 and (fastest - slowest) / fastest > 0.15:
+if fastest > 0 and (fastest - slowest) / fastest > 0.15:         # over 15 % slower?
 ```
 
 - **A SequentialCommandGroup** runs commands one after another: first straighten the wheels for 0.5 s, then spin.

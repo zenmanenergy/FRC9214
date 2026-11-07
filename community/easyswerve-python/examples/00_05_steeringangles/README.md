@@ -15,19 +15,24 @@ The "do the wheels turn in sync, to the right angle" test. Now the steering uses
 ## The code to look at
 
 ```python
-for name, module in self.drivetrain.modules:
-    self.distance[name] = abs(angleError(degrees, module.angleRelativeToRobotDeg()))
-    module.pointAt(degrees)
+for name, module in self.drivetrain.modules:                         # repeat for each of the 4 modules
+    now = module.angleRelativeToRobotDeg()                           # where it points now
+    self.distance[name] = abs(angleError(degrees, now))              # how far it has to go
+    module.pointAt(degrees)                                          # steer there (with PID)
 ```
 
 ```python
-error = angleError(degrees, module.angleRelativeToRobotDeg())
-if abs(error) > CLOSE_DEG:
-    self.lastOff[name] = now - self.startTime
+actual = module.angleRelativeToRobotDeg()                        # where it points now
+error = angleError(degrees, actual)                              # how far off it is
+if abs(error) > CLOSE_DEG:                                       # not close yet?
+    self.lastOff[name] = now - self.startTime                    # remember when
 ```
 
 ```python
-speeds = {n: self.distance[n] / t for n, t in self.arrived.items() if t > 0}
+speeds = {}                                                          # module -> turning speed (degrees per second)
+for n, t in self.arrived.items():                                    # for each wheel that settled
+    if t > 0:
+        speeds[n] = self.distance[n] / t                             # distance / time = speed
 ```
 
 - **pointAt(degrees)** steers one wheel to an angle relative to the robot (0 = straight ahead, 90 = left) with the PID, and keeps the drive motor still.

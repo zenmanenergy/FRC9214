@@ -94,6 +94,7 @@ class RioSteeringEncoder:
         self._synced = False
         self._lastSync = -1e9
         self._lastWarn = -1e9
+        self._noSignal = False  # warned that the signal is gone?
         self.resyncThreshold = math.radians(ModuleConstants.kSteeringResyncThresholdDeg)
         self.resyncCount = 0
 
@@ -146,13 +147,18 @@ class RioSteeringEncoder:
         wheel is still and the two disagree by more than the threshold."""
         actual = self.absoluteAngle()
         if actual is None:
-            if now - self._lastWarn > 5.0:
-                self._lastWarn = now
+            # Say so once when the signal goes, not every loop (the Driver
+            # Station console is small)
+            if not self._noSignal:
+                self._noSignal = True
                 wpilib.reportWarning(
                     f"Steering encoder {self.name} on DIO {self.dioChannel} has no signal; "
                     "check its 3 wires (signal, 5 V, ground)"
                 )
             return
+        if self._noSignal:
+            self._noSignal = False
+            wpilib.reportWarning(f"Steering encoder {self.name} on DIO {self.dioChannel}: signal is back")
 
         current = self.relative.getPosition()
         self._checkStuck(current, now)

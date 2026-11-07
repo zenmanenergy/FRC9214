@@ -6,12 +6,13 @@ Hold A: the robot drives itself to the start of a path, then follows it exactly.
 
 ## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Plug an Xbox controller into the Driver Station laptop (it should be in slot 0 on the USB tab), clear some space, and enable in **Teleoperated**. Hold A.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Plug an Xbox controller into the Driver Station laptop (it should be in slot 0 on the USB tab), clear some space, and enable in **Teleoperated**. This one needs a big floor or a field: it first drives to the path's start on the field. Hold A.
 
 ## The code to look at
 
 ```python
-self.controller.a().whileTrue(self.autos.goToPath("Drive Forward 2m"))
+goPath = self.autos.goToPath("Drive Forward")               # get to the path's start, then drive it
+self.controller.a().whileTrue(goPath)                       # hold A to run it; let go to stop
 ```
 
 - **goToPath** combines 25 and 18: pathfind to the path's start, then follow the path.

@@ -10,43 +10,43 @@ and enable in Teleoperated. Hold A.
 
 To use this example: copy this file over robot.py in the project folder
 (the file next to robot_settings.py), then deploy: py -m robotpy deploy
+
+The comments on the right explain each line. Python ignores everything
+after a # sign, so they don't change what the code does.
 """
 
-import commands2
-from commands2.button import CommandXboxController
+import commands2                                                    # command-based robot library
+from commands2.button import CommandXboxController                  # an Xbox controller with buttons
 
-import robot_settings
-from easyswerve import Autos, Drivetrain
+import robot_settings                                               # load robot_settings.py (your robot's settings)
+from easyswerve import Autos, Drivetrain                            # drivetrain, and PathPlanner autos
 
 
-class MyRobot(commands2.TimedCommandRobot):
-    def robotInit(self) -> None:
-        """Runs once when the robot turns on: build the robot here."""
-        self.drivetrain = Drivetrain()
-        self.controller = CommandXboxController(robot_settings.CONTROLLER_PORT)
+class MyRobot(commands2.TimedCommandRobot):                         # our robot: runs 50 times a second
+    def robotInit(self) -> None:                                    # runs ONCE, when the robot code starts
+        self.drivetrain = Drivetrain()                              # make the drivetrain (uses robot_settings.py)
+        port = robot_settings.CONTROLLER_PORT                       # Driver Station USB slot (usually 0)
+        self.controller = CommandXboxController(port)               # the driver's Xbox controller
+        self.drivetrain.driveWithController(self.controller)        # left stick drives, right stick turns
 
-        # Left stick moves the robot, right stick turns it
-        self.drivetrain.driveWithController(self.controller)
+        self.autos = Autos(self.drivetrain)                         # autos drawn in the PathPlanner app
+        goPath = self.autos.goToPath("Drive Forward")               # get to the path's start, then drive it
+        self.controller.a().whileTrue(goPath)                       # hold A to run it; let go to stop
 
-        self.autos = Autos(self.drivetrain)
-        self.controller.a().whileTrue(self.autos.goToPath("Drive Forward 2m"))
+        self.autoCommand = None                                     # no auto yet (None = nothing)
 
-        self.autoCommand = None
+    def makeAuto(self):                                             # builds what autonomous will do
+        return None                                                 # None = no auto
 
-    def makeAuto(self):
-        """Builds the command that runs in autonomous."""
-        # No auto in this example
-        return None
+    def autonomousInit(self) -> None:                               # runs once when enabled in Autonomous
+        self.autoCommand = self.makeAuto()                          # build the auto (makeAuto, above)
+        if self.autoCommand is not None:                            # if there is an auto...
+            scheduler = commands2.CommandScheduler.getInstance()    # the part that runs commands
+            scheduler.schedule(self.autoCommand)                    # start the auto
 
-    def autonomousInit(self) -> None:
-        self.autoCommand = self.makeAuto()
-        if self.autoCommand is not None:
-            commands2.CommandScheduler.getInstance().schedule(self.autoCommand)
+    def teleopInit(self) -> None:                                   # runs once when enabled in Teleoperated
+        if self.autoCommand is not None:                            # if an auto is still running...
+            self.autoCommand.cancel()                               # stop the auto: the driver takes over
 
-    def teleopInit(self) -> None:
-        # Stop the auto when the driver takes over
-        if self.autoCommand is not None:
-            self.autoCommand.cancel()
-
-    def testInit(self) -> None:
-        commands2.CommandScheduler.getInstance().cancelAll()
+    def testInit(self) -> None:                                     # runs once when enabled in Test
+        commands2.CommandScheduler.getInstance().cancelAll()        # stop every command that is running

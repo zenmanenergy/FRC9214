@@ -6,12 +6,13 @@ Slide sideways without turning. This is what makes swerve special: a normal (tan
 
 ## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot on the floor with about 3 m of clear space around it and someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**. Watch it slide to its left without turning.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot in the middle of the practice carpet, facing the long way, have someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**. The moves are sized to fit the carpet (CARPET_LENGTH_M and CARPET_WIDTH_M in robot_settings.py). Watch it slide to its left without turning.
 
 ## The code to look at
 
 ```python
-return self.drivetrain.driveFor(2.0, left=0.25)
+seconds = carpet.fitSeconds(2.0, left=0.25)                 # 2 s, or less to stay on the carpet
+return self.drivetrain.driveFor(seconds, left=0.25)         # slide left for 2 s, still facing forward
 ```
 
 - **left=0.25** slides left at quarter speed. Negative slides right.

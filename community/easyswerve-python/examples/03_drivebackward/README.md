@@ -6,12 +6,13 @@ The same as 02, but backward. A negative speed means the other direction.
 
 ## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot on the floor with about 3 m of clear space around it and someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot in the middle of the practice carpet, facing the long way, have someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**. The moves are sized to fit the carpet (CARPET_LENGTH_M and CARPET_WIDTH_M in robot_settings.py).
 
 ## The code to look at
 
 ```python
-return self.drivetrain.driveFor(2.0, forward=-0.25)
+seconds = carpet.fitSeconds(2.0, forward=-0.25)             # 2 s, or less to stay on the carpet
+return self.drivetrain.driveFor(seconds, forward=-0.25)     # negative forward = backward, 2 seconds
 ```
 
 - **forward=-0.25**: the minus sign reverses the direction. There's no separate "backward" command.

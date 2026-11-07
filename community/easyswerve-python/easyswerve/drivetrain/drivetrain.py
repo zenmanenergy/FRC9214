@@ -14,12 +14,14 @@ import math
 import commands2
 import wpilib
 import wpimath
-from wpimath.controller import PIDController
+from wpimath.geometry import Pose2d, Rotation2d
+from wpimath.kinematics import ChassisSpeeds
 
 from ..tuning.autotune import Autotuner
 from ..vision.vision import VisionSubsystem
 from .constants import DriveConstants, OIConstants
 from .drivesubsystem import DriveSubsystem
+from .positioncontrol import PositionController
 
 
 class Drivetrain(DriveSubsystem):
@@ -41,7 +43,8 @@ class Drivetrain(DriveSubsystem):
         self.autotuner = Autotuner(self)
         sd = wpilib.SmartDashboard
         sd.putData("Autotune/1 Steering (robot stays put)", self.autotuner.steeringCommand())
-        sd.putData("Autotune/2 Drive (needs clear floor ahead)", self.autotuner.driveCommand())
+        sd.putData("Autotune/2 Drive (start at one end of the carpet)", self.autotuner.driveCommand())
+        sd.putData("Autotune/3 Position (start at one end of the carpet)", self.autotuner.positionCommand())
         sd.putData("Autotune/All", self.autotuner.fullCommand())
         sd.putData("Autotune/Reset to defaults", self.autotuner.resetCommand())
         sd.putData(
@@ -228,55 +231,92 @@ class Drivetrain(DriveSubsystem):
         ).withTimeout(seconds)
 
     def driveDistance(self, meters: float, speed: float = 0.3) -> commands2.Command:
-        """Drive straight forward (negative meters = backward) until the robot
-        has gone that far, then stop.
+        """Drive straight forward (negative meters = backward) exactly that far,
+        and stop on the spot, still facing the same way.
+
+        The target is a point on the field: where the robot started, plus
+        that many meters straight ahead. The tuned position PID (posP/I/D,
+        from setup step 11) compares where the robot is with that point
+        every loop and asks for the speed that closes the gap: fast when
+        far, slowing down as it gets close, and a push back if it rolls
+        past. The tuned heading PID keeps it facing the same way. The speed
+        PID inside each SPARK MAX makes the wheels go that speed.
 
         Example: drivetrain.driveDistance(2.0)
         """
-        start = {}
-        direction = 1.0 if meters >= 0 else -1.0
 
-        def begin() -> None:
-            start["pose"] = self.getPose()
+        def target(start):
+            ahead = start.rotation()
+            dx, dy = meters * ahead.cos(), meters * ahead.sin()
+            return Pose2d(start.X() + dx, start.Y() + dy, ahead)
 
-        def done() -> bool:
-            traveled = self.getPose().translation().distance(start["pose"].translation())
-            return traveled >= abs(meters)
-
-        return commands2.FunctionalCommand(
-            begin,
-            lambda: self.drive(direction * abs(speed), 0, 0, False),
-            lambda interrupted: self.drive(0, 0, 0, False),
-            done,
-            self,
-        )
+        maxMps = abs(speed) * DriveConstants.kMaxSpeedMetersPerSecond
+        seconds = abs(meters) / max(maxMps, 0.05) + DriveConstants.kDistanceTimeoutS
+        return self.moveTo(target, maxMps, DriveConstants.kMaxAngularSpeed * 0.5, seconds)
 
     def turnTo(self, headingDeg: float, maxTurnSpeed: float = 0.5) -> commands2.Command:
         """Spin in place until the robot faces a direction, then stop.
         0 = the direction it faced at start (or at the last resetHeading),
         90 = a quarter turn counterclockwise (left), -90 = right, 180 = around.
 
+        Uses the tuned heading PID (headP/I/D, from setup step 11), and the
+        position PID keeps the robot on the same spot while it turns.
+
         Example: drivetrain.turnTo(90)
         """
-        pid = PIDController(0.015, 0.0, 0.0)  # turn speed per degree of error
-        pid.enableContinuousInput(-180.0, 180.0)  # 179 and -179 are 2 apart
-        pid.setTolerance(2.0)  # close enough: within 2 degrees
 
-        def arrived() -> bool:
-            # within 2 degrees AND nearly stopped, so it doesn't coast past
-            return pid.atSetpoint() and abs(self.getTurnRate()) < 10.0
+        def target(start):
+            turn = headingDeg - self.getHeading()  # the gyro says how far to turn
+            return Pose2d(start.translation(), start.rotation() + Rotation2d.fromDegrees(turn))
 
-        def step() -> None:
-            out = pid.calculate(self.getHeading(), headingDeg)
-            # at least a little turn speed (friction), at most maxTurnSpeed
-            if abs(out) < 0.04 and not pid.atSetpoint():
-                out = math.copysign(0.04, out)
-            self.drive(0, 0, max(-maxTurnSpeed, min(maxTurnSpeed, out)), False)
+        maxRad = abs(maxTurnSpeed) * DriveConstants.kMaxAngularSpeed
+        seconds = math.pi / max(maxRad, 0.1) + DriveConstants.kDistanceTimeoutS
+        return self.moveTo(target, DriveConstants.kMaxSpeedMetersPerSecond * 0.3, maxRad, seconds)
 
-        return commands2.FunctionalCommand(
-            pid.reset,
-            step,
-            lambda interrupted: self.drive(0, 0, 0, False),
-            arrived,
-            self,
-        )
+    def moveTo(self, makeTarget, maxMps: float, maxRadPerS: float, seconds: float) -> commands2.Command:
+        """A command: drive to a pose with the tuned position and heading PID.
+        makeTarget(startPose) returns the target, worked out when the command
+        starts. Done when it has stayed within 1 cm and 1 degree, nearly
+        stopped, for 0.1 s (so it isn't "done" while rolling through the
+        target), or after the given seconds (it prints how far off it was)."""
+        state = {}
+
+        def begin() -> None:
+            state["target"] = makeTarget(self.getPose())
+            state["inside"] = 0  # loops in a row inside the tolerance
+            state["pid"] = PositionController(
+                self.gains, maxMps, maxRadPerS, DriveConstants.kDistanceAccelMps2
+            )
+
+        def run() -> None:
+            pose = self.getPose()
+            vx, vy, omega = state["pid"].calculate(pose, state["target"])
+            self.driveSpeeds(ChassisSpeeds.fromFieldRelativeSpeeds(vx, vy, omega, pose.rotation()))
+
+        def errors():
+            pose, goal = self.getPose(), state["target"]
+            meters = pose.translation().distance(goal.translation())
+            degrees = abs((pose.rotation() - goal.rotation()).degrees())
+            return meters, degrees
+
+        def done() -> bool:
+            meters, degrees = errors()
+            stopped = max(abs(m.wheelSpeed()) for _, m in self.modules) < 0.05
+            inside = (
+                meters <= DriveConstants.kDistanceToleranceM
+                and degrees <= DriveConstants.kDistanceHeadingToleranceDeg
+                and stopped
+                and abs(self.getTurnRate()) < 10.0
+            )
+            state["inside"] = state["inside"] + 1 if inside else 0
+            return state["inside"] >= 5  # 5 loops = 0.1 s
+
+        def end(interrupted: bool) -> None:
+            self.drive(0, 0, 0, False)
+            if interrupted and "target" in state:
+                meters, degrees = errors()
+                if meters > 0.03 or degrees > 3.0:
+                    print(f"[drive] move stopped {meters * 100:.0f} cm / {degrees:.0f} deg from the target")
+
+        return commands2.FunctionalCommand(begin, run, end, done, self).withTimeout(seconds)
+

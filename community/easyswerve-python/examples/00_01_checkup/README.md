@@ -15,26 +15,29 @@ The first thing to run on a new robot, before anything moves. It checks that the
 ## The code to look at
 
 ```python
-results = self.drivetrain.checkup()  # a list of (ok, message)
-problems = [text for ok, text in results if not ok]
+results = self.drivetrain.checkup()                                 # a list of (ok, message) pairs
+problems = {withoutNumbers(t): t for ok, t in results if not ok}    # this check's problems
 ```
 
 ```python
-for ok, text in results:
-    label = "OK      " if ok else "PROBLEM "
-    print(f"  {label} {text}")
+for ok, text in results:                                            # repeat for each (ok, message)
+    label = "OK      " if ok else "PROBLEM "                        # pick the label
+    print("  " + label + " " + text)                                # e.g. "  OK       navX connected"
 ```
 
 ```python
-if now - self.startTime < 3.0:
-    return
-if self.lastReport is not None and now - self.lastReport < 10.0:
-    return
+for key, text in problems.items():                              # each problem now...
+    if key not in self.lastResults:                             # ...that wasn't there before
+        print("NEW PROBLEM: " + text)
+for key, text in self.lastResults.items():                      # each problem before...
+    if key not in problems:                                     # ...that is gone now
+        print("FIXED: " + text)
 ```
 
 - **checkup()** asks every part a question and returns a list of (ok, message) pairs: True or False, plus a sentence.
 - **A list comprehension** (problems = [text for ok, text in results if not ok]) keeps only the messages whose ok is False.
-- **robotPeriodic** runs 50 times a second in every mode, even disabled. The two ifs make it wait 3 seconds after startup, then report every 10 seconds instead of 50 times a second.
+- **robotPeriodic** runs 50 times a second in every mode, even disabled. The ifs make it wait 3 seconds after startup, then check only every 2 seconds.
+- **Print once, then only changes.** The first check prints everything. After that it prints only NEW PROBLEM or FIXED lines, so the Driver Station's small console doesn't fill up with the same report. Unplug a cable and you'll see one line about it.
 - **Nothing moves**: there is no controller, no driveWithController and no auto in this example.
 
 ## Key ideas

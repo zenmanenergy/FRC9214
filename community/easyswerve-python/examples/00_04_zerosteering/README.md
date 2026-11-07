@@ -16,15 +16,17 @@ Teach the robot which way each wheel points. The steering encoders measure angle
 ## The code to look at
 
 ```python
-self.controller.back().onTrue(self.drivetrain.zeroSteeringCommand())
+zero = self.drivetrain.zeroSteeringCommand()                  # a command: save the wheel angles as zero
+self.controller.back().onTrue(zero)                           # press Back (DISABLED, hex keys in)
 ```
 
 ```python
-degrees = math.degrees(module.getState().angle.radians())
+rad = module.getState().angle.radians()                   # which way the wheel points (radians)
+degrees.append(math.degrees(rad))                         # the same, in degrees (0 = straight ahead)
 ```
 
 ```python
-return self.drivetrain.driveFor(1.5, forward=0.15)
+return self.drivetrain.driveFor(1.5, forward=0.15)            # check: drive slowly; all wheels straight?
 ```
 
 - **zeroSteeringCommand** reads all four steering encoders and saves those readings as each wheel's zero. It's the same as the dashboard's Calibrate button.

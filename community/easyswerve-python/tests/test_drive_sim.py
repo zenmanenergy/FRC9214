@@ -14,12 +14,18 @@ import pytest
 from wpilib.simulation import XboxControllerSim
 
 from easyswerve.drivetrain import configs
+from easyswerve.drivetrain.constants import DriveConstants
 
-from easyswerve.sim.physics import findDrivetrain
+from conftest import drivetrainOrSkip, startingRobotOrSkip
+
+
+# How far full stick for 1 second must go at least: half of MAX_SPEED_MPS
+# (it needs a moment to speed up), so the tests pass at any top speed.
+ONE_SECOND_M = 0.5 * DriveConstants.kMaxSpeedMetersPerSecond
 
 
 def _drive(robot):
-    return findDrivetrain(robot)
+    return startingRobotOrSkip(robot)
 
 
 def test_forward_stick_drives_forward(control, robot):
@@ -29,7 +35,7 @@ def test_forward_stick_drives_forward(control, robot):
         xbox.setLeftY(-1.0)  # stick pushed forward reads negative
         control.step_timing(seconds=1.0, autonomous=False, enabled=True)
         pose = _drive(robot).getPose()
-        assert pose.X() > 1.0, f"expected forward motion, got {pose}"
+        assert pose.X() > ONE_SECOND_M, f"expected forward motion, got {pose}"
         assert abs(pose.Y()) < 0.10, f"drifted sideways: {pose}"
         assert abs(pose.rotation().degrees()) < 3, f"rotated: {pose}"
 
@@ -41,7 +47,7 @@ def test_left_stick_left_strafes_left(control, robot):
         xbox.setLeftX(-1.0)  # stick pushed left reads negative
         control.step_timing(seconds=1.0, autonomous=False, enabled=True)
         pose = _drive(robot).getPose()
-        assert pose.Y() > 1.0, f"expected motion to the left (+Y), got {pose}"
+        assert pose.Y() > ONE_SECOND_M, f"expected motion to the left (+Y), got {pose}"
         assert abs(pose.X()) < 0.10, f"drifted forward/back: {pose}"
 
 
@@ -77,7 +83,7 @@ def test_field_relative_forward_after_turning(control, robot):
         end = drive.getPose()
         dx = end.X() - start.X()
         dy = end.Y() - start.Y()
-        assert dx > 1.0, f"field-relative forward should be +X, moved dx={dx:.2f} dy={dy:.2f}"
+        assert dx > ONE_SECOND_M, f"field-relative forward should be +X, moved dx={dx:.2f} dy={dy:.2f}"
         assert abs(dy) < 0.15, f"field-relative forward drifted, dy={dy:.2f}"
 
 

@@ -13,11 +13,13 @@
 > | easyswerve_vision, its config.py cameras and VISION_ENABLED | easyswerve/vision/; cameras and VISION_ENABLED are in robot_settings.py |
 > | self.drivetrain, DriveSubsystem() | self.drivetrain, Drivetrain() |
 > | robotcontainer.py, RobotContainer | robot.py (built in robotInit; no separate container) |
-> | examples/robotcontainer.py, examples/deploy/pathplanner/ | examples/<name>/robot.py: 11 setup steps (00_00 to 00_10) and 35 small examples (examples/README.md) |
+> | examples/robotcontainer.py, examples/deploy/pathplanner/ | examples/<name>/robot.py: 12 setup steps (00_00 to 00_11) and 36 small examples (examples/README.md) |
 >
 > Autotune and calibration buttons are created by Drivetrain() automatically.
 >
-> Setup and calibration on the robot now go step by step through examples/00_00 to 00_10. New since this guide was written: encoder_reversed per module in robot_settings.py (00_03 finds it), Ziegler-Nichols steering tuning with P, I and D (00_07, easyswerve/tuning/zieglernichols.py; steerI, steerD and steerIZoneDeg in the gains file), and a practice robot with wiring mistakes in the simulator (SIM_PRACTICE_MISTAKES in easyswerve/sim/physics.py).
+> Setup and calibration on the robot now go step by step through examples/00_00 to 00_11. New since this guide was written: the position and heading PID (posP/posI/posD and headP/headI/headD in the gains file) used by driveDistance, turnTo, heading hold, driveTo and PathPlanner, tuned on the floor by 00_11 (easyswerve/tuning/positiontune.py: a model with the SIMC rules and Ziegler-Nichols, both checked on real moves); encoder_reversed per module in robot_settings.py (00_03 finds it), Ziegler-Nichols steering tuning with P, I and D (00_07, easyswerve/tuning/zieglernichols.py; steerI, steerD and steerIZoneDeg in the gains file), and a practice robot with wiring mistakes in the simulator (SIM_PRACTICE_MISTAKES in easyswerve/sim/physics.py).
+>
+> Heading hold (on by default, HEADING_HOLD in robot_settings.py; example 36): while drive() is called with turn = 0 and the robot is moving, the gyro keeps the heading where it was when turning stopped (the tuned heading PID headP/headI/headD from 00_11, limited to kHeadingHoldMaxDegPerS in constants.py). drivetrain.headingHold switches it at run time. PathPlanner paths are not affected (they use driveRobotRelative and control heading themselves). Each module's drive speed is also scaled by the cosine of its steering error while it turns (WPILib's recommendation).
 
 
 RobotPy 2026 port of REV's EasySwerve-Java-Template v2026.0.
@@ -832,14 +834,14 @@ Results are applied to the SPARKs immediately, saved to a file, and loaded at ev
 
 1. Battery charged (above 12.5 V), robot on carpet.
 2. Steering: the robot stays in place; wheels spin on their pivots. About 30 s.
-3. Drive: the robot drives forward up to 2.0 m, then back to where it started, four times. Clear at least 2.5 m in front of it. About 25 s.
+3. Drive: the robot drives forward up to kDriveMaxDistanceM, then back to where it started, four times (it coasts about 0.3 m past each limit). kDriveMaxDistanceM comes from the practice carpet in robot_settings.py (easyswerve/carpet.py), at most 2 m: start the robot at one end of the carpet. About 15 s.
 4. Driver Station: select Test mode, then Enable.
 5. Dashboard (Shuffleboard, Elastic or Glass), under Autotune/, click one of:
 
 | Button | Does |
 |---|---|
 | 1 Steering (robot stays put) | steering only |
-| 2 Drive (needs clear floor ahead) | drive only (wheels are pointed straight first) |
+| 2 Drive (start at one end of the carpet) | drive only (wheels are pointed straight first) |
 | All | steering, then drive |
 | Reset to defaults | forget saved tuning, back to REV's gains |
 
@@ -905,7 +907,7 @@ Autotune only runs in Test mode, stops instantly when disabled, and the drive te
 | Setting | Default | Use |
 |---|---|---|
 | kRequireTestMode | True | refuse to run outside Test mode |
-| kDriveMaxDistanceM | 2.0 | farthest the drive test goes in each direction; lower it for small spaces (1.0 still works) |
+| kDriveMaxDistanceM | from the carpet, at most 2.0 | farthest the drive test goes in each direction: the practice carpet's room from one end (robot_settings.py) minus 0.3 m of coasting |
 | kDriveSmoothing | 1.5 | drive speed loop: 1.0 fastest (about 8 % overshoot), 2.0 gentlest (about 1 %) |
 | kSteerDampingRatio | 0.75 | starting point for steering P before the real steps adjust it |
 | kSteerFrictionFraction | 0.8 | steering friction push as a fraction of measured friction; below 1.0 so the push alone never moves the wheel |

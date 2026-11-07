@@ -11,8 +11,9 @@ Copy this folder's robot.py over robot.py in the project folder and deploy (py -
 ## The code to look at
 
 ```python
-self.controller.povUp().onTrue(self.drivetrain.turnTo(0))
-self.controller.povLeft().onTrue(self.drivetrain.turnTo(90))
+turn = self.drivetrain.turnTo                               # a shorter name for turnTo
+self.controller.povUp().onTrue(turn(0))                     # D-pad up: face away from the driver
+self.controller.povLeft().onTrue(turn(90))                  # D-pad left: face left
 ```
 
 - **povUp, povLeft, povDown, povRight** are the D-pad directions. They work like buttons.

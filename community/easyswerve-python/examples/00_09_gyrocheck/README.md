@@ -14,24 +14,24 @@ Check the navX gyro, which tells the robot which way it faces. Field-relative dr
 ## The code to look at
 
 ```python
-if self.drivetrain.gyroCalibrating():
-    self.driftStartTime = None
+if self.drivetrain.gyroCalibrating():                                 # navX still calibrating?
+    self.driftStartTime = None                                        # then don't measure drift yet
 ```
 
 ```python
-minutes = (now - self.driftStartTime) / 60.0
-drift = heading - self.driftStartHeading
-perMinute = drift / minutes if minutes > 0 else 0.0
+minutes = (now - self.driftStartTime) / 60.0                          # how long we've measured
+drift = heading - self.driftStartHeading                              # how far the heading crept
+perMinute = drift / minutes if minutes > 0 else 0.0                   # drift per minute
 ```
 
 ```python
-return commands2.SequentialCommandGroup(
-    commands2.PrintCommand("Turning test: mark where the robot faces now"),
-    self.drivetrain.turnTo(90),
-    self.drivetrain.turnTo(180),
-    self.drivetrain.turnTo(-90),
-    self.drivetrain.turnTo(0),
-    commands2.PrintCommand("Turning test done: is it facing the mark?"),
+return commands2.SequentialCommandGroup(                              # turn each way, then back to the start:
+    commands2.PrintCommand("Turning test: mark where it faces now"),
+    self.drivetrain.turnTo(90),                                       # face left
+    self.drivetrain.turnTo(180),                                      # face backwards
+    self.drivetrain.turnTo(-90),                                      # face right
+    self.drivetrain.turnTo(0),                                        # back to the start
+    commands2.PrintCommand("Turning test done: facing the mark?"),    # if the gyro is right
 )
 ```
 

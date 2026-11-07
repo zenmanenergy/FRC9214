@@ -4,7 +4,7 @@ Each folder has a robot.py that shows one idea, and a README.md that explains it
 
 To try one on the robot:
 
-1. Do the setup steps (00_00 to 00_10) first, once, on a new robot.
+1. Do the setup steps (00_00 to 00_11) first, once, on a new robot.
 2. Copy the example's robot.py over robot.py in the project folder (the one next to robot_settings.py). In VS Code: right-click the example's robot.py, Copy, then right-click the project folder, Paste, and choose Replace.
 3. Connect to the robot and deploy: py -m robotpy deploy
 4. Clear space around the robot, have someone ready to disable (Enter disables, space bar is the emergency stop), then enable in the mode the example's README says.
@@ -12,11 +12,11 @@ To try one on the robot:
 
 To go back to the start: copy examples/01_basic/robot.py over robot.py and deploy.
 
-Every example's auto uses gentle speeds (about 2 meters per move), but the robot still moves: give it about 3 m of clear floor.
+Every example's auto uses gentle speeds and keeps its moves on the practice carpet (CARPET_LENGTH_M and CARPET_WIDTH_M in robot_settings.py; set CARPET_LENGTH_M = None on a big floor). Start the robot in the middle of the carpet, facing the long way, unless the example's README says otherwise.
 
-## Setup: do these first, in order (00_00 to 00_10)
+## Setup: do these first, in order (00_00 to 00_11)
 
-On a new robot, or after rebuilding a module, go through these before driving. They check every motor and sensor one at a time, then tune and calibrate. Each step's README has the exact steps for the robot and for the simulator, and ends with which step is next.
+On a new robot, or after rebuilding a module, go through these before driving. They check every motor and sensor one at a time, then tune and calibrate. Each step's README has the exact steps for the robot, and ends with which step is next.
 
 | Step | Folder | What it does | Robot |
 |---|---|---|---|
@@ -28,9 +28,10 @@ On a new robot, or after rebuilding a module, go through these before driving. T
 | 5 | [00_05_steeringangles](00_05_steeringangles/README.md) | all four wheels to the same angles, in sync? | on blocks |
 | 6 | [00_06_driveonebyone](00_06_driveonebyone/README.md) | each drive motor alone: forward? same speed? | on blocks |
 | 7 | [00_07_zieglernichols](00_07_zieglernichols/README.md) | tune the steering PID (Ziegler-Nichols) | on the floor |
-| 8 | [00_08_autotunedrive](00_08_autotunedrive/README.md) | tune the drive motors (drives 2 m) | on the floor, Test mode |
+| 8 | [00_08_autotunedrive](00_08_autotunedrive/README.md) | tune the drive motors (drives as far as the carpet allows) | on the floor, Test mode |
 | 9 | [00_09_gyrocheck](00_09_gyrocheck/README.md) | check the gyro: calibrating, drift, turning test | on the floor |
 | 10 | [00_10_wheeldiameter](00_10_wheeldiameter/README.md) | measure the real wheel size so distances are right | on the floor |
+| 11 | [00_11_autotuneposition](00_11_autotuneposition/README.md) | tune the PID that drives to a spot and turns to a heading | on the floor, Test mode |
 
 
 ## Start here
@@ -104,3 +105,9 @@ First set VISION_ENABLED = True in robot_settings.py (and for the simulator, rem
 | 33 | [33_visionvsodometry](33_visionvsodometry/README.md) | wheels-only position vs. camera-corrected position |
 | 34 | [34_aimattag](34_aimattag/README.md) | hold A: turn to face an AprilTag |
 | 35 | [35_drivetotag](35_drivetotag/README.md) | hold A: drive to a spot 1 m in front of a tag |
+
+## Driving straight
+
+| # | Folder | What it shows |
+|---|---|---|
+| 36 | [36_headinghold](36_headinghold/README.md) | heading hold: the gyro keeps the robot facing the same way while it drives |

@@ -22,6 +22,7 @@ from wpimath.kinematics import (
 )
 
 from .constants import DriveConstants
+from .positioncontrol import headingPID
 from ..tuning import calibration
 from ..tuning import gains as tunedGains
 from .easyswervemodule import EasySwerveModule
@@ -127,6 +128,17 @@ class DriveSubsystem(Subsystem):
         self.visionMeasurementCount = 0
         self.poseResetCount = 0  # bumps on every resetOdometry (the sim watches it)
 
+        # Heading hold: keeps the robot facing the same way while it drives
+        # with no turn input (HEADING_HOLD in robot_settings.py)
+        self.headingHold = DriveConstants.kHeadingHold
+
+        # "Driver forward": the gyro reading that counts as heading 0 for
+        # field-relative driving, turnTo and getHeading. resetHeading changes
+        # this instead of resetting the navX, so the position tracking (which
+        # needs the gyro to never jump) is not disturbed.
+        self._driverZero = Rotation2d()
+        self._holdTarget: typing.Optional[float] = None  # degrees; None = not holding
+
         # REV's Java template also calls HAL.report() here for FIRST's anonymous
         # usage statistics. It has no effect on robot behavior, so it's omitted.
 
@@ -137,6 +149,8 @@ class DriveSubsystem(Subsystem):
         # Keep the steering sensors synced to the absolute encoders (roboRIO
         # wiring), and each steering friction push pointed the right way
         enabled = wpilib.DriverStation.isEnabled()
+        if not enabled:
+            self._holdTarget = None  # start fresh after every enable
         now = wpilib.Timer.getFPGATimestamp()
         for _, m in self.modules:
             if m.turningVoltage is None:
@@ -153,6 +167,7 @@ class DriveSubsystem(Subsystem):
         """Resets the estimated position to the specified pose."""
         self.poseEstimator.resetPosition(self._gyroRotation(), self._modulePositions(), pose)
         self.poseResetCount += 1
+        self._holdTarget = None
 
     def addVisionMeasurement(
         self,
@@ -179,9 +194,13 @@ class DriveSubsystem(Subsystem):
 
         :param xSpeed:        Speed of the robot in the x direction (forward), -1 to 1.
         :param ySpeed:        Speed of the robot in the y direction (sideways), -1 to 1.
-        :param rot:           Angular rate of the robot, -1 to 1.
+        :param rot:           Angular rate of the robot, -1 to 1. Exactly 0 while
+                              moving turns on heading hold (if HEADING_HOLD).
         :param fieldRelative: Whether the provided x and y speeds are relative to the field.
         """
+        # Heading hold: no turn asked for, so keep facing the same way
+        rot = self._headingHoldTurn(xSpeed, ySpeed, rot)
+
         # Convert the commanded speeds into the correct units for the drivetrain
         xSpeedDelivered = xSpeed * DriveConstants.kMaxSpeedMetersPerSecond
         ySpeedDelivered = ySpeed * DriveConstants.kMaxSpeedMetersPerSecond
@@ -189,13 +208,44 @@ class DriveSubsystem(Subsystem):
 
         if fieldRelative:
             speeds = ChassisSpeeds.fromFieldRelativeSpeeds(
-                xSpeedDelivered, ySpeedDelivered, rotDelivered, self._gyroRotation()
+                xSpeedDelivered, ySpeedDelivered, rotDelivered, self._driverRotation()
             )
         else:
             speeds = ChassisSpeeds(xSpeedDelivered, ySpeedDelivered, rotDelivered)
 
         swerveModuleStates = DriveConstants.kDriveKinematics.toSwerveModuleStates(speeds)
         self.setModuleStates(swerveModuleStates)
+
+    def _headingHoldTurn(self, xSpeed: float, ySpeed: float, rot: float) -> float:
+        """The turn to actually use. While turning, the turn as asked. While
+        driving without turning, a small turn that keeps the robot facing the
+        way it faced when the turning stopped (the gyro is the sensor of the
+        tuned heading PID). Standing still: no correction, just remember the heading."""
+        if not self.headingHold or rot != 0.0:
+            self._holdTarget = None  # turning (or hold off): forget the target
+            return rot
+        heading = self.getHeading()
+        if self._holdTarget is None:
+            # Just stopped turning: let the robot finish rotating first, or it
+            # would snap back to where the stick was let go
+            if abs(self.getTurnRate()) > DriveConstants.kHeadingHoldSettleDegPerS:
+                return 0.0
+            self._holdTarget = heading
+            self._holdPID = headingPID(self.gains)  # the tuned heading PID, fresh
+        if math.hypot(xSpeed, ySpeed) < DriveConstants.kHeadingHoldMinMove:
+            self._holdTarget = heading  # standing still: hold whatever way it faces now
+            self._holdPID.reset()
+            return 0.0
+        radPerS = self._holdPID.calculate(math.radians(heading), math.radians(self._holdTarget))
+        limit = math.radians(DriveConstants.kHeadingHoldMaxDegPerS)
+        radPerS = max(-limit, min(limit, radPerS))
+        return radPerS / DriveConstants.kMaxAngularSpeed  # as a fraction of full spin
+
+    def driveSpeeds(self, speeds: ChassisSpeeds) -> None:
+        """Drive at robot-relative speeds (m/s, m/s, rad/s), exactly as asked
+        (no heading hold): for code that controls the heading itself."""
+        discretized = ChassisSpeeds.discretize(speeds, 0.02)
+        self.setModuleStates(DriveConstants.kDriveKinematics.toSwerveModuleStates(discretized))
 
     def setX(self) -> None:
         """Sets the wheels into an X formation to prevent movement."""
@@ -230,12 +280,17 @@ class DriveSubsystem(Subsystem):
         self.rearRight.resetEncoders()
 
     def zeroHeading(self) -> None:
-        """Zeroes the heading of the robot."""
-        self.gyro.reset()
+        """Make the direction the robot faces now heading 0 ("forward" for
+        field-relative driving and turnTo). The navX itself is not reset: the
+        position tracking needs its reading to never jump (resetting it would
+        make the tracker think the robot spun, and x and y would drift)."""
+        self._driverZero = self._gyroRotation()
+        self._holdTarget = None  # the heading just jumped
 
     def getHeading(self) -> float:
-        """Returns the robot's heading in degrees, from -180 to 180."""
-        return self._gyroRotation().degrees()
+        """Returns the robot's heading in degrees, from -180 to 180
+        (0 = the way it faced at startup or at the last resetHeading)."""
+        return self._driverRotation().degrees()
 
     def getTurnRate(self) -> float:
         """Returns the turn rate of the robot, in degrees per second."""
@@ -259,10 +314,10 @@ class DriveSubsystem(Subsystem):
     def _stopNotReady(self) -> None:
         for _, m in self.modules:
             m.setDrivingVoltage(0.0)
-        now = wpilib.Timer.getFPGATimestamp()
-        if now - getattr(self, "_lastNotReadyWarn", -1e9) > 2.0:
-            self._lastNotReadyWarn = now
-            missing = [n for n, m in self.modules if not m.turningEncoder.synced]
+        # Warn once per change in which encoders are missing, not every loop
+        missing = [n for n, m in self.modules if not m.turningEncoder.synced]
+        if missing != getattr(self, "_lastNotReady", None):
+            self._lastNotReady = missing
             wpilib.reportWarning(
                 f"Drive held still: steering encoders not read yet for {', '.join(missing)}"
             )
@@ -297,7 +352,9 @@ class DriveSubsystem(Subsystem):
         return f"zeroed and saved ({path})"
 
     def applyGains(self, gains: tunedGains.TunedGains) -> None:
-        """Send new gains to all 8 SPARKs right away."""
+        """Send new gains to all 8 SPARKs right away. The position and heading
+        PID are used by driveDistance, turnTo and heading hold from their next
+        move; PathPlanner (driveTo, autos) reads them only at startup."""
         self.gains = gains
         for _, m in self.modules:
             m.applyGains(gains)
@@ -316,13 +373,18 @@ class DriveSubsystem(Subsystem):
     # ---- helpers -------------------------------------------------------------
 
     def gyroRotation(self) -> Rotation2d:
-        """Which way the robot faces, from the navX (counterclockwise +)."""
+        """Which way the robot faces, from the navX (counterclockwise +),
+        never changed by resetHeading (for your own position tracking)."""
         return self._gyroRotation()
 
     def modulePositions(self):
         """How far each wheel has rolled and which way it points (FL, FR,
         RL, RR), as WPILib odometry wants it."""
         return self._modulePositions()
+
+    def _driverRotation(self) -> Rotation2d:
+        """The heading the driver sees: the gyro minus the driver zero."""
+        return self._gyroRotation() - self._driverZero
 
     def _gyroRotation(self) -> Rotation2d:
         # getRotation2d() already converts the navX's clockwise-positive angle

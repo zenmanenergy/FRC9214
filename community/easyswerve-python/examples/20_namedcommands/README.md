@@ -6,14 +6,15 @@ Let autos drawn in the PathPlanner app run your own commands, by name.
 
 ## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot on the floor with about 3 m of clear space around it and someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**. Look for "Hello from auto!" in the console at the end.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot at one end of the practice carpet, facing the long way, centered side to side, with the back bumper about 20 cm from the edge, have someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**. The paths are 1.2 m long, so they fit the carpet; on a bigger floor, drag their points out in the PathPlanner app. Look for "Hello from auto!" in the console at the end.
 
 ## The code to look at
 
 ```python
-# name in the app  -> what it does
-self.autos.addCommand("printHello", commands2.PrintCommand("Hello from auto!"))
-self.autos.addCommand("lockWheels", self.drivetrain.lockWheels().withTimeout(1.0))
+hello = commands2.PrintCommand("Hello from auto!")          # a command that prints a message
+self.autos.addCommand("printHello", hello)                  # autos can run it by this name
+lock = self.drivetrain.lockWheels().withTimeout(1.0)        # lock the wheels for 1 second
+self.autos.addCommand("lockWheels", lock)                   # autos can run it by this name
 ```
 
 - **addCommand(name, command)** connects a name typed in the PathPlanner app to a real command in code.

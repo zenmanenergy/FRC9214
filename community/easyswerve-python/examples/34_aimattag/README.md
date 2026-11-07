@@ -13,18 +13,19 @@ Copy this folder's robot.py over robot.py and deploy. Put the robot about 2.5 m 
 ## The code to look at
 
 ```python
-tag = self.vision.target(CAMERA)
+tag = self.vision.target(CAMERA)                                 # what the camera sees now (None = no tag)
 if tag is None:
-    return 0.0  # no tag in sight: don't turn
+    return 0.0                                                   # no tag in sight: don't turn
 ```
 
 ```python
-turn = -tag.getYaw() * AIM_GAIN
-return max(-0.3, min(0.3, turn))  # limit to 30 % turning speed
+turn = -tag.getYaw() * AIM_GAIN                                  # yaw + = tag right of center, so turn right (-)
+return max(-0.3, min(0.3, turn))                                 # limit to 30 % turning speed
 ```
 
 ```python
-self.drivetrain.drive(forward, left, self.aimTurnSpeed(), True)
+turn = self.aimTurnSpeed()                                       # the camera does the turning
+self.drivetrain.drive(forward, left, turn, True)                 # True = field-relative
 ```
 
 - **vision.target("front")** is what the front camera sees right now: the best tag, or None. Pass a tag number, like target("front", 7), to aim at one tag only.

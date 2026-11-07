@@ -11,25 +11,27 @@ Copy this folder's robot.py over robot.py in the project folder and deploy (py -
 ## The code to look at
 
 ```python
-self.drivetrain.setDefaultCommand(
-    commands2.RunCommand(self.driveWithSlowMode, self.drivetrain)
+self.drivetrain.setDefaultCommand(                           # what the drivetrain does when nothing else runs:
+    commands2.RunCommand(self.driveSlow, self.drivetrain)    # call driveSlow every loop
 )
 ```
 
 ```python
-speed = 0.3 if self.controller.getLeftTriggerAxis() > 0.5 else 1.0
+slow = pad.getLeftTriggerAxis() > 0.5                        # left trigger pulled more than halfway?
+speed = 0.3 if slow else 1.0                                 # 30 % speed if so, otherwise full speed
 ```
 
 ```python
-forward = -wpimath.applyDeadband(self.controller.getLeftY(), 0.1)
+forward = -wpimath.applyDeadband(pad.getLeftY(), 0.1)        # stick up = forward (ignore tiny moves)
 ```
 
 ```python
-self.drivetrain.drive(forward * speed, left * speed, turn * speed, True)
+f, l, t = forward * speed, left * speed, turn * speed        # slow all three down
+self.drivetrain.drive(f, l, t, True)                         # drive (True = field-relative)
 ```
 
 - **setDefaultCommand** sets what the drivetrain does when no other command is using it. driveWithController (01) does this for you; here it's written out.
-- **RunCommand** calls driveWithSlowMode 50 times a second, forever.
+- **RunCommand** calls driveSlow 50 times a second, forever.
 - **getLeftTriggerAxis()** reads how far the trigger is pressed, from 0 to 1.
 - **applyDeadband** ignores tiny stick movements, so a stick that doesn't center perfectly doesn't creep the robot.
 - **The minus sign:** pushing a stick forward reads as negative, so it's flipped.

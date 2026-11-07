@@ -6,16 +6,17 @@ Repeat a short back-and-forth move over and over for 8 seconds.
 
 ## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot on the floor with about 3 m of clear space around it and someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot in the middle of the practice carpet, facing the long way, have someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**. The moves are sized to fit the carpet (CARPET_LENGTH_M and CARPET_WIDTH_M in robot_settings.py).
 
 ## The code to look at
 
 ```python
-backAndForth = commands2.SequentialCommandGroup(
-    self.drivetrain.driveFor(1.0, forward=0.25),
-    self.drivetrain.driveFor(1.0, forward=-0.25),
+seconds = carpet.fitSeconds(1.0, forward=0.25)              # 1 s, or less to stay on the carpet
+backAndForth = commands2.SequentialCommandGroup(            # one trip, saved in a variable:
+    self.drivetrain.driveFor(seconds, forward=0.25),        # forward for 1 s...
+    self.drivetrain.driveFor(seconds, forward=-0.25),       # ...then back for 1 s
 )
-return backAndForth.repeatedly().withTimeout(8.0)
+return backAndForth.repeatedly().withTimeout(8.0)           # repeat the trip, stop after 8 s
 ```
 
 - **backAndForth** is a variable holding a command. Giving it a name makes the last line easier to read.

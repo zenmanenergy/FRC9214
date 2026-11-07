@@ -16,22 +16,22 @@ Check the sensors before any motor runs. You turn a module's steering, or roll a
 ## The code to look at
 
 ```python
-angle = module.absoluteDeg()  # the Through Bore Encoder, degrees
+angle = module.absoluteDeg()                                      # the Through Bore Encoder, degrees
 ```
 
 ```python
-moved = self.steer[name].update(change, now)
+moved = self.steer[name].update(change, now)                      # a whole movement, once it's over
 if moved is None or abs(moved) < STEER_DEG:
     return
-way = "counterclockwise" if moved > 0 else "CLOCKWISE"
+way = "counterclockwise" if moved > 0 else "CLOCKWISE"            # + = counterclockwise from above
 ```
 
 ```python
-if abs(change) > self.tiny:
-    self.total += change
-    self.stillSince = now
-    return None
-if self.total != 0.0 and now - self.stillSince >= STILL_S:
+if abs(change) > self.tiny:                                       # it moved (more than noise)?
+    self.total += change                                          # add it to this movement's total
+    self.stillSince = now                                         # and remember when
+    return None                                                   # still moving: nothing to report yet
+if self.total != 0.0 and now - self.stillSince >= STILL_S:        # moved, then still for a while?
 ```
 
 - **absoluteDeg()** is the Through Bore Encoder's angle. **wheelMeters()** is how far the drive motor's encoder says the wheel has rolled.

@@ -6,24 +6,24 @@ A mechanism written properly, as a subsystem: an Intake class with commands it c
 
 ## On the robot
 
-Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot on the floor with about 3 m of clear space around it and someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**. The console shows intake on, then intake off when the drive ends.
+Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy). Put the robot in the middle of the practice carpet, facing the long way, have someone ready to disable (Enter disables, space bar is the emergency stop), then enable in **Autonomous**. The moves are sized to fit the carpet (CARPET_LENGTH_M and CARPET_WIDTH_M in robot_settings.py). The console shows intake on, then intake off when the drive ends.
 
 ## The code to look at
 
 ```python
-class Intake(commands2.Subsystem):
+class Intake(commands2.Subsystem):                                         # a one-motor intake: a subsystem of its own
 ```
 
 ```python
-def runIn(self) -> commands2.Command:
-    """Pull in while running, stop when done."""
-    return commands2.StartEndCommand(self.start, self.stop, self)
+def runIn(self) -> commands2.Command:                                  # a command: pull in while it runs
+    return commands2.StartEndCommand(self.start, self.stop, self)      # start() at the start, stop() at the end
 ```
 
 ```python
-return commands2.ParallelDeadlineGroup(
-    self.drivetrain.driveFor(2.0, forward=0.2),
-    self.intake.runIn(),
+seconds = carpet.fitSeconds(2.0, forward=0.2)                      # 2 s, or less to stay on the carpet
+return commands2.ParallelDeadlineGroup(                            # run these at the same time, until the FIRST ends:
+    self.drivetrain.driveFor(seconds, forward=0.2),                # the deadline: drive forward 2 s
+    self.intake.runIn(),                                           # runs alongside, stops when the drive ends
 )
 ```
 

@@ -2,7 +2,7 @@
 
 ## What it does
 
-See why cameras help. The robot tracks its position two ways at once: wheels only (encoders and gyro, called odometry) and wheels + cameras (the drivetrain's real position, corrected whenever a camera sees a tag). Once a second it prints both and how far apart they are. With slipping wheels, the wheels-only position drifts and the cameras pull the real one back.
+See why cameras help. The robot tracks its position two ways at once: wheels only (encoders and gyro, called odometry) and wheels + cameras (the drivetrain's real position, corrected whenever a camera sees a tag). Every 2 seconds while it drives, it prints both on one line with how far apart they are, and once more when it's disabled. With slipping wheels, the wheels-only position drifts and the cameras pull the real one back.
 
 ## On the robot
 
@@ -13,22 +13,24 @@ This needs measured cameras (measured=True; docs/VISION.md). Copy this folder's 
 ## The code to look at
 
 ```python
-self.wheelsOnly = SwerveDrive4Odometry(
-    self.drivetrain.kinematics,
-    self.drivetrain.gyroRotation(),
-    self.drivetrain.modulePositions(),
+self.wheelsOnly = SwerveDrive4Odometry(                       # our own wheels-only tracker (no cameras):
+    self.drivetrain.kinematics,                               # the robot's shape (where the wheels are)
+    self.drivetrain.gyroRotation(),                           # which way it faces
+    self.drivetrain.modulePositions(),                        # how far each wheel rolled, which way
 )
 ```
 
 ```python
-self.wheelsOnly.update(self.drivetrain.gyroRotation(), self.drivetrain.modulePositions())
+heading = self.drivetrain.gyroRotation()                      # the gyro, now
+wheels = self.drivetrain.modulePositions()                    # the wheels, now
+self.wheelsOnly.update(heading, wheels)                       # update the wheels-only tracker every loop
 ```
 
 ```python
-self.wheelsOnly.resetPosition(
-    self.drivetrain.gyroRotation(),
-    self.drivetrain.modulePositions(),
-    self.drivetrain.getPose(),
+self.wheelsOnly.resetPosition(                                # start it from:
+    self.drivetrain.gyroRotation(),                           # the gyro now
+    self.drivetrain.modulePositions(),                        # the wheels now
+    self.drivetrain.getPose(),                                # and the drivetrain's position
 )
 ```
 

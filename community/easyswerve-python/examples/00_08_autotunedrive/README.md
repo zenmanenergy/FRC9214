@@ -2,21 +2,21 @@
 
 ## What it does
 
-Tunes the drive motors. A wheel's speed depends on voltage in a simple, steady way, so instead of Ziegler-Nichols the robot measures that relationship (feedforward): kS, the volts it takes just to get moving, and kV, the volts for each meter per second. Then it adds a small P to fix what's left. The robot drives itself up to 2 m forward and back, and saves the result.
+Tunes the drive motors. A wheel's speed depends on voltage in a simple, steady way, so instead of Ziegler-Nichols the robot measures that relationship (feedforward): kS, the volts it takes just to get moving, and kV, the volts for each meter per second. Then it adds a small P to fix what's left. The robot drives itself forward and back, as far as the practice carpet allows (up to 2 m), and saves the result.
 
 ## On the robot
 
 1. Do steps 1 to 7 first.
 2. Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy).
-3. Wheels ON the floor, at least 2.5 m of clear floor IN FRONT of the robot, and someone on the Disable button (Enter is disable, space is emergency stop).
-4. Driver Station in **Test** mode, then **Enable**. About 30 seconds. Disable stops it at once (nothing is saved then).
+3. Wheels ON the floor. On the practice carpet (its size is in robot_settings.py): put the robot at one end, facing the long way, centered side to side, with the back bumper about 20 cm from the edge. It drives forward and back as far as the carpet allows (up to 2 m), coasting about 30 cm at each end. Someone on the Disable button (Enter is disable, space is emergency stop).
+4. Driver Station in **Test** mode, then **Enable**. About 15 seconds. Disable stops it at once (nothing is saved then).
 5. Read the console for the results; they're saved automatically.
 
 ## The code to look at
 
 ```python
-self.tuneCommand = self.drivetrain.autotuner.driveCommand()
-commands2.CommandScheduler.getInstance().schedule(self.tuneCommand)
+self.tuneCommand = self.drivetrain.autotuner.driveCommand()            # the drive tuning command
+commands2.CommandScheduler.getInstance().schedule(self.tuneCommand)    # start it
 ```
 
 - **testInit** runs when the robot is enabled in Test mode. Autotune only runs in Test mode, so it can't start by accident in a match.

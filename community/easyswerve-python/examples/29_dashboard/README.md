@@ -11,9 +11,10 @@ Copy this folder's robot.py over robot.py and deploy (py -m robotpy deploy). Ope
 ## The code to look at
 
 ```python
-def robotPeriodic(self) -> None:
-    pose = self.drivetrain.getPose()
-    wpilib.SmartDashboard.putNumber("My Robot/X (m)", pose.X())
+def robotPeriodic(self) -> None:                                      # runs 50 times a second, in every mode
+    pose = self.drivetrain.getPose()                                  # where the robot thinks it is (x, y, heading)
+    board = wpilib.SmartDashboard                                     # a shorter name for the dashboard
+    board.putNumber("My Robot/X (m)", pose.X())                       # show x (meters) on the dashboard
 ```
 
 - **robotPeriodic** runs 50 times a second in every mode, even disabled.

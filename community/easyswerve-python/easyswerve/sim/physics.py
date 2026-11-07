@@ -395,8 +395,9 @@ class _NavxSim:
             self.rate.set(-math.degrees(rateRadS))
 
 
-def findDrivetrain(robot):
-    """The robot's drivetrain, whatever robot.py named it."""
+def findDrivetrain(robot, required: bool = True):
+    """The robot's drivetrain, whatever robot.py named it (None if there is
+    none and required is False)."""
     from ..drivetrain.drivesubsystem import DriveSubsystem
 
     container = getattr(robot, "container", None)
@@ -406,6 +407,8 @@ def findDrivetrain(robot):
         for value in vars(holder).values():
             if isinstance(value, DriveSubsystem):
                 return value
+    if not required:
+        return None
     raise RuntimeError(
         "physics.py: no Drivetrain found. robot.py must create one in robotInit, "
         "for example self.drivetrain = Drivetrain()."
@@ -415,7 +418,11 @@ def findDrivetrain(robot):
 class PhysicsEngine:
     def __init__(self, physics_controller, robot) -> None:
         self.pc = physics_controller
-        self.drive = findDrivetrain(robot)
+        self.drive = findDrivetrain(robot, required=False)
+        if self.drive is None:
+            # robot.py builds no drivetrain (like setup step 0): nothing to simulate
+            self.modules = []
+            return
         d = self.drive
 
         # One simulator per DIO encoder object the robot code made, by channel
@@ -453,6 +460,8 @@ class PhysicsEngine:
         )
 
     def update_sim(self, now: float, tm_diff: float) -> None:
+        if self.drive is None:
+            return
         enabled = wpilib.DriverStation.isEnabled()
 
         # If the robot code reset its position (start of an auto, or a manual

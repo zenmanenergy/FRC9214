@@ -7,20 +7,22 @@ Make the robot's distances match the real world. The drive encoders count wheel 
 ## On the robot
 
 1. Copy this folder's robot.py over robot.py in the project folder and deploy (py -m robotpy deploy).
-2. Put a tape mark on the floor at the front bumper, with at least 2.5 m clear in front.
-3. Enable in **Autonomous**. The robot drives about 2 m slowly and stops.
+2. On the practice carpet (its size is in robot_settings.py): put the robot at one end, facing the long way, centered side to side, with the back bumper about 20 cm from the edge. Put a tape mark on the floor at the front bumper.
+3. Enable in **Autonomous**. The robot drives 2 m slowly (less if the carpet is too short) and stops. The console says how close to that distance it stopped, by its encoders: within a centimeter or two is good.
 4. Measure from the tape mark to the front bumper and type it into the dashboard box "Wheel Check/Measured distance (m)", then disable.
 5. Copy the suggested WHEEL_DIAMETER_M into robot_settings.py and deploy. Run it again to check.
 
 ## The code to look at
 
 ```python
-rolled = [abs(e - s) for s, e in zip(self.startDistances, end)]
-self.encoderDistance = sum(rolled) / len(rolled)
+pairs = zip(self.startDistances, end)                              # (start, end) for each wheel
+rolled = [abs(e - s) for s, e in pairs]                            # how far each wheel rolled
+self.encoderDistance = sum(rolled) / len(rolled)                   # the average of the 4
 ```
 
 ```python
-correct = robot_settings.WHEEL_DIAMETER_M * measured / self.encoderDistance
+ratio = measured / self.encoderDistance                            # real distance / encoder distance
+correct = robot_settings.WHEEL_DIAMETER_M * ratio                  # the real diameter: same ratio
 ```
 
 - **wheelDistances()** gives how far each wheel has rolled, by its encoder. The difference between the start and the end, averaged over the 4 wheels, is the encoder distance.
@@ -37,10 +39,10 @@ correct = robot_settings.WHEEL_DIAMETER_M * measured / self.encoderDistance
 ## Try this
 
 1. On the real robot: put tape at the front bumper, run the auto, measure from the tape to the bumper, type it in. Copy the suggested value into robot_settings.py and redeploy. Run the test again: does it come out right now?
-2. Work it out by hand first: if the robot thinks it drove 2.00 m but really drove 1.94 m, what's the new diameter?
+2. Work it out by hand first: if the robot thinks it drove 1.50 m but really drove 1.46 m, what's the new diameter?
 3. Do it again at speed 0.5. Is the answer different? Why? (Hint: slipping.)
 4. Repeat every few events: treads wear during competition.
 
-Next: [01_basic](../01_basic/README.md)
+Next: [00_11_autotuneposition](../00_11_autotuneposition/README.md)
 
 To go back to the starting robot, copy 01_basic/robot.py over robot.py.

@@ -9,6 +9,7 @@ Every auto saved in deploy/pathplanner/autos/ appears in the dashboard's
 "Auto" chooser automatically.
 """
 
+import math
 import typing
 
 import commands2
@@ -18,6 +19,7 @@ from wpimath.geometry import Pose2d, Rotation2d
 
 from ..drivetrain.constants import DriveConstants
 from . import robotconfig
+from .. import carpet
 from .planner import EasySwervePathPlanner
 
 # In the simulator, clicking Autonomous runs this auto so something happens
@@ -43,8 +45,30 @@ class Autos:
                 trackWidthM=DriveConstants.kTrackWidth,
                 wheelBaseM=DriveConstants.kWheelBase,
             )
+        # Wheel positions and top speed from robot_settings.py, so paths are
+        # never planned faster than MAX_SPEED_MPS allows
+        config = robotconfig.matchRobot(
+            config, DriveConstants.kTrackWidth, DriveConstants.kWheelBase,
+            DriveConstants.kMaxSpeedMetersPerSecond,
+        )
+        for line in robotconfig.appMismatches(
+            carpet.ROBOT_LENGTH_M, carpet.ROBOT_WIDTH_M, DriveConstants.kTrackWidth
+        ):
+            wpilib.reportWarning(f"PathPlanner app Settings differ from robot_settings.py: {line}")
+        # Position and heading PID from the position autotune (read once, at
+        # startup: after autotuning, restart the robot code to use new ones here)
+        import math
+        from pathplannerlib.config import PIDConstants
+
+        g = drivetrain.gains
+        translation = PIDConstants(g.posP, g.posI, g.posD, g.posIZoneM)
+        rotation = PIDConstants(g.headP, g.headI, g.headD, math.radians(g.headIZoneDeg))
         self.planner = EasySwervePathPlanner(
-            drivetrain, DriveConstants.kDriveKinematics, robotConfig=config
+            drivetrain,
+            DriveConstants.kDriveKinematics,
+            robotConfig=config,
+            translationPID=translation,
+            rotationPID=rotation,
         )
 
         if defaultAuto is None and wpilib.RobotBase.isSimulation():
@@ -85,7 +109,7 @@ class Autos:
     def goToPath(self, pathName: str, maxSpeedMps: float = 3.0) -> commands2.Command:
         """Drive by itself to the start of a path from wherever the robot is,
         then drive the path. Good on a button: hold to go, let go to stop."""
-        constraints = PathConstraints(maxSpeedMps, 3.0, 3.14, 6.28)
+        constraints = self._constraints(maxSpeedMps)
         return commands2.DeferredCommand(
             lambda: self.planner.pathfindThenFollowPath(pathName, constraints),
             self.drivetrain,
@@ -98,13 +122,22 @@ class Autos:
             lambda: self.planner.followPath(pathName), self.drivetrain
         )
 
+    @staticmethod
+    def _constraints(maxSpeedMps: float) -> PathConstraints:
+        """Speed limits for driving on the fly, never above MAX_SPEED_MPS and
+        MAX_TURN_DEG_PER_S (the wheels are limited to those anyway, and a
+        plan the wheels can't keep up with cuts corners and arrives late)."""
+        speed = min(maxSpeedMps, DriveConstants.kMaxSpeedMetersPerSecond)
+        turn = min(math.pi, DriveConstants.kMaxAngularSpeed)
+        return PathConstraints(speed, 3.0, turn, 2 * turn)
+
     def driveTo(
         self, x: float, y: float, headingDeg: float, maxSpeedMps: float = 3.0
     ) -> commands2.Command:
         """Drive by itself to a spot on the field (meters from the blue
         corner), steering around obstacles. Good on a button: hold to go,
         let go to stop."""
-        constraints = PathConstraints(maxSpeedMps, 3.0, 3.14, 6.28)
+        constraints = self._constraints(maxSpeedMps)
         target = Pose2d(x, y, Rotation2d.fromDegrees(headingDeg))
         return commands2.DeferredCommand(
             lambda: self.planner.pathfindToPose(target, constraints), self.drivetrain
