@@ -224,8 +224,8 @@ class EasySwerveModule:
 
     def _configure(self, role: str, spark: SparkMax, config, persist: bool = False) -> None:
         """Send a full config to one SPARK MAX. If the SPARK refuses it (the
-        usual reason: its firmware is older than the REVLib in this code, so it
-        doesn't know some of the settings), don't crash: remember the problem,
+        usual reason: its firmware doesn't match the 2026 REVLib in this code;
+        27.0.0 firmware, for one, removed the conversion-factor settings), don't crash: remember the problem,
         print what to do, and keep this module still (see configured). The
         check-up (examples/00_01_checkup) lists it with the firmware version."""
         try:
@@ -243,8 +243,9 @@ class EasySwerveModule:
             self.configProblems[role] = str(e)
             print(
                 f"[drive] {self.name} {role} SPARK MAX (CAN {spark.getDeviceId()}) refused its settings: {e}. "
-                f"Its firmware is {firmware}; this code needs 2026 firmware. Update every SPARK MAX "
-                "with REV Hardware Client. This module will not move until then."
+                f"Its firmware is {firmware}; this code needs 2026 firmware (26.x, not 27 or later). "
+                "Put 2026 firmware on every SPARK MAX with REV Hardware Client. This module will not "
+                "move until then."
             )
 
     def _heldStill(self) -> bool:

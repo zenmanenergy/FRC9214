@@ -182,11 +182,13 @@ class Drivetrain(DriveSubsystem):
                     refused = m.configProblems.get(role)
                     if refused:
                         add(False, f"{name} {role} SPARK MAX (CAN {can}) REFUSED ITS SETTINGS ({refused}). "
-                                   f"Firmware {firmware}: update it to 2026 firmware with REV Hardware Client")
+                                   f"Firmware {firmware}: this code needs 2026 firmware (26.x), put on with REV Hardware Client")
                         continue
-                    if not sim and firmwareYear(firmware) is not None and firmwareYear(firmware) < 26:
-                        add(False, f"{name} {role} SPARK MAX (CAN {can}) firmware {firmware} is too old: "
-                                   "update it to 2026 firmware with REV Hardware Client")
+                    year = None if sim else firmwareYear(firmware)
+                    if year is not None and year != 26:
+                        which = "too old: update it" if year < 26 else "too new (2027 or later): put it back"
+                        add(False, f"{name} {role} SPARK MAX (CAN {can}) firmware {firmware} is {which} "
+                                   "to 2026 firmware (26.x) with REV Hardware Client")
                         continue
                     fault = spark.hasActiveFault()
                     add(not fault, f"{name} {role} SPARK MAX (CAN {can}) answering, firmware {firmware}"
