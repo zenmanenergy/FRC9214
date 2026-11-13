@@ -314,17 +314,25 @@ class DriveSubsystem(Subsystem):
     def _stopNotReady(self) -> None:
         for _, m in self.modules:
             m.setDrivingVoltage(0.0)
-        # Warn once per change in which encoders are missing, not every loop
+        # Warn once per change in what is missing, not every loop
+        refused = [n for n, m in self.modules if not m.configured]
         missing = [n for n, m in self.modules if not m.turningEncoder.synced]
-        if missing != getattr(self, "_lastNotReady", None):
-            self._lastNotReady = missing
-            wpilib.reportWarning(
-                f"Drive held still: steering encoders not read yet for {', '.join(missing)}"
-            )
+        if (refused, missing) != getattr(self, "_lastNotReady", None):
+            self._lastNotReady = (refused, missing)
+            if refused:
+                wpilib.reportWarning(
+                    f"Drive held still: SPARK MAX settings refused for {', '.join(refused)} "
+                    "(update the SPARK MAX firmware; run examples/00_01_checkup)"
+                )
+            if missing:
+                wpilib.reportWarning(
+                    f"Drive held still: steering encoders not read yet for {', '.join(missing)}"
+                )
 
     def steeringEncodersReady(self) -> bool:
-        """True when every module knows its true steering angle."""
-        return all(m.turningEncoder.synced for _, m in self.modules)
+        """True when every module knows its true steering angle (and both of
+        its SPARK MAXes accepted their settings)."""
+        return all(m.turningEncoder.synced and m.configured for _, m in self.modules)
 
     def zeroSteeringEncoders(self) -> typing.Optional[str]:
         """roboRIO wiring only: make the current wheel angles the zeros (hex keys

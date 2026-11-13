@@ -87,16 +87,12 @@ class EasySwerveModule:
         self.turningTarget: typing.Optional[float] = None
         self.steerDeadbandRad = math.radians(ModuleConstants.kSteerFrictionDeadbandDeg)
 
-        self.drivingSpark.configure(
-            configs.drivingConfig(self.drivingInverted, self.gains),
-            ResetMode.kResetSafeParameters,
-            PersistMode.kPersistParameters,
-        )
-        self.turningSpark.configure(
-            self._turningConfig(self.gains),
-            ResetMode.kResetSafeParameters,
-            PersistMode.kPersistParameters,
-        )
+        # SPARK MAXes that refused their settings: role -> error text. The
+        # module will not move until this is empty (see configured).
+        self.configProblems: typing.Dict[str, str] = {}
+        self._configure("drive", self.drivingSpark,
+                        configs.drivingConfig(self.drivingInverted, self.gains), True)
+        self._configure("steer", self.turningSpark, self._turningConfig(self.gains), True)
 
         self.chassisAngularOffset = chassisAngularOffset
         self.desiredState = SwerveModuleState(
@@ -127,6 +123,8 @@ class EasySwerveModule:
 
         :param desiredState: Desired state with speed and angle.
         """
+        if self._heldStill():
+            return
         # Apply chassis angular offset to the desired state.
         correctedDesiredState = SwerveModuleState(
             desiredState.speed,
@@ -162,11 +160,15 @@ class EasySwerveModule:
 
     def setDrivingVoltage(self, volts: float) -> None:
         """Run the drive motor open-loop at a voltage (autotune only)."""
+        if volts and self._heldStill():
+            return
         self.drivingVoltage = volts
         self.drivingSpark.setVoltage(volts)
 
     def setTurningVoltage(self, volts: float) -> None:
         """Run the steering motor open-loop at a voltage (autotune only)."""
+        if volts and self._heldStill():
+            return
         self.turningVoltage = volts
         self.turningSpark.setVoltage(volts)
 
@@ -185,6 +187,8 @@ class EasySwerveModule:
     def _steerTo(self, encoderAngle: float) -> None:
         """Send a steering setpoint (encoder frame, radians), adding a friction
         push in the direction of the error when it is outside the deadband."""
+        if self._heldStill():
+            return
         target = encoderAngle % math.tau
         ff = self._frictionPush(target)
         self.turningTarget = target
@@ -197,7 +201,7 @@ class EasySwerveModule:
         """Re-aim the friction push at the current error. DriveSubsystem calls
         this every loop, so the push stays correct even if nothing resends the
         steering target (it is only resent when the push actually changes)."""
-        if self.turningTarget is None or self.turningVoltage is not None:
+        if self.turningTarget is None or self.turningVoltage is not None or not self.configured:
             return
         ff = self._frictionPush(self.turningTarget)
         if ff != self.turningFeedforward:
@@ -215,16 +219,47 @@ class EasySwerveModule:
         old, self.gains = self.gains, gains
         if all(getattr(old, f) == getattr(gains, f) for f in SPARK_GAIN_FIELDS):
             return
-        self.drivingSpark.configure(
-            configs.drivingConfig(self.drivingInverted, gains),
-            ResetMode.kResetSafeParameters,
-            PersistMode.kNoPersistParameters,
-        )
-        self.turningSpark.configure(
-            self._turningConfig(gains),
-            ResetMode.kResetSafeParameters,
-            PersistMode.kNoPersistParameters,
-        )
+        self._configure("drive", self.drivingSpark, configs.drivingConfig(self.drivingInverted, gains))
+        self._configure("steer", self.turningSpark, self._turningConfig(gains))
+
+    def _configure(self, role: str, spark: SparkMax, config, persist: bool = False) -> None:
+        """Send a full config to one SPARK MAX. If the SPARK refuses it (the
+        usual reason: its firmware is older than the REVLib in this code, so it
+        doesn't know some of the settings), don't crash: remember the problem,
+        print what to do, and keep this module still (see configured). The
+        check-up (examples/00_01_checkup) lists it with the firmware version."""
+        try:
+            spark.configure(
+                config,
+                ResetMode.kResetSafeParameters,
+                PersistMode.kPersistParameters if persist else PersistMode.kNoPersistParameters,
+            )
+            self.configProblems.pop(role, None)
+        except RuntimeError as e:
+            try:
+                firmware = spark.getFirmwareString()
+            except Exception:
+                firmware = "unknown"
+            self.configProblems[role] = str(e)
+            print(
+                f"[drive] {self.name} {role} SPARK MAX (CAN {spark.getDeviceId()}) refused its settings: {e}. "
+                f"Its firmware is {firmware}; this code needs 2026 firmware. Update every SPARK MAX "
+                "with REV Hardware Client. This module will not move until then."
+            )
+
+    def _heldStill(self) -> bool:
+        """If a SPARK MAX refused its settings, its motor would run with the
+        wrong direction and no current limit: keep both motors off instead."""
+        if self.configured:
+            return False
+        self.drivingSpark.setVoltage(0.0)
+        self.turningSpark.setVoltage(0.0)
+        return True
+
+    @property
+    def configured(self) -> bool:
+        """True when both SPARK MAXes accepted their settings."""
+        return not self.configProblems
 
     def _turningConfig(self, gains: TunedGains):
         return configs.turningConfig(
@@ -235,11 +270,7 @@ class EasySwerveModule:
         """Send the steering angle to the roboRIO every 5 ms instead of 20 ms
         (Ziegler-Nichols tuning only: it adds CAN traffic)."""
         self.fastSteeringSignals = fast
-        self.turningSpark.configure(
-            self._turningConfig(self.gains),
-            ResetMode.kResetSafeParameters,
-            PersistMode.kNoPersistParameters,
-        )
+        self._configure("steer", self.turningSpark, self._turningConfig(self.gains))
 
     # ---- simple helpers for the setup examples (00_...) ---------------------------
     # Angles in degrees, + = counterclockwise seen from above.

@@ -24,6 +24,15 @@ from .drivesubsystem import DriveSubsystem
 from .positioncontrol import PositionController
 
 
+
+def firmwareYear(firmware: str):
+    """The first number of a SPARK firmware string ("v26.1.0" -> 26), or None."""
+    import re
+
+    found = re.search(r"(\d+)\.", str(firmware))
+    return int(found.group(1)) if found else None
+
+
 class Drivetrain(DriveSubsystem):
     def __init__(self) -> None:
         super().__init__()
@@ -169,6 +178,15 @@ class Drivetrain(DriveSubsystem):
                     if not answering:
                         add(False, f"{name} {role} SPARK MAX (CAN {can}) not answering: check its CAN ID "
                                    "in REV Hardware Client and the CAN wiring")
+                        continue
+                    refused = m.configProblems.get(role)
+                    if refused:
+                        add(False, f"{name} {role} SPARK MAX (CAN {can}) REFUSED ITS SETTINGS ({refused}). "
+                                   f"Firmware {firmware}: update it to 2026 firmware with REV Hardware Client")
+                        continue
+                    if not sim and firmwareYear(firmware) is not None and firmwareYear(firmware) < 26:
+                        add(False, f"{name} {role} SPARK MAX (CAN {can}) firmware {firmware} is too old: "
+                                   "update it to 2026 firmware with REV Hardware Client")
                         continue
                     fault = spark.hasActiveFault()
                     add(not fault, f"{name} {role} SPARK MAX (CAN {can}) answering, firmware {firmware}"
